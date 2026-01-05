@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Widget - Compact</title>
+  <style>
+    :root {
+      --r: 29;
+      --g: 185;
+      --b: 84;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html, body {
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 10px;
+    }
+
+    /* ===== IDLE STATE ===== */
+    .idle {
+      background: linear-gradient(135deg, rgba(30,30,30,0.9), rgba(10,10,10,0.95));
+      backdrop-filter: blur(20px);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 14px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .idle.hidden { display: none; }
+
+    .idle-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .idle-icon svg {
+      width: 32px;
+      height: 32px;
+      opacity: 0.2;
+    }
+
+    .idle-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .idle-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 6px;
+    }
+
+    .idle-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      margin-top: 10px;
+    }
+
+    /* ===== WIDGET ===== */
+    .widget {
+      background: linear-gradient(
+        135deg,
+        rgba(var(--r), var(--g), var(--b), 0.15),
+        rgba(0, 0, 0, 0.85)
+      );
+      backdrop-filter: blur(20px);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 14px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .widget.hidden { display: none; }
+
+    .cover {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .info { flex: 1; min-width: 0; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgb(var(--r), var(--g), var(--b));
+      margin-bottom: 6px;
+    }
+
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: rgb(var(--r), var(--g), var(--b));
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    .badge.paused { color: rgba(255,255,255,0.4); }
+    .badge.paused::before { animation: none; background: rgba(255,255,255,0.3); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .artist {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress {
+      margin-top: 10px;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: rgb(var(--r), var(--g), var(--b));
+      width: 0%;
+      transition: width 1s linear;
+    }
+  </style>
+</head>
+<body>
+  <!-- Idle State -->
+  <div class="idle" id="idle">
+    <div class="idle-icon">
+      <svg viewBox="0 0 24 24" fill="white">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+    </div>
+    <div class="idle-info">
+      <div class="idle-text">Warte auf Musik...</div>
+      <div class="idle-bar"></div>
+    </div>
+  </div>
+
+  <!-- Active Widget -->
+  <div class="widget hidden" id="widget">
+    <div class="cover" id="cover"></div>
+    <div class="info">
+      <div class="badge" id="badge">Läuft jetzt</div>
+      <div class="title" id="title">—</div>
+      <div class="artist" id="artist">—</div>
+      <div class="progress">
+        <div class="progress-fill" id="progress"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const isDemo = !window.__TAURI__;
+
+    if (isDemo) {
+        import('./mock-track.js').then(({ startDemo }) => {
+            startDemo(update);
+        });
+    } else {
+        listen('track-update', (e) => update(e.payload));
+        invoke('get_track').then(update);
+    }
+
+    const { listen } = window.__TAURI__.event;
+    const { invoke } = window.__TAURI__.tauri;
+    const appWindow = window.__TAURI__.window?.appWindow || window.__TAURI__.window?.getCurrent?.();
+
+    if (appWindow) {
+      document.addEventListener('mousedown', async (e) => {
+        if (e.buttons === 1) {
+          try { await appWindow.startDragging(); } catch(e) {}
+        }
+      });
+    }
+
+    const $ = (id) => document.getElementById(id);
+    let currentTrack = null;
+
+    function update(track) {
+      const widget = $('widget');
+      const idle = $('idle');
+      const cover = $('cover');
+      const badge = $('badge');
+      const title = $('title');
+      const artist = $('artist');
+      const progress = $('progress');
+
+      if (!track?.track) {
+        widget?.classList.add('hidden');
+        idle?.classList.remove('hidden');
+        return;
+      }
+
+      idle?.classList.add('hidden');
+      widget?.classList.remove('hidden');
+
+      if (track.albumCover && track.albumCover !== currentTrack?.albumCover) {
+        if (cover) cover.style.backgroundImage = `url('${track.albumCover}')`;
+      }
+
+      if (title) title.textContent = track.track;
+      if (artist) artist.textContent = track.artist;
+
+      if (badge) {
+        badge.classList.toggle('paused', !track.isPlaying);
+        badge.textContent = track.isPlaying ? 'Läuft jetzt' : 'Pausiert';
+      }
+
+      if (track.color) {
+        document.documentElement.style.setProperty('--r', track.color.r);
+        document.documentElement.style.setProperty('--g', track.color.g);
+        document.documentElement.style.setProperty('--b', track.color.b);
+      }
+
+      if (track.durationMs > 0 && progress) {
+        progress.style.width = `${(track.progressMs / track.durationMs) * 100}%`;
+      }
+
+      currentTrack = track;
+    }
+
+    listen('track-update', (e) => update(e.payload));
+    invoke('get_track').then(update);
+
+    setInterval(() => {
+      if (currentTrack?.isPlaying && currentTrack.durationMs > 0) {
+        currentTrack.progressMs = Math.min(currentTrack.progressMs + 1000, currentTrack.durationMs);
+        const progress = $('progress');
+        if (progress) progress.style.width = `${(currentTrack.progressMs / currentTrack.durationMs) * 100}%`;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
