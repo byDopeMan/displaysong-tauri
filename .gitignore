@@ -1,0 +1,52 @@
+# =====================
+# Secrets & Environment
+# =====================
+.env
+.env.*
+**/credentials.json
+**/token.json
+
+# =====================
+# Node / Frontend
+# =====================
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =====================
+# Rust / Tauri
+# =====================
+target/
+src-tauri/target/
+
+# =====================
+# Tauri Bundles
+# =====================
+*.exe
+*.msi
+*.dmg
+*.app
+*.AppImage
+*.deb
+*.rpm
+
+# =====================
+# Logs & Cache
+# =====================
+logs/
+*.log
+.cache/
+.turbo/
+.parcel-cache/
+
+# =====================
+# OS / Editor
+# =====================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

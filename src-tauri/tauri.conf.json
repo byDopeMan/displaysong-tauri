@@ -1,0 +1,141 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": "../src",
+    "distDir": "../src",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "DisplaySong",
+    "version": "2.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "window": {
+        "all": true
+      },
+      "shell": {
+        "open": true
+      },
+      "path": {
+        "all": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "category": "Entertainment",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/icon.png",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.displaysong.app",
+      "longDescription": "Spotify Now Playing Widget für OBS",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [
+        "../src/widgets/*",
+        "../src/templates/*"
+      ],
+      "shortDescription": "Spotify Now Playing Widget",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": "default-src 'self' customwidget:; img-src 'self' https://i.scdn.co https://*.scdn.co data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' customwidget:; connect-src 'self' https://api.spotify.com https://accounts.spotify.com; frame-src https://open.spotify.com"
+    },
+    "updater": {
+      "active": false
+    },
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": false
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "DisplaySong",
+        "width": 420,
+        "height": 520,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "center": true,
+        "visible": true
+      },
+      {
+        "label": "widget-1",
+        "title": "Widget - Compact",
+        "url": "widgets/design1.html",
+        "width": 380,
+        "height": 120,
+        "minWidth": 280,
+        "minHeight": 80,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true
+      },
+      {
+        "label": "widget-2",
+        "title": "Widget - Album",
+        "url": "widgets/design2.html",
+        "width": 320,
+        "height": 412,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true
+      },
+      {
+        "label": "widget-custom1",
+        "title": "Widget - Custom 1",
+        "url": "customwidget://custom1",
+        "width": 250,
+        "height": 260,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true
+      },
+      {
+        "label": "widget-custom2",
+        "title": "Widget - Custom 2",
+        "url": "customwidget://custom2",
+        "width": 340,
+        "height": 80,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "skipTaskbar": true
+      }
+    ]
+  }
+}
