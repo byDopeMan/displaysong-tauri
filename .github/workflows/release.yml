@@ -1,0 +1,94 @@
+# Automatischer Build für Windows, macOS und Linux
+# Wird ausgelöst wenn ein neuer Tag gepusht wird (z.B. v2.1.1)
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows
+          - platform: windows-latest
+            args: ''
+            
+          # macOS Intel
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            
+          # macOS Apple Silicon
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            
+          # Linux
+          - platform: ubuntu-22.04
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-action@stable
+        
+      # macOS: Beide Targets installieren
+      - name: Install macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: |
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+
+      # Linux: Dependencies installieren
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.0-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'DisplaySong ${{ github.ref_name }}'
+          releaseBody: |
+            Siehe [Changelog](https://github.com/${{ github.repository }}/blob/main/README.md#-changelog) für Details.
+            
+            ## Downloads
+            
+            | Plattform | Datei |
+            |-----------|-------|
+            | **Windows** | `DisplaySong_x.x.x_x64-setup.exe` (empfohlen) oder `.msi` |
+            | **macOS Intel** | `DisplaySong_x.x.x_x64.dmg` |
+            | **macOS Apple Silicon** | `DisplaySong_x.x.x_aarch64.dmg` |
+            | **Linux** | `DisplaySong_x.x.x_amd64.AppImage` oder `.deb` |
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
