@@ -213,6 +213,9 @@ async function showWidget(widgetLabel) {
       activeWidgets.add(widgetLabel);
       await restoreWidgetPosition(widgetLabel);
       updateWidgetList();
+      
+      // Akzentfarbe an Widget senden wenn aktiviert (mit Verzögerung)
+      setTimeout(() => sendAccentColorToWidget(widgetLabel), 300);
     }
   } catch (e) {
     console.error('Show widget error:', e);
@@ -236,6 +239,8 @@ async function toggleWidget(widgetLabel) {
         await widget.show();
         activeWidgets.add(widgetLabel);
         await restoreWidgetPosition(widgetLabel);
+        // Akzentfarbe mit Verzögerung senden
+        setTimeout(() => sendAccentColorToWidget(widgetLabel), 300);
       }
       updateWidgetList();
     }
@@ -304,11 +309,60 @@ function updateWidgetList() {
   });
 }
 
+// Akzentfarbe an Widget senden
+async function sendAccentColorToWidget(widgetLabel) {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  
+  // Prüfen ob Akzentfarbe für dieses Widget aktiviert ist
+  const useAccent = settings.widgetAccentColors?.[widgetLabel] || false;
+  
+  // Custom Widgets bekommen immer die Akzentfarbe
+  const isCustomWidget = widgetLabel.includes('custom');
+  
+  if (!useAccent && !isCustomWidget) return;
+  
+  const color = getCurrentAccentColor();
+  try {
+    await invoke('send_accent_to_widget', { 
+      label: widgetLabel, 
+      r: color.r, 
+      g: color.g, 
+      b: color.b 
+    });
+  } catch (e) {
+    console.log('Send accent to widget:', e);
+  }
+}
+
+// Widget zurück auf Cover-Farbe setzen (Akzentfarbe deaktiviert)
+async function resetWidgetToTrackColor(widgetLabel) {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  
+  try {
+    // Event senden das Akzentfarbe deaktiviert wurde
+    await invoke('reset_widget_accent', { label: widgetLabel });
+  } catch (e) {
+    console.log('Reset widget accent:', e);
+  }
+}
+
+// Akzentfarbe an alle aktiven Widgets senden
+async function broadcastAccentColor() {
+  for (const widgetLabel of activeWidgets) {
+    await sendAccentColorToWidget(widgetLabel);
+  }
+  // Auch an nicht-aktive Custom Widgets (für nächstes Öffnen)
+  await sendAccentColorToWidget('widget-custom1');
+  await sendAccentColorToWidget('widget-custom2');
+}
+
 // ============================================================================
 // SONG HISTORY - Dual Container System
 // ============================================================================
 
-let historyDesign = 'simple'; // 'simple' oder 'embedded'
+let historyDesign = 'simple';
 let cachedHistory = [];
 let embeddedTrackIds = new Set();
 
@@ -345,7 +399,6 @@ function updateHistoryDisplay(history) {
     return;
   }
   
-  // BEIDE Listen parallel updaten
   updateSimpleList(simpleList, cachedHistory);
   updateEmbeddedList(embeddedList, cachedHistory);
   applyHistoryDesign();
@@ -383,7 +436,7 @@ function updateEmbeddedList(container, history) {
   const currentIds = new Set(validHistory.map(t => t.trackId));
   const maxItems = settings.historyLength || 20;
   
-  // Neue Songs hinzufügen
+  // Neue Songs hinzufügen mit Click-Overlay
   for (const track of validHistory) {
     if (!embeddedTrackIds.has(track.trackId)) {
       const embed = document.createElement('div');
@@ -391,11 +444,11 @@ function updateEmbeddedList(container, history) {
       embed.dataset.trackId = track.trackId;
       embed.innerHTML = `
         <iframe 
-          src="https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=1" 
+          src="https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0" 
           width="100%" 
           height="80" 
           frameborder="0" 
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+          allow="encrypted-media" 
           loading="lazy">
         </iframe>
       `;
@@ -505,12 +558,42 @@ const DEFAULT_SETTINGS = {
   rememberPositions: false,
   theme: 'dark',
   accentColor: 'spotify',
+  customAccentColor: '#1db954',
   historyLength: 20,
   widgetOpacity: 100,
-  historyDesign: 'simple'
+  historyDesign: 'simple',
+  widgetAccentColors: {} // z.B. { 'widget-1': true, 'widget-2': false }
 };
 
 let settings = { ...DEFAULT_SETTINGS };
+
+// Vordefinierte Farben
+const ACCENT_COLORS = {
+  spotify: { r: 29, g: 185, b: 84 },
+  blue: { r: 59, g: 130, b: 246 },
+  purple: { r: 139, g: 92, b: 246 },
+  pink: { r: 236, g: 72, b: 153 },
+  orange: { r: 249, g: 115, b: 22 },
+  red: { r: 239, g: 68, b: 68 }
+};
+
+// Hex zu RGB konvertieren
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 29, g: 185, b: 84 };
+}
+
+// Aktuelle Akzentfarbe holen
+function getCurrentAccentColor() {
+  if (settings.accentColor === 'custom') {
+    return hexToRgb(settings.customAccentColor);
+  }
+  return ACCENT_COLORS[settings.accentColor] || ACCENT_COLORS.spotify;
+}
 
 function loadSettings() {
   try {
@@ -533,16 +616,7 @@ function saveSettings() {
 function applySettings() {
   document.documentElement.setAttribute('data-theme', settings.theme);
   
-  const colors = {
-    spotify: { r: 29, g: 185, b: 84 },
-    blue: { r: 59, g: 130, b: 246 },
-    purple: { r: 139, g: 92, b: 246 },
-    pink: { r: 236, g: 72, b: 153 },
-    orange: { r: 249, g: 115, b: 22 },
-    red: { r: 239, g: 68, b: 68 }
-  };
-  
-  const color = colors[settings.accentColor] || colors.spotify;
+  const color = getCurrentAccentColor();
   document.documentElement.style.setProperty('--accent', `rgb(${color.r}, ${color.g}, ${color.b})`);
   document.documentElement.style.setProperty('--accent-rgb', `${color.r}, ${color.g}, ${color.b}`);
   
@@ -568,8 +642,26 @@ function applySettings() {
     if (opacityValue) opacityValue.textContent = settings.widgetOpacity + '%';
   }
   
+  // Farb-Buttons
   document.querySelectorAll('.color-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.color === settings.accentColor);
+  });
+  
+  // Custom Color Picker
+  const customColorInput = document.getElementById('custom-accent-color');
+  if (customColorInput) {
+    customColorInput.value = settings.customAccentColor;
+    // Custom Button Hintergrund aktualisieren
+    const customBtn = document.querySelector('.color-btn-custom');
+    if (customBtn && settings.accentColor === 'custom') {
+      customBtn.style.background = settings.customAccentColor;
+    }
+  }
+  
+  // Widget Akzentfarben Checkboxen
+  document.querySelectorAll('.widget-accent-check').forEach(checkbox => {
+    const widget = checkbox.dataset.widget;
+    checkbox.checked = settings.widgetAccentColors?.[widget] || false;
   });
   
   historyDesign = settings.historyDesign || 'simple';
@@ -701,11 +793,68 @@ function setupSettingsListeners() {
     });
   }
   
-  document.querySelectorAll('.color-btn').forEach(btn => {
+  // Vordefinierte Farben
+  document.querySelectorAll('.color-btn:not(.color-btn-custom)').forEach(btn => {
     btn.addEventListener('click', () => {
       settings.accentColor = btn.dataset.color;
       saveSettings();
       applySettings();
+      broadcastAccentColor();
+    });
+  });
+  
+  // Custom Color Picker
+  const customColorInput = document.getElementById('custom-accent-color');
+  const customColorBtn = document.querySelector('.color-btn-custom');
+  
+  if (customColorInput && customColorBtn) {
+    // Beim Klick auf Custom Button -> Color Picker öffnen und aktivieren
+    customColorBtn.addEventListener('click', () => {
+      settings.accentColor = 'custom';
+      saveSettings();
+      applySettings();
+      broadcastAccentColor();
+    });
+    
+    // Farbe ändern
+    customColorInput.addEventListener('input', () => {
+      settings.customAccentColor = customColorInput.value;
+      settings.accentColor = 'custom';
+      customColorBtn.style.background = customColorInput.value;
+      
+      // Live-Update
+      const color = hexToRgb(customColorInput.value);
+      document.documentElement.style.setProperty('--accent', `rgb(${color.r}, ${color.g}, ${color.b})`);
+      document.documentElement.style.setProperty('--accent-rgb', `${color.r}, ${color.g}, ${color.b}`);
+      
+      // Buttons aktualisieren
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.color === 'custom');
+      });
+    });
+    
+    customColorInput.addEventListener('change', () => {
+      saveSettings();
+      broadcastAccentColor();
+    });
+  }
+  
+  // Widget Akzentfarben Checkboxen
+  document.querySelectorAll('.widget-accent-check').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      const widget = checkbox.dataset.widget;
+      if (!settings.widgetAccentColors) settings.widgetAccentColors = {};
+      settings.widgetAccentColors[widget] = checkbox.checked;
+      saveSettings();
+      
+      // Wenn Widget aktiv ist, Farbe senden oder zurücksetzen
+      if (activeWidgets.has(widget)) {
+        if (checkbox.checked) {
+          sendAccentColorToWidget(widget);
+        } else {
+          resetWidgetToTrackColor(widget);
+        }
+      }
     });
   });
   
@@ -747,6 +896,18 @@ function setupSettingsListeners() {
     document.getElementById('licenses-modal')?.classList.remove('hidden');
   });
   
+  document.getElementById('btn-logs')?.addEventListener('click', async () => {
+    const invoke = getTauriInvoke();
+    if (invoke) {
+      try {
+        await invoke('open_logs_folder');
+        showNotification('Logs-Ordner geöffnet');
+      } catch (e) {
+        showNotification('Fehler: ' + e);
+      }
+    }
+  });
+  
   document.querySelectorAll('.modal-close').forEach(btn => {
     btn.addEventListener('click', () => {
       const modalId = btn.dataset.modal;
@@ -762,99 +923,6 @@ function setupSettingsListeners() {
 }
 
 // ============================================================================
-// DESIGN EDITOR
-// ============================================================================
-
-const DEFAULT_TEMPLATE = `<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <title>Custom Widget</title>
-  <style>
-    :root { --r: 29; --g: 185; --b: 84; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; background: transparent; }
-    body { font-family: system-ui; padding: 10px; -webkit-app-region: drag; }
-    .widget {
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(16px);
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      gap: 14px;
-      align-items: center;
-    }
-    .cover { width: 70px; height: 70px; border-radius: 8px; background-size: cover; background-color: #222; }
-    .info { flex: 1; min-width: 0; }
-    .title { font-size: 15px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .artist { font-size: 12px; color: #aaa; }
-  </style>
-</head>
-<body>
-  <div class="widget" id="widget">
-    <div class="cover" id="cover"></div>
-    <div class="info">
-      <div class="title" id="title">—</div>
-      <div class="artist" id="artist">—</div>
-    </div>
-  </div>
-  <script type="module">
-    const{listen}=window.__TAURI__.event,{invoke}=window.__TAURI__.tauri;
-    let track=null;
-    function update(t){
-      if(!t?.track)return;
-      if(t.albumCover!==track?.albumCover)document.getElementById('cover').style.backgroundImage='url('+t.albumCover+')';
-      document.getElementById('title').textContent=t.track;
-      document.getElementById('artist').textContent=t.artist;
-      track=t;
-    }
-    listen('track-update',e=>update(e.payload));
-    invoke('get_track').then(update);
-  <\/script>
-</body>
-</html>`;
-
-async function loadEditorContent(file) {
-  currentEditorFile = file;
-  try {
-    const invoke = getTauriInvoke();
-    if (!invoke) return;
-    const content = await invoke('load_custom_design', { name: file });
-    if (codeMirrorEditor) codeMirrorEditor.setValue(content);
-    else if (el.editorContent) el.editorContent.value = content;
-  } catch (e) {
-    const errorMsg = `<!-- Fehler beim Laden von ${file}.html -->\n<!-- ${e} -->`;
-    if (codeMirrorEditor) codeMirrorEditor.setValue(errorMsg);
-    else if (el.editorContent) el.editorContent.value = errorMsg;
-  }
-}
-
-async function saveEditorContent() {
-  try {
-    const invoke = getTauriInvoke();
-    if (!invoke) return;
-    const content = codeMirrorEditor ? codeMirrorEditor.getValue() : el.editorContent.value;
-    await invoke('save_custom_design', { name: currentEditorFile, content });
-    showNotification('Design gespeichert!');
-  } catch (e) {
-    showNotification('Fehler beim Speichern: ' + e);
-  }
-}
-
-function resetEditorContent() {
-  if (confirm('Auf Standard zurücksetzen?')) {
-    if (codeMirrorEditor) codeMirrorEditor.setValue(DEFAULT_TEMPLATE);
-    else if (el.editorContent) el.editorContent.value = DEFAULT_TEMPLATE;
-  }
-}
-
-async function previewDesign() {
-  await saveEditorContent();
-  const widgetLabel = currentEditorFile === 'custom1' ? 'widget-custom1' : 'widget-custom2';
-  await toggleWidget(widgetLabel);
-}
-
-// ============================================================================
 // NOTIFICATIONS
 // ============================================================================
 
@@ -866,7 +934,7 @@ function showNotification(message) {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: #1db954;
+    background: var(--accent, #1db954);
     color: white;
     padding: 12px 20px;
     border-radius: 8px;
@@ -881,24 +949,6 @@ function showNotification(message) {
 // ============================================================================
 // SPOTIFY AUTH
 // ============================================================================
-
-async function checkExistingCredentials() {
-  try {
-    const invoke = getTauriInvoke();
-    if (!invoke) { showView('setup'); return; }
-    
-    const hasCredentials = await invoke('check_credentials');
-    if (hasCredentials) {
-      isAuthenticated = true;
-      showView('player');
-      updateSpotifyStatus(true);
-    } else {
-      showView('setup');
-    }
-  } catch (e) {
-    showView('setup');
-  }
-}
 
 async function saveCredentials(clientId, clientSecret) {
   try {
@@ -952,13 +1002,40 @@ function setupTitlebarControls() {
       if (!appWindow) return;
       
       const action = btn.dataset.action;
-      if (action === 'minimize') await appWindow.hide();
+      if (action === 'minimize') {
+        // Minimize Animation
+        const app = document.querySelector('.app');
+        if (app) {
+          app.classList.add('minimizing');
+        }
+        
+        // Tray Toast anzeigen
+        showTrayToast();
+        
+        // Warten auf Animation, dann verstecken
+        setTimeout(async () => {
+          await appWindow.hide();
+          if (app) app.classList.remove('minimizing');
+        }, 250);
+      }
       if (action === 'close') {
         const invoke = getTauriInvoke();
         if (invoke) await invoke('quit_app');
       }
     });
   });
+}
+
+// Tray Toast anzeigen
+function showTrayToast() {
+  const toast = document.getElementById('tray-toast');
+  if (!toast) return;
+  
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
 }
 
 // ============================================================================
@@ -1028,11 +1105,6 @@ function setupEventListeners() {
   if (el.btnDisconnect) el.btnDisconnect.addEventListener('click', disconnectSpotify);
   if (el.btnCancelAuth) el.btnCancelAuth.addEventListener('click', () => showView('setup'));
 
-  if (el.editorSelect) el.editorSelect.addEventListener('change', () => loadEditorContent(el.editorSelect.value));
-  if (el.btnSaveDesign) el.btnSaveDesign.addEventListener('click', saveEditorContent);
-  if (el.btnResetDesign) el.btnResetDesign.addEventListener('click', resetEditorContent);
-  if (el.btnPreviewDesign) el.btnPreviewDesign.addEventListener('click', previewDesign);
-
   const btnOpenFolder = document.getElementById('btn-open-folder');
   if (btnOpenFolder) btnOpenFolder.addEventListener('click', openConfigFolder);
 
@@ -1097,6 +1169,16 @@ function startProgressInterpolation() {
 // ============================================================================
 
 async function init() {
+  // Loading Status Element
+  const loadingStatus = document.getElementById('loading-status');
+  const loadingView = document.getElementById('loading-view');
+  
+  function setLoadingStatus(text) {
+    if (loadingStatus) loadingStatus.textContent = text;
+  }
+  
+  setLoadingStatus('Initialisiere...');
+  
   let attempts = 0;
   while (!window.__TAURI__ && attempts < 100) {
     await new Promise(r => setTimeout(r, 50));
@@ -1105,12 +1187,14 @@ async function init() {
   
   const invoke = getTauriInvoke();
   
+  setLoadingStatus('Lade Komponenten...');
+  
   views = {
+    loading: document.getElementById('loading-view'),
     setup: document.getElementById('setup-view'),
     player: document.getElementById('player-view'),
     history: document.getElementById('history-view'),
     designs: document.getElementById('designs-view'),
-    editor: document.getElementById('editor-view'),
     settings: document.getElementById('settings-view'),
     auth: document.getElementById('auth-view'),
   };
@@ -1130,13 +1214,8 @@ async function init() {
     progressCurrent: document.getElementById('progress-current'),
     progressTotal: document.getElementById('progress-total'),
     widgetList: document.getElementById('widget-list'),
-    editorSelect: document.getElementById('editor-select'),
-    editorContent: document.getElementById('editor-content'),
     spotifyStatusText: document.getElementById('spotify-status-text'),
     btnDisconnect: document.getElementById('btn-disconnect'),
-    btnSaveDesign: document.getElementById('btn-save-design'),
-    btnResetDesign: document.getElementById('btn-reset-design'),
-    btnPreviewDesign: document.getElementById('btn-preview-design'),
     btnCancelAuth: document.getElementById('btn-cancel-auth'),
   };
   
@@ -1146,10 +1225,16 @@ async function init() {
   setupSettingsListeners();
   loadSettings();
   loadWidgetPositions();
+  
+  setLoadingStatus('Prüfe Anmeldedaten...');
+  
   await loadAutostartStatus();
   await setupDeepLinkHandler();
   await setupTrackListener();
-  await checkExistingCredentials();
+  
+  // Credentials prüfen mit visuellen Status-Updates
+  await checkExistingCredentialsWithStatus(setLoadingStatus);
+  
   startProgressInterpolation();
   
   if (isAuthenticated && invoke) {
@@ -1159,29 +1244,47 @@ async function init() {
     } catch (e) {}
     await autoShowWidgets();
   }
-
-  if (el.editorContent) {
-    setTimeout(() => {
-      if (typeof CodeMirror !== 'undefined') {
-        codeMirrorEditor = CodeMirror.fromTextArea(el.editorContent, {
-          mode: 'htmlmixed',
-          theme: 'dracula',
-          lineNumbers: true,
-          lineWrapping: true,
-          tabSize: 2,
-          indentWithTabs: false,
-          autoCloseTags: true,
-          autoCloseBrackets: true,
-          matchBrackets: true
-        });
-        loadEditorContent('custom1');
-      } else {
-        loadEditorContent('custom1');
-      }
-    }, 100);
+  
+  // Loading View ausblenden
+  if (loadingView) {
+    loadingView.classList.add('hidden');
   }
   
   console.log('DisplaySong initialized!');
+}
+
+// Credentials prüfen mit Status-Updates
+async function checkExistingCredentialsWithStatus(setStatus) {
+  try {
+    const invoke = getTauriInvoke();
+    if (!invoke) { 
+      showView('setup'); 
+      return; 
+    }
+    
+    setStatus('Suche gespeicherte Anmeldedaten...');
+    await new Promise(r => setTimeout(r, 200)); // Kurze Pause für visuelle Feedback
+    
+    const hasCredentials = await invoke('check_credentials');
+    
+    if (hasCredentials) {
+      setStatus('Anmeldedaten gefunden!');
+      await new Promise(r => setTimeout(r, 300));
+      setStatus('Verbinde mit Spotify...');
+      await new Promise(r => setTimeout(r, 500));
+      
+      isAuthenticated = true;
+      showView('player');
+      updateSpotifyStatus(true);
+    } else {
+      setStatus('Keine Anmeldedaten gefunden');
+      await new Promise(r => setTimeout(r, 300));
+      showView('setup');
+    }
+  } catch (e) {
+    console.error('Credential check failed:', e);
+    showView('setup');
+  }
 }
 
 if (document.readyState === 'loading') {

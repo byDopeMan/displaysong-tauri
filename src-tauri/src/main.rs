@@ -1,16 +1,75 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod spotify;
 mod credentials;
 mod color;
 
 use std::sync::Arc;
 use std::fs;
+use std::path::PathBuf;
 use tauri::{
     async_runtime::Mutex,
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, 
     SystemTrayMenu, SystemTrayMenuItem, State, AppHandle
 };
 use tokio::sync::watch;
-use log::info;
+use log::{info, error, LevelFilter};
+
+// ============================================================================
+// LOGGING SETUP
+// ============================================================================
+
+fn setup_logging(app_data_dir: Option<PathBuf>) -> Result<(), fern::InitError> {
+    let log_dir = app_data_dir
+        .map(|d| d.join("logs"))
+        .unwrap_or_else(|| PathBuf::from("logs"));
+    
+    // Log-Ordner erstellen
+    let _ = fs::create_dir_all(&log_dir);
+    
+    // Log-Datei mit Datum
+    let log_file = log_dir.join(format!(
+        "displaysong_{}.log",
+        chrono::Local::now().format("%Y-%m-%d")
+    ));
+    
+    // Alte Logs aufräumen (nur die letzten 7 behalten)
+    if let Ok(entries) = fs::read_dir(&log_dir) {
+        let mut log_files: Vec<_> = entries
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().map_or(false, |ext| ext == "log"))
+            .collect();
+        
+        log_files.sort_by_key(|e| e.path());
+        
+        while log_files.len() > 7 {
+            if let Some(old) = log_files.first() {
+                let _ = fs::remove_file(old.path());
+            }
+            log_files.remove(0);
+        }
+    }
+    
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {} {}] {}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(LevelFilter::Info)
+        .level_for("reqwest", LevelFilter::Warn)
+        .level_for("hyper", LevelFilter::Warn)
+        .level_for("rustls", LevelFilter::Warn)
+        .level_for("tao", LevelFilter::Error)  // Suppress tao warnings
+        .level_for("wry", LevelFilter::Error)  // Suppress wry warnings
+        .chain(fern::log_file(log_file)?)
+        .apply()?;
+    
+    Ok(())
+}
 
 // ============================================================================
 // APP STATE
@@ -201,6 +260,15 @@ async fn check_credentials(
     app: AppHandle,
     state: State<'_, Arc<AppState>>
 ) -> Result<bool, String> {
+    // Prüfen ob bereits verbunden und Polling läuft
+    {
+        let status = state.status.lock().await;
+        if status.spotify_connected && status.is_polling {
+            info!("Bereits verbunden und Polling aktiv");
+            return Ok(true);
+        }
+    }
+    
     if let Ok((client_id, client_secret)) = credentials::load() {
         let mut client = spotify::SpotifyClient::new(&client_id, &client_secret);
         
@@ -216,11 +284,14 @@ async fn check_credentials(
                 *state.spotify.lock().await = Some(client);
                 state.status.lock().await.spotify_connected = true;
                 
-                // Polling starten
-                let state_clone = state.inner().clone();
-                tauri::async_runtime::spawn(async move {
-                    start_polling(app, state_clone).await;
-                });
+                // Polling nur starten wenn noch nicht aktiv
+                let should_start = !state.status.lock().await.is_polling;
+                if should_start {
+                    let state_clone = state.inner().clone();
+                    tauri::async_runtime::spawn(async move {
+                        start_polling(app, state_clone).await;
+                    });
+                }
                 
                 return Ok(true);
             }
@@ -489,12 +560,45 @@ fn handle_tray_event(app: &AppHandle, event: SystemTrayEvent) {
 
 #[tauri::command]
 async fn reload_widgets(app: AppHandle) -> Result<(), String> {
-    // Alle Widget-Fenster neu laden
-    for label in ["widget-1", "widget-2", "widget-custom1", "widget-custom2"] {
+    // Custom Widgets: Lade Inhalt aus AppData und injiziere via document.write
+    for name in ["custom1", "custom2"] {
+        let label = format!("widget-{}", name);
+        
+        if let Some(window) = app.get_window(&label) {
+            // Prüfe ob Custom-Version in AppData existiert
+            if let Some(data_dir) = app.path_resolver().app_data_dir() {
+                let custom_path = data_dir.join("widgets").join(format!("{}.html", name));
+                if custom_path.exists() {
+                    if let Ok(content) = fs::read_to_string(&custom_path) {
+                        // Escape für JavaScript
+                        let escaped = content
+                            .replace("\\", "\\\\")
+                            .replace("`", "\\`")
+                            .replace("$", "\\$");
+                        
+                        // Kompletten HTML-Inhalt ersetzen
+                        let js = format!(
+                            r#"document.open(); document.write(`{}`); document.close();"#,
+                            escaped
+                        );
+                        let _ = window.eval(&js);
+                        continue;
+                    }
+                }
+            }
+            
+            // Fallback: Normales Reload
+            let _ = window.eval("window.location.reload()");
+        }
+    }
+    
+    // Design Widgets: Einfaches Reload
+    for label in ["widget-1", "widget-2"] {
         if let Some(window) = app.get_window(label) {
             let _ = window.eval("window.location.reload()");
         }
     }
+    
     info!("Widgets neu geladen");
     Ok(())
 }
@@ -618,6 +722,42 @@ async fn set_widget_opacity(label: String, opacity: f64, app: AppHandle) -> Resu
 }
 
 #[tauri::command]
+async fn send_accent_to_widget(label: String, r: u8, g: u8, b: u8, app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_window(&label) {
+        // CSS Custom Properties setzen für Akzentfarbe
+        let js = format!(
+            r#"
+            document.documentElement.style.setProperty('--accent-r', '{}');
+            document.documentElement.style.setProperty('--accent-g', '{}');
+            document.documentElement.style.setProperty('--accent-b', '{}');
+            document.documentElement.style.setProperty('--accent', 'rgb({}, {}, {})');
+            // Event für Widgets die darauf reagieren wollen
+            window.dispatchEvent(new CustomEvent('accent-color-change', {{ 
+                detail: {{ r: {}, g: {}, b: {} }} 
+            }}));
+            "#,
+            r, g, b, r, g, b, r, g, b
+        );
+        window.eval(&js).map_err(|e| e.to_string())?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+async fn reset_widget_accent(label: String, app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_window(&label) {
+        // Event senden das Widget zurück auf Track-Farbe wechseln soll
+        let js = r#"
+            window.dispatchEvent(new CustomEvent('accent-color-reset'));
+        "#;
+        window.eval(js).map_err(|e| e.to_string())?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
 async fn get_custom_widget_content(name: String, app: AppHandle) -> Result<String, String> {
     use std::path::PathBuf;
     
@@ -677,12 +817,12 @@ async fn open_config_folder(app: AppHandle) -> Result<(), String> {
     fs::create_dir_all(&widgets_dir)
         .map_err(|e| format!("Fehler: {}", e))?;
     
-    // Custom-Dateien kopieren falls nicht vorhanden (aus templates!)
+    // Custom-Dateien kopieren falls nicht vorhanden
     for name in ["custom1", "custom2"] {
         let target = widgets_dir.join(format!("{}.html", name));
         if !target.exists() {
-            // 1. Versuche aus Resources/templates (Build-Modus)
-            if let Some(resource) = app.path_resolver().resolve_resource(format!("templates/{}.html", name)) {
+            // 1. Versuche aus Resources (flache Struktur: {name}.html)
+            if let Some(resource) = app.path_resolver().resolve_resource(format!("{}.html", name)) {
                 if resource.exists() {
                     let _ = fs::copy(&resource, &target);
                     continue;
@@ -738,13 +878,52 @@ async fn open_config_folder(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn open_logs_folder(app: AppHandle) -> Result<(), String> {
+    let logs_dir = app.path_resolver()
+        .app_data_dir()
+        .ok_or("Konnte App-Datenverzeichnis nicht finden")?
+        .join("logs");
+    
+    // Ordner erstellen falls nicht vorhanden
+    fs::create_dir_all(&logs_dir)
+        .map_err(|e| format!("Fehler: {}", e))?;
+    
+    info!("Öffne Logs-Ordner: {}", logs_dir.display());
+    
+    // Ordner im Explorer öffnen
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&logs_dir)
+            .spawn()
+            .map_err(|e| format!("Fehler beim Öffnen: {}", e))?;
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&logs_dir)
+            .spawn()
+            .map_err(|e| format!("Fehler beim Öffnen: {}", e))?;
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&logs_dir)
+            .spawn()
+            .map_err(|e| format!("Fehler beim Öffnen: {}", e))?;
+    }
+    
+    Ok(())
+}
+
 // ============================================================================
 // MAIN
 // ============================================================================
 
 fn main() {
-    env_logger::init();
-    
     let (shutdown_tx, _) = watch::channel(false);
     
     let state = Arc::new(AppState {
@@ -760,63 +939,6 @@ fn main() {
         .manage(state)
         .system_tray(create_tray())
         .on_system_tray_event(handle_tray_event)
-        .register_uri_scheme_protocol("customwidget", |app, request| {
-            // Custom protocol für dynamisches Widget-Loading
-            // URLs: customwidget://custom1 oder customwidget://custom2
-            let uri = request.uri();
-            
-            // URI ist z.B. "customwidget://custom1" - extrahiere den Namen
-            let name = uri
-                .strip_prefix("customwidget://")
-                .unwrap_or("custom1")
-                .split('/')
-                .next()
-                .unwrap_or("custom1");
-            
-            // 1. AppData prüfen (User-Änderungen)
-            let content = if let Some(data_dir) = app.path_resolver().app_data_dir() {
-                let saved_path = data_dir.join("widgets").join(format!("{}.html", name));
-                if saved_path.exists() {
-                    fs::read_to_string(&saved_path).ok()
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-            
-            // 2. Falls nicht in AppData, Resource/Templates laden
-            let content = content.or_else(|| {
-                if let Some(resource_path) = app.path_resolver().resolve_resource(format!("templates/{}.html", name)) {
-                    if resource_path.exists() {
-                        return fs::read_to_string(&resource_path).ok();
-                    }
-                }
-                None
-            });
-            
-            // 3. Dev-Modus Fallback
-            let content = content.or_else(|| {
-                let dev_path = std::path::PathBuf::from("../src/widgets").join(format!("{}.html", name));
-                if dev_path.exists() {
-                    return fs::read_to_string(&dev_path).ok();
-                }
-                let dev_path2 = std::path::PathBuf::from("src/widgets").join(format!("{}.html", name));
-                if dev_path2.exists() {
-                    return fs::read_to_string(&dev_path2).ok();
-                }
-                None
-            });
-            
-            match content {
-                Some(html) => tauri::http::ResponseBuilder::new()
-                    .header("Content-Type", "text/html")
-                    .body(html.into_bytes()),
-                None => tauri::http::ResponseBuilder::new()
-                    .status(404)
-                    .body(b"Widget not found".to_vec()),
-            }
-        })
         .invoke_handler(tauri::generate_handler![
             get_track,
             get_track_history,
@@ -838,7 +960,73 @@ fn main() {
             save_custom_design,
             set_history_length,
             set_widget_opacity,
+            send_accent_to_widget,
+            reset_widget_accent,
+            open_logs_folder,
         ])
+        .setup(|app| {
+            let app_handle = app.handle();
+            let data_dir = app.path_resolver().app_data_dir();
+            
+            // Logging initialisieren
+            if let Err(e) = setup_logging(data_dir.clone()) {
+                eprintln!("Logging setup failed: {}", e);
+            } else {
+                info!("=== DisplaySong v2.1.1 gestartet ===");
+                if let Some(ref dir) = data_dir {
+                    info!("App-Daten: {}", dir.display());
+                    info!("Logs: {}/logs", dir.display());
+                }
+            }
+            
+            // Panic Handler für Crash-Logging
+            let log_dir = data_dir.clone().map(|d| d.join("logs"));
+            std::panic::set_hook(Box::new(move |panic_info| {
+                let msg = format!("PANIC: {}", panic_info);
+                error!("{}", msg);
+                
+                // Auch in separate Crash-Datei schreiben
+                if let Some(ref dir) = log_dir {
+                    let crash_file = dir.join(format!(
+                        "crash_{}.log",
+                        chrono::Local::now().format("%Y-%m-%d_%H-%M-%S")
+                    ));
+                    let _ = fs::write(&crash_file, &msg);
+                }
+            }));
+            
+            // Custom Widgets beim Start laden (mit Verzögerung damit Fenster bereit sind)
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                
+                for name in ["custom1", "custom2"] {
+                    let label = format!("widget-{}", name);
+                    
+                    if let Some(window) = app_handle.get_window(&label) {
+                        // Prüfe ob Custom-Version in AppData existiert
+                        if let Some(data_dir) = app_handle.path_resolver().app_data_dir() {
+                            let custom_path = data_dir.join("widgets").join(format!("{}.html", name));
+                            if custom_path.exists() {
+                                if let Ok(content) = fs::read_to_string(&custom_path) {
+                                    let escaped = content
+                                        .replace("\\", "\\\\")
+                                        .replace("`", "\\`")
+                                        .replace("$", "\\$");
+                                    
+                                    let js = format!(
+                                        r#"document.open(); document.write(`{}`); document.close();"#,
+                                        escaped
+                                    );
+                                    let _ = window.eval(&js);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten der App");
 }

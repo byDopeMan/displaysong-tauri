@@ -2,7 +2,7 @@
 
 **Spotify Now Playing Widget für OBS** - Eine elegante Desktop-App, die den aktuell spielenden Spotify-Track als Widget anzeigt.
 
-![Version](https://img.shields.io/badge/version-2.0.0-green)
+![Version](https://img.shields.io/badge/version-2.1.1-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20|%20macOS%20|%20Linux-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Tauri-orange)
 
@@ -14,9 +14,13 @@
 - 🎯 **OBS-ready** - Transparenter Hintergrund für nahtlose Stream-Integration
 - 🔄 **Echtzeit-Updates** - Song, Artist, Album, Cover und Fortschritt werden live aktualisiert
 - 🌈 **Dynamische Farben** - Widget-Akzentfarbe passt sich automatisch dem Album-Cover an
+- 🎨 **Custom Akzentfarbe** - Wähle deine eigene Farbe oder nutze Presets (Spotify Grün, Twitch Lila, etc.)
+- ✨ **Smooth Transitions** - Elegante Animationen beim Song-Wechsel
+- 📜 **Song-Verlauf** - Die letzten 20 Songs mit Spotify-Embed Ansicht
 - 💾 **Kein Server nötig** - Läuft komplett lokal auf deinem PC
-- 🔒 **Sicher** - Deine Spotify-Credentials werden nur lokal gespeichert
+- 🔒 **Sicher** - Credentials werden im System-Keyring gespeichert
 - ⚡ **Leichtgewichtig** - Dank Tauri nur ~10MB, minimaler RAM-Verbrauch
+- 📝 **Logging** - Automatische Logs für Debugging
 
 ---
 
@@ -24,37 +28,24 @@
 
 ### Voraussetzungen
 
-- [Node.js](https://nodejs.org/) (v18+)
-- [Rust](https://rustup.rs/) (für Entwicklung)
-- Spotify Premium Account
+- Spotify Premium Account (für API-Zugriff)
+- Windows 10/11, macOS 10.15+, oder Linux
+
+### Download
+
+Lade die neueste Version von der [Releases](../../releases) Seite herunter:
+- **Windows:** `DisplaySong_x.x.x_x64-setup.exe` oder `.msi`
+- **macOS:** `DisplaySong_x.x.x_x64.dmg`
+- **Linux:** `DisplaySong_x.x.x_amd64.AppImage` oder `.deb`
 
 ### Spotify App erstellen
 
 1. Gehe zum [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Erstelle eine neue App
-3. Füge als Redirect URI hinzu: `http://127.0.0.1:8888/callback`
-4. Kopiere **Client ID** und **Client Secret**
-
-### App starten (Entwicklung)
-
-```bash
-# Repository klonen / ZIP entpacken
-cd displaysong-tauri
-
-# Dependencies installieren
-npm install
-
-# App starten
-npm run tauri dev
-```
-
-### App bauen (Release)
-
-```bash
-npm run tauri build
-```
-
-Die fertige `.exe` / `.dmg` / `.AppImage` findest du in `src-tauri/target/release/bundle/`.
+2. Klicke **"Create App"**
+3. Name: `DisplaySong` (oder beliebig)
+4. Redirect URI: `http://127.0.0.1:8888/callback`
+5. Wähle "Web API" bei den APIs
+6. Kopiere **Client ID** und **Client Secret**
 
 ---
 
@@ -62,38 +53,50 @@ Die fertige `.exe` / `.dmg` / `.AppImage` findest du in `src-tauri/target/releas
 
 ### Erste Einrichtung
 
-1. Starte die App
+1. Starte DisplaySong
 2. Gib deine **Client ID** und **Client Secret** ein
 3. Klicke "Speichern & Verbinden"
-4. Autorisiere die App in deinem Browser
+4. Autorisiere die App im Browser
 5. Fertig! 🎉
 
 ### Widgets anzeigen
 
 1. Gehe zum Tab **"Designs"**
 2. Klicke bei einem Widget auf **"Anzeigen"**
-3. Das Widget erscheint als transparentes Overlay
+3. Ziehe das Widget an die gewünschte Position
+4. Das Widget merkt sich die Position automatisch
 
 ### Widgets in OBS einbinden
 
-1. Zeige ein Widget an
-2. In OBS: **Quelle hinzufügen → Fensteraufnahme**
-3. Wähle das Widget-Fenster
-4. Capture Method auf **"Windows 10 (1903 and up)"** in den Eigenschaften
+1. Zeige ein Widget in DisplaySong an
+2. In OBS: **Quellen → + → Fensteraufnahme**
+3. Wähle das Widget-Fenster (z.B. "Compact Bar")
+4. **Wichtig:** Setze "Aufnahmemethode" auf **"Windows 10 (1903 und höher)"**
+5. Aktiviere **"Client-Bereich erfassen"** für bessere Ränder
 
 ### Custom Widgets bearbeiten
 
-1. Gehe zum Tab **"Designs"**
+1. Gehe zu **"Designs"**
 2. Klicke **"📁 Widget-Ordner öffnen"**
-3. Bearbeite `custom1.html` oder `custom2.html` mit einem Texteditor
-4. Speichere die Datei
-5. Klicke **"🔄 Widgets neu laden"**
+3. Bearbeite `custom1.html` oder `custom2.html`
+4. Speichere und klicke **"🔄 Widgets neu laden"**
+
+---
+
+## ⚙️ Einstellungen
+
+| Einstellung | Beschreibung |
+|-------------|--------------|
+| **Autostart** | App beim Windows-Start automatisch starten |
+| **Widget-Positionen merken** | Widgets öffnen an der letzten Position |
+| **Aktualisierungsrate** | Wie oft Spotify abgefragt wird (1-10 Sek.) |
+| **Verlauf-Länge** | Anzahl der gespeicherten Songs (10-100) |
+| **Widget-Transparenz** | Deckkraft der Widgets (50-100%) |
+| **Akzentfarbe** | Preset oder eigene Farbe wählen |
 
 ---
 
 ## 🎨 Custom Widget Entwicklung
-
-Die Custom-Widgets sind einfache HTML-Dateien. Du hast vollen Zugriff auf:
 
 ### Verfügbare CSS-Variablen
 
@@ -102,6 +105,7 @@ Die Custom-Widgets sind einfache HTML-Dateien. Du hast vollen Zugriff auf:
   --r: 29;   /* Rot-Wert der Album-Farbe (0-255) */
   --g: 185;  /* Grün-Wert */
   --b: 84;   /* Blau-Wert */
+  --transition-duration: 0.4s;  /* Animation-Dauer */
 }
 
 /* Verwendung: */
@@ -111,33 +115,52 @@ Die Custom-Widgets sind einfache HTML-Dateien. Du hast vollen Zugriff auf:
 }
 ```
 
-### Verfügbare Track-Daten (JavaScript)
+### Track-Daten (JavaScript)
 
 ```javascript
-// Track-Objekt Struktur:
+// Track-Objekt:
 {
   track: "Song Name",
   artist: "Artist Name", 
   album: "Album Name",
-  albumCover: "https://...",  // Cover URL
-  isPlaying: true,            // Play/Pause Status
-  progressMs: 45000,          // Aktuelle Position in ms
-  durationMs: 180000,         // Gesamtlänge in ms
-  color: { r: 29, g: 185, b: 84 }  // Dominante Farbe
+  albumCover: "https://...",
+  trackId: "spotify:track:...",
+  isPlaying: true,
+  progressMs: 45000,
+  durationMs: 180000,
+  color: { r: 29, g: 185, b: 84 }
 }
 ```
 
-### Beispiel: Minimales Widget
+### Events
+
+```javascript
+// Song-Update empfangen
+window.__TAURI__.event.listen('track-update', (e) => {
+  const track = e.payload;
+  // Widget aktualisieren...
+});
+
+// Akzentfarbe geändert
+window.addEventListener('accent-color-change', (e) => {
+  const { r, g, b } = e.detail;
+  // Farbe anwenden...
+});
+
+// Zurück auf Album-Farbe
+window.addEventListener('accent-color-reset', () => {
+  // currentTrack.color verwenden...
+});
+```
+
+### Minimales Widget-Template
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <style>
-    body { 
-      background: transparent; 
-      font-family: system-ui;
-    }
+    body { background: transparent; font-family: system-ui; }
     .widget {
       background: rgba(0,0,0,0.8);
       padding: 16px;
@@ -171,63 +194,49 @@ Die Custom-Widgets sind einfache HTML-Dateien. Du hast vollen Zugriff auf:
 
 ---
 
-## 📁 Projektstruktur
+## 📁 Dateipfade
+
+| Betriebssystem | Pfad |
+|----------------|------|
+| **Windows** | `%APPDATA%\com.displaysong.app\` |
+| **macOS** | `~/Library/Application Support/com.displaysong.app/` |
+| **Linux** | `~/.config/com.displaysong.app/` |
+
+### Ordnerstruktur
 
 ```
-displaysong-tauri/
-├── src/                    # Frontend
-│   ├── index.html          # Haupt-UI
-│   ├── app.js              # App-Logik
-│   ├── styles/             # CSS
-│   ├── widgets/            # Widget-Loader (design1, design2, custom1, custom2)
-│   └── templates/          # Custom Widget Templates
-├── src-tauri/              # Backend (Rust)
-│   ├── src/
-│   │   ├── main.rs         # Hauptlogik, Commands
-│   │   ├── spotify.rs      # Spotify API Client
-│   │   ├── credentials.rs  # Credential-Speicherung
-│   │   └── color.rs        # Farbextraktion aus Covers
-│   ├── icons/              # App-Icons
-│   └── tauri.conf.json     # Tauri-Konfiguration
-└── package.json
+com.displaysong.app/
+├── widgets/           # Deine Custom Widgets
+│   ├── custom1.html
+│   └── custom2.html
+└── logs/              # Log-Dateien
+    └── displaysong_2024-01-15.log
 ```
-
----
-
-## ⚙️ Konfiguration
-
-### Dateipfade
-
-| Pfad | Beschreibung |
-|------|--------------|
-| `%APPDATA%\com.displaysong.app\` | App-Daten (Windows) |
-| `~/Library/Application Support/com.displaysong.app/` | App-Daten (macOS) |
-| `~/.config/com.displaysong.app/` | App-Daten (Linux) |
-
-### Gespeicherte Daten
-
-- `credentials.json` - Verschlüsselte Spotify-Credentials
-- `widgets/custom1.html` - Dein Custom Widget 1
-- `widgets/custom2.html` - Dein Custom Widget 2
 
 ---
 
 ## 🔧 Troubleshooting
 
 ### "Autorisierung fehlgeschlagen"
-- Prüfe ob die Redirect URI in deiner Spotify App korrekt ist: `http://127.0.0.1:8888/callback`
+- Prüfe die Redirect URI: `http://127.0.0.1:8888/callback`
 - Stelle sicher dass Port 8888 nicht blockiert ist
 
-### Widget zeigt nichts an
+### Widget zeigt "Warte auf Musik..."
 - Ist Spotify geöffnet und spielt Musik?
-- Prüfe ob die App verbunden ist (grüner Status)
+- Prüfe den Verbindungsstatus in DisplaySong (grüner Punkt)
 
 ### Custom Widget wird nicht aktualisiert
-- Klicke "🔄 Widgets neu laden" nach dem Speichern
-- Prüfe die Browser-Konsole auf JavaScript-Fehler (F12 im Widget)
+- Klicke **"🔄 Widgets neu laden"** nach dem Speichern
+- Öffne das Widget und drücke F12 für die Konsole
 
 ### App startet nicht
-- Lösche `%APPDATA%\com.displaysong.app\` und starte neu
+1. Gehe zu **Einstellungen → Über → 📁 Logs öffnen**
+2. Prüfe die neueste Log-Datei
+3. Lösche notfalls den App-Ordner und starte neu
+
+### Rate-Limit Fehler
+- Spotify erlaubt begrenzte API-Aufrufe
+- Erhöhe die Aktualisierungsrate auf 5+ Sekunden
 
 ---
 
@@ -235,22 +244,72 @@ displaysong-tauri/
 
 ### Voraussetzungen
 
-- Node.js 18+
-- Rust (stable)
+- [Node.js](https://nodejs.org/) 18+
+- [Rust](https://rustup.rs/) (stable)
 - Tauri CLI: `cargo install tauri-cli`
 
-### Commands
+### Setup
 
 ```bash
-# Entwicklung
+# Repository klonen
+git clone https://github.com/byDopeMan/displaysong-tauri.git
+cd displaysong
+
+# Dependencies installieren
+npm install
+
+# Entwicklung starten
 npm run tauri dev
 
-# Build
+# Release bauen
 npm run tauri build
-
-# Rust prüfen
-cd src-tauri && cargo check
 ```
+
+### Projektstruktur
+
+```
+displaysong-tauri/
+├── src/                    # Frontend
+│   ├── index.html
+│   ├── app.js
+│   ├── styles/
+│   ├── widgets/            # Widget HTML-Dateien
+│   └── templates/          # Custom Widget Templates
+├── src-tauri/              # Backend (Rust)
+│   ├── src/
+│   │   ├── main.rs         # Hauptlogik, Commands
+│   │   ├── spotify.rs      # Spotify API Client
+│   │   ├── credentials.rs  # Keyring-Speicherung
+│   │   └── color.rs        # Farbextraktion
+│   └── tauri.conf.json
+└── package.json
+```
+
+---
+
+## 📋 Changelog
+
+### v2.1.1
+- 🚀 Lade-Bildschirm beim Start mit Status
+- 📥 Visuelle Animation beim Minimieren ins Tray
+- 📝 Automatisches Logging in AppData/logs
+- ✨ Smooth Song-Wechsel Animationen
+- 🎨 Akzentfarbe zurücksetzen funktioniert sofort
+- 🐛 Mehrfaches Polling verhindert
+- 🎵 Spotify Embed voll nutzbar (Save, Links, etc.)
+
+### v2.1.0
+- 🎨 Custom Akzentfarbe mit Color Picker
+- 🎨 Akzentfarbe für Design 1 & 2 optional
+- 📜 Song-Verlauf mit Spotify Embed Ansicht
+- 📋 Song-Info kopieren Button
+- 🌫️ Widget-Transparenz einstellbar
+
+### v2.0.0
+- 🎉 Erste Tauri-Version
+- 4 Widget-Designs
+- Dynamische Farben
+- System Tray Integration
 
 ---
 
@@ -263,8 +322,14 @@ MIT License - Siehe [LICENSE](LICENSE)
 ## 🙏 Credits
 
 - [Tauri](https://tauri.app/) - Framework
-- [Spotify Web API](https://developer.spotify.com/documentation/web-api/) - Musik-Daten
-- [color-thief](https://lokeshdhakar.com/projects/color-thief/) - Farbextraktion (Konzept)
+- [Spotify Web API](https://developer.spotify.com/) - Musik-Daten
+
+---
+
+## 💬 Support
+
+- **Issues:** [GitHub Issues](../../issues)
+- **Discussions:** [GitHub Discussions](../../discussions)
 
 ---
 

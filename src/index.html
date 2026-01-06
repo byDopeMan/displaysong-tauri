@@ -26,8 +26,18 @@
     </nav>
 
     <div class="content">
+      <!-- Loading View (beim Start) -->
+      <div id="loading-view" class="view">
+        <div class="loading-container">
+          <div class="logo">🎵</div>
+          <h1>DisplaySong</h1>
+          <div class="spinner"></div>
+          <p id="loading-status">Starte...</p>
+        </div>
+      </div>
+
       <!-- Setup View -->
-      <div id="setup-view" class="view">
+      <div id="setup-view" class="view hidden">
         <div class="setup-container">
           <div class="logo">🎵</div>
           <h1>DisplaySong</h1>
@@ -148,6 +158,12 @@
             </div>
             <h3>Compact Bar</h3>
             <p class="design-desc">Horizontal, minimalistisch</p>
+            <div class="design-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="accent-widget-1" class="setting-checkbox widget-accent-check" data-widget="widget-1">
+                <span>Akzentfarbe</span>
+              </label>
+            </div>
             <button class="btn btn-show" data-widget="widget-1">Anzeigen</button>
           </div>
           <div class="design-card">
@@ -156,6 +172,12 @@
             </div>
             <h3>Album Focus</h3>
             <p class="design-desc">Großes Cover, vertikal</p>
+            <div class="design-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="accent-widget-2" class="setting-checkbox widget-accent-check" data-widget="widget-2">
+                <span>Akzentfarbe</span>
+              </label>
+            </div>
             <button class="btn btn-show" data-widget="widget-2">Anzeigen</button>
           </div>
           <div class="design-card">
@@ -184,11 +206,11 @@
         <div class="custom-widgets-hint">
           <h3>Eigene Designs</h3>
           <p>Du kannst die Custom-Widgets (Custom 1 & 2) mit einem Texteditor anpassen.</p>
+          <p class="hint">Nutze <code>var(--accent-r)</code>, <code>var(--accent-g)</code>, <code>var(--accent-b)</code> für die Akzentfarbe.</p>
           <div class="btn-row">
             <button id="btn-open-folder" class="btn btn-secondary">📁 Widget-Ordner öffnen</button>
             <button id="btn-reload-widgets" class="btn btn-secondary">🔄 Widgets neu laden</button>
           </div>
-          <p class="hint">Bearbeite custom1.html oder custom2.html, speichere und klicke "Widgets neu laden".</p>
         </div>
       </div>
 
@@ -280,7 +302,7 @@
           </div>
           
           <div class="setting-row">
-            <label for="accent-color">Akzentfarbe:</label>
+            <label>Akzentfarbe:</label>
             <div class="color-options">
               <button class="color-btn active" data-color="spotify" style="background: #1db954;" title="Spotify Grün"></button>
               <button class="color-btn" data-color="blue" style="background: #3b82f6;" title="Blau"></button>
@@ -288,6 +310,14 @@
               <button class="color-btn" data-color="pink" style="background: #ec4899;" title="Pink"></button>
               <button class="color-btn" data-color="orange" style="background: #f97316;" title="Orange"></button>
               <button class="color-btn" data-color="red" style="background: #ef4444;" title="Rot"></button>
+              <label class="color-picker-label" title="Eigene Farbe">
+                <input type="color" id="custom-accent-color" class="color-picker-input" value="#1db954">
+                <span class="color-btn color-btn-custom" data-color="custom">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                </span>
+              </label>
             </div>
           </div>
         </div>
@@ -297,12 +327,13 @@
           <h3>Über</h3>
           <div class="about-info">
             <p class="app-name">🎵 DisplaySong</p>
-            <p class="app-version">Version 2.1.0</p>
+            <p class="app-version">Version 2.1.1</p>
             <p class="app-desc">Spotify Now Playing Widget für OBS</p>
           </div>
           <div class="about-links">
             <button id="btn-changelog" class="btn btn-text">📋 Changelog</button>
             <button id="btn-licenses" class="btn btn-text">📄 Lizenzen</button>
+            <button id="btn-logs" class="btn btn-text">📁 Logs öffnen</button>
           </div>
         </div>
       </div>
@@ -316,14 +347,24 @@
           </div>
           <div class="modal-body">
             <div class="changelog-entry">
+              <h4>v2.1.1</h4>
+              <ul>
+                <li>🚀 Lade-Bildschirm beim Start mit Status-Anzeige</li>
+                <li>📥 Visuelle Animation beim Minimieren ins Tray</li>
+                <li>📝 Automatisches Logging in %AppData%/logs</li>
+                <li>🐛 Bugfixes und Performance-Verbesserungen</li>
+              </ul>
+            </div>
+            <div class="changelog-entry">
               <h4>v2.1.0</h4>
               <ul>
-                <li>🎵 Spotify-Link Button im Verlauf - öffnet Song in Spotify App</li>
+                <li>🎨 Custom Akzentfarbe mit Color Picker</li>
+                <li>🎨 Akzentfarbe für Design 1 & 2 optional aktivierbar</li>
+                <li>🎨 Akzentfarbe in Custom Widgets nutzbar</li>
+                <li>🎵 Spotify-Link Button im Verlauf</li>
                 <li>📋 Song-Info kopieren Button im Player</li>
                 <li>📊 Verlauflänge einstellbar (10-100 Songs)</li>
                 <li>🌫️ Widget-Transparenz einstellbar</li>
-                <li>🎨 Neues Custom2 Design - Neon Bar Style</li>
-                <li>⏸️ Idle-State für alle Widgets wenn kein Song läuft</li>
                 <li>🎧 Spotify Embed Ansicht im Verlauf</li>
               </ul>
             </div>
@@ -391,6 +432,12 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Tray Notification Toast -->
+  <div id="tray-toast" class="tray-toast hidden">
+    <span class="tray-toast-icon">📥</span>
+    <span>App läuft im System-Tray weiter</span>
   </div>
 
   <script src="app.js"></script>

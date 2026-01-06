@@ -776,6 +776,8 @@ body {
 .color-options {
   display: flex;
   gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .color-btn {
@@ -794,6 +796,81 @@ body {
 .color-btn.active {
   border-color: white;
   box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* Custom Color Picker */
+.color-picker-label {
+  position: relative;
+  cursor: pointer;
+}
+
+.color-picker-input {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.color-btn-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+  color: white;
+}
+
+.color-btn-custom svg {
+  pointer-events: none;
+}
+
+/* Design Card Options */
+.design-options {
+  margin: 8px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.checkbox-label:hover {
+  color: var(--text);
+}
+
+.checkbox-label input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+}
+
+/* Embed Overlay für History */
+.history-embed {
+  position: relative;
+}
+
+.embed-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  cursor: pointer;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.embed-overlay:hover {
+  background: rgba(29, 185, 84, 0.1);
+}
+
+.embed-overlay:active {
+  background: rgba(29, 185, 84, 0.2);
 }
 
 /* About Section */
@@ -1251,7 +1328,110 @@ body {
 .history-embed iframe {
   display: block;
   width: 100%;
-  height: 80px;
+  height: 152px;
   border: none;
   border-radius: 12px;
+}
+
+.history-list.embedded-full .history-embed iframe {
+  height: 352px;
+}
+
+/* ===== LOADING VIEW ===== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-container .logo {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: pulse-logo 2s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.loading-container h1 {
+  margin-bottom: 24px;
+  font-size: 28px;
+}
+
+.loading-container .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-container #loading-status {
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  min-height: 20px;
+}
+
+/* ===== TRAY TOAST ===== */
+.tray-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(29, 185, 84, 0.95);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  z-index: 9999;
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), 
+              opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.tray-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.tray-toast.hidden {
+  display: flex; /* Keep in DOM for animation */
+}
+
+.tray-toast-icon {
+  font-size: 18px;
+}
+
+/* ===== MINIMIZE ANIMATION ===== */
+@keyframes minimize-shrink {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.3) translateY(100px);
+    opacity: 0;
+  }
+}
+
+.app.minimizing {
+  animation: minimize-shrink 0.3s ease-in forwards;
 }

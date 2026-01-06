@@ -9,7 +9,7 @@
   },
   "package": {
     "productName": "DisplaySong",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "tauri": {
     "allowlist": {
@@ -60,7 +60,7 @@
       }
     },
     "security": {
-      "csp": "default-src 'self' customwidget:; img-src 'self' https://i.scdn.co https://*.scdn.co data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' customwidget:; connect-src 'self' https://api.spotify.com https://accounts.spotify.com; frame-src https://open.spotify.com"
+      "csp": "default-src 'self'; img-src 'self' https://i.scdn.co https://*.scdn.co data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.spotify.com https://accounts.spotify.com; frame-src https://open.spotify.com"
     },
     "updater": {
       "active": false
@@ -74,7 +74,7 @@
         "label": "main",
         "title": "DisplaySong",
         "width": 420,
-        "height": 520,
+        "height": 540,
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
@@ -113,7 +113,7 @@
       {
         "label": "widget-custom1",
         "title": "Widget - Custom 1",
-        "url": "customwidget://custom1",
+        "url": "widgets/custom1.html",
         "width": 250,
         "height": 260,
         "resizable": false,
@@ -126,7 +126,7 @@
       {
         "label": "widget-custom2",
         "title": "Widget - Custom 2",
-        "url": "customwidget://custom2",
+        "url": "widgets/custom2.html",
         "width": 340,
         "height": 80,
         "resizable": true,

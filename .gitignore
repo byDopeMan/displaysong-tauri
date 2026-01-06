@@ -3,6 +3,7 @@
 # =====================
 .env
 .env.*
+TODO.todo
 **/credentials.json
 **/token.json
 

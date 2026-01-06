@@ -2,12 +2,13 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Widget - Compact</title>
+  <title>Widget - Compact Bar</title>
   <style>
     :root {
       --r: 29;
       --g: 185;
       --b: 84;
+      --transition-duration: 0.4s;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -88,22 +89,50 @@
       gap: 14px;
       align-items: center;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: background var(--transition-duration) ease;
     }
 
     .widget.hidden { display: none; }
 
-    .cover {
+    /* ===== COVER MIT TRANSITION ===== */
+    .cover-container {
       width: 72px;
       height: 72px;
       border-radius: 8px;
-      background: rgba(255,255,255,0.05);
-      background-size: cover;
-      background-position: center;
       flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    .info { flex: 1; min-width: 0; }
+    .cover {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.05);
+      background-size: cover;
+      background-position: center;
+      transition: opacity var(--transition-duration) ease, 
+                  transform var(--transition-duration) ease;
+    }
+
+    .cover.old {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    .cover.new {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .info { 
+      flex: 1; 
+      min-width: 0;
+      position: relative;
+    }
 
     .badge {
       display: inline-flex;
@@ -115,6 +144,7 @@
       letter-spacing: 0.5px;
       color: rgb(var(--r), var(--g), var(--b));
       margin-bottom: 6px;
+      transition: color var(--transition-duration) ease;
     }
 
     .badge::before {
@@ -124,6 +154,7 @@
       background: rgb(var(--r), var(--g), var(--b));
       border-radius: 50%;
       animation: pulse 1.5s infinite;
+      transition: background var(--transition-duration) ease;
     }
 
     .badge.paused { color: rgba(255,255,255,0.4); }
@@ -134,22 +165,55 @@
       50% { opacity: 0.4; }
     }
 
+    /* ===== TEXT MIT SLIDE TRANSITION ===== */
+    .text-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .title-container {
+      height: 20px;
+      margin-bottom: 2px;
+    }
+
+    .artist-container {
+      height: 16px;
+    }
+
+    .title, .artist {
+      position: absolute;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: transform var(--transition-duration) ease,
+                  opacity var(--transition-duration) ease;
+    }
+
     .title {
       font-size: 15px;
       font-weight: 600;
       color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 2px;
     }
 
     .artist {
       font-size: 12px;
       color: rgba(255,255,255,0.6);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+
+    .title.old, .artist.old {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+
+    .title.new, .artist.new {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .title.entering, .artist.entering {
+      transform: translateY(100%);
+      opacity: 0;
     }
 
     .progress {
@@ -164,7 +228,7 @@
       height: 100%;
       background: rgb(var(--r), var(--g), var(--b));
       width: 0%;
-      transition: width 1s linear;
+      transition: width 1s linear, background var(--transition-duration) ease;
     }
   </style>
 </head>
@@ -184,11 +248,20 @@
 
   <!-- Active Widget -->
   <div class="widget hidden" id="widget">
-    <div class="cover" id="cover"></div>
+    <div class="cover-container">
+      <div class="cover new" id="cover"></div>
+      <div class="cover old" id="cover-old"></div>
+    </div>
     <div class="info">
       <div class="badge" id="badge">Läuft jetzt</div>
-      <div class="title" id="title">—</div>
-      <div class="artist" id="artist">—</div>
+      <div class="text-container title-container">
+        <div class="title new" id="title">—</div>
+        <div class="title old" id="title-old">—</div>
+      </div>
+      <div class="text-container artist-container">
+        <div class="artist new" id="artist">—</div>
+        <div class="artist old" id="artist-old">—</div>
+      </div>
       <div class="progress">
         <div class="progress-fill" id="progress"></div>
       </div>
@@ -196,74 +269,180 @@
   </div>
 
   <script type="module">
-    const { listen } = window.__TAURI__.event;
-    const { invoke } = window.__TAURI__.tauri;
-    const appWindow = window.__TAURI__.window?.appWindow || window.__TAURI__.window?.getCurrent?.();
+    async function waitForTauri() {
+      let attempts = 0;
+      while (!window.__TAURI__ && attempts < 100) {
+        await new Promise(r => setTimeout(r, 50));
+        attempts++;
+      }
+      return window.__TAURI__;
+    }
 
-    if (appWindow) {
-      document.addEventListener('mousedown', async (e) => {
-        if (e.buttons === 1) {
-          try { await appWindow.startDragging(); } catch(e) {}
+    (async () => {
+      const tauri = await waitForTauri();
+      if (!tauri) { console.error('Tauri API nicht verfügbar'); return; }
+
+      const listen = tauri.event?.listen || tauri.listen;
+      const invoke = tauri.tauri?.invoke || tauri.invoke;
+      const appWindow = tauri.window?.appWindow || tauri.window?.getCurrent?.() || tauri.appWindow;
+
+      if (!listen || !invoke) { console.error('Tauri listen/invoke nicht gefunden'); return; }
+
+      if (appWindow) {
+        document.addEventListener('mousedown', async (e) => {
+          if (e.buttons === 1) {
+            try { await appWindow.startDragging(); } catch(e) {}
+          }
+        });
+      }
+
+      const $ = (id) => document.getElementById(id);
+      let currentTrack = null;
+      let useAccentColor = false;
+      let accentColor = null;
+      let isTransitioning = false;
+
+      // Akzentfarbe Event Listener
+      window.addEventListener('accent-color-change', (e) => {
+        useAccentColor = true;
+        accentColor = e.detail;
+        document.documentElement.style.setProperty('--r', accentColor.r);
+        document.documentElement.style.setProperty('--g', accentColor.g);
+        document.documentElement.style.setProperty('--b', accentColor.b);
+      });
+
+      // Zurück auf Track-Farbe
+      window.addEventListener('accent-color-reset', () => {
+        useAccentColor = false;
+        accentColor = null;
+        // Aktuelle Track-Farbe wiederherstellen
+        if (currentTrack?.color) {
+          setColor(currentTrack.color.r, currentTrack.color.g, currentTrack.color.b);
         }
       });
-    }
 
-    const $ = (id) => document.getElementById(id);
-    let currentTrack = null;
-
-    function update(track) {
-      const widget = $('widget');
-      const idle = $('idle');
-      const cover = $('cover');
-      const badge = $('badge');
-      const title = $('title');
-      const artist = $('artist');
-      const progress = $('progress');
-
-      if (!track?.track) {
-        widget?.classList.add('hidden');
-        idle?.classList.remove('hidden');
-        return;
+      function setColor(r, g, b) {
+        document.documentElement.style.setProperty('--r', r);
+        document.documentElement.style.setProperty('--g', g);
+        document.documentElement.style.setProperty('--b', b);
       }
 
-      idle?.classList.add('hidden');
-      widget?.classList.remove('hidden');
+      async function transitionToNewTrack(track) {
+        if (isTransitioning) return;
+        isTransitioning = true;
 
-      if (track.albumCover && track.albumCover !== currentTrack?.albumCover) {
-        if (cover) cover.style.backgroundImage = `url('${track.albumCover}')`;
+        const cover = $('cover');
+        const coverOld = $('cover-old');
+        const title = $('title');
+        const titleOld = $('title-old');
+        const artist = $('artist');
+        const artistOld = $('artist-old');
+
+        // Alten Inhalt in "old" Elemente kopieren
+        if (currentTrack) {
+          coverOld.style.backgroundImage = cover.style.backgroundImage;
+          titleOld.textContent = title.textContent;
+          artistOld.textContent = artist.textContent;
+
+          // Old sichtbar machen, New verstecken
+          coverOld.classList.remove('old');
+          coverOld.classList.add('new');
+          cover.classList.remove('new');
+          cover.classList.add('old');
+
+          titleOld.classList.remove('old');
+          titleOld.classList.add('new');
+          title.classList.add('entering');
+          title.classList.remove('new');
+
+          artistOld.classList.remove('old');
+          artistOld.classList.add('new');
+          artist.classList.add('entering');
+          artist.classList.remove('new');
+        }
+
+        // Neuen Inhalt setzen
+        cover.style.backgroundImage = `url('${track.albumCover}')`;
+        title.textContent = track.track;
+        artist.textContent = track.artist;
+
+        // Farbe ändern (smooth durch CSS transition)
+        if (track.color && !useAccentColor) {
+          setColor(track.color.r, track.color.g, track.color.b);
+        }
+
+        // Kurze Verzögerung für CSS
+        await new Promise(r => setTimeout(r, 50));
+
+        // Transition starten
+        cover.classList.remove('old');
+        cover.classList.add('new');
+        coverOld.classList.remove('new');
+        coverOld.classList.add('old');
+
+        title.classList.remove('entering');
+        title.classList.add('new');
+        titleOld.classList.remove('new');
+        titleOld.classList.add('old');
+
+        artist.classList.remove('entering');
+        artist.classList.add('new');
+        artistOld.classList.remove('new');
+        artistOld.classList.add('old');
+
+        // Warten bis Transition fertig
+        await new Promise(r => setTimeout(r, 400));
+        isTransitioning = false;
       }
 
-      if (title) title.textContent = track.track;
-      if (artist) artist.textContent = track.artist;
-
-      if (badge) {
-        badge.classList.toggle('paused', !track.isPlaying);
-        badge.textContent = track.isPlaying ? 'Läuft jetzt' : 'Pausiert';
-      }
-
-      if (track.color) {
-        document.documentElement.style.setProperty('--r', track.color.r);
-        document.documentElement.style.setProperty('--g', track.color.g);
-        document.documentElement.style.setProperty('--b', track.color.b);
-      }
-
-      if (track.durationMs > 0 && progress) {
-        progress.style.width = `${(track.progressMs / track.durationMs) * 100}%`;
-      }
-
-      currentTrack = track;
-    }
-
-    listen('track-update', (e) => update(e.payload));
-    invoke('get_track').then(update);
-
-    setInterval(() => {
-      if (currentTrack?.isPlaying && currentTrack.durationMs > 0) {
-        currentTrack.progressMs = Math.min(currentTrack.progressMs + 1000, currentTrack.durationMs);
+      function update(track) {
+        const widget = $('widget');
+        const idle = $('idle');
+        const badge = $('badge');
         const progress = $('progress');
-        if (progress) progress.style.width = `${(currentTrack.progressMs / currentTrack.durationMs) * 100}%`;
+
+        if (!track?.track) {
+          widget?.classList.add('hidden');
+          idle?.classList.remove('hidden');
+          currentTrack = null;
+          return;
+        }
+
+        idle?.classList.add('hidden');
+        widget?.classList.remove('hidden');
+
+        // Prüfen ob neuer Track
+        const isNewTrack = !currentTrack || 
+          currentTrack.track !== track.track || 
+          currentTrack.artist !== track.artist;
+
+        if (isNewTrack) {
+          transitionToNewTrack(track);
+        }
+
+        if (badge) {
+          badge.classList.toggle('paused', !track.isPlaying);
+          badge.textContent = track.isPlaying ? 'Läuft jetzt' : 'Pausiert';
+        }
+
+        if (track.durationMs > 0 && progress) {
+          progress.style.width = `${(track.progressMs / track.durationMs) * 100}%`;
+        }
+
+        currentTrack = { ...track };
       }
-    }, 1000);
+
+      await listen('track-update', (e) => update(e.payload));
+      try { const track = await invoke('get_track'); update(track); } catch (e) {}
+
+      setInterval(() => {
+        if (currentTrack?.isPlaying && currentTrack.durationMs > 0) {
+          currentTrack.progressMs = Math.min(currentTrack.progressMs + 1000, currentTrack.durationMs);
+          const progress = $('progress');
+          if (progress) progress.style.width = `${(currentTrack.progressMs / currentTrack.durationMs) * 100}%`;
+        }
+      }, 1000);
+    })();
   </script>
 </body>
 </html>

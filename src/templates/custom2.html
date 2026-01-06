@@ -6,13 +6,16 @@
   <style>
     /*
      * ═══════════════════════════════════════════════════════════════════════════
-     * CUSTOM WIDGET 2 - NEON BAR DESIGN
+     * CUSTOM WIDGET 2 - BEARBEITBARE VORLAGE (NEON STYLE)
      * ═══════════════════════════════════════════════════════════════════════════
      * 
-     * Horizontales Design mit Neon-Akzenten und schwebender Progress-Bar
+     * Dieses Widget hat einen modernen Neon/Glow-Stil.
+     * Du kannst es frei anpassen!
      * 
-     * VERFÜGBARE CSS-VARIABLEN:
-     *   --r, --g, --b  = RGB-Werte der dominanten Farbe vom Album-Cover
+     * ANIMATIONEN:
+     *   - Cover: Crossfade mit leichtem Zoom
+     *   - Text: Slide-up Animation  
+     *   - Farben: Smooth Transition für Glow-Effekte
      * 
      * ═══════════════════════════════════════════════════════════════════════════
      */
@@ -21,6 +24,7 @@
       --r: 29;
       --g: 185;
       --b: 84;
+      --transition-duration: 0.5s;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,238 +37,283 @@
 
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
        IDLE STATE
        ═══════════════════════════════════════════════════════════════════════════ */
-    
+
     .idle {
-      background: linear-gradient(90deg, rgba(20,20,20,0.95), rgba(30,30,30,0.9));
-      border-radius: 50px;
-      padding: 10px 20px 10px 10px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      width: 340px;
+      background: linear-gradient(160deg, rgba(20,20,25,0.95), rgba(5,5,10,0.98));
+      border-radius: 20px;
+      padding: 30px;
       border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 
+        0 20px 60px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.05);
     }
 
     .idle.hidden { display: none; }
 
-    .idle-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.03);
+    .idle-cover {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 20px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.02);
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
     }
 
-    .idle-icon svg {
-      width: 20px;
-      height: 20px;
-      opacity: 0.25;
+    .idle-cover svg {
+      width: 50px;
+      height: 50px;
+      opacity: 0.15;
     }
 
     .idle-text {
-      font-size: 12px;
-      color: rgba(255,255,255,0.25);
-      flex: 1;
+      text-align: center;
+      font-size: 14px;
+      color: rgba(255,255,255,0.2);
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
-       WIDGET - NEON BAR
+       WIDGET - NEON STYLE
        ═══════════════════════════════════════════════════════════════════════════ */
 
     .widget {
-      position: relative;
-      background: linear-gradient(
-        90deg, 
-        rgba(var(--r), var(--g), var(--b), 0.08),
-        rgba(20,20,20,0.95)
+      width: 340px;
+      background: linear-gradient(160deg, 
+        rgba(20,20,25,0.95), 
+        rgba(var(--r), var(--g), var(--b), 0.05),
+        rgba(5,5,10,0.98)
       );
-      border-radius: 50px;
-      padding: 10px 20px 10px 10px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      border-radius: 20px;
+      padding: 24px;
       border: 1px solid rgba(var(--r), var(--g), var(--b), 0.15);
       box-shadow: 
-        0 4px 20px rgba(0,0,0,0.4),
-        inset 0 0 30px rgba(var(--r), var(--g), var(--b), 0.03);
+        0 20px 60px rgba(0,0,0,0.6),
+        0 0 80px rgba(var(--r), var(--g), var(--b), 0.1),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: background var(--transition-duration) ease,
+                  border-color var(--transition-duration) ease,
+                  box-shadow var(--transition-duration) ease;
     }
 
     .widget.hidden { display: none; }
 
-    /* Neon Glow Line am unteren Rand */
-    .widget::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 20px;
-      right: 20px;
-      height: 2px;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgb(var(--r), var(--g), var(--b)),
-        transparent
-      );
-      opacity: 0.6;
-      filter: blur(1px);
+    /* ═══════════════════════════════════════════════════════════════════════════
+       HEADER MIT STATUS
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
     }
 
-    .widget.paused::after {
-      opacity: 0.2;
-    }
-
-    /* Rundes Cover */
-    .cover {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: #222;
-      background-size: cover;
-      background-position: center;
-      flex-shrink: 0;
-      box-shadow: 
-        0 0 0 2px rgba(var(--r), var(--g), var(--b), 0.3),
-        0 2px 10px rgba(0,0,0,0.3);
-      transition: box-shadow 0.3s, transform 0.3s;
-    }
-
-    .widget:not(.paused) .cover {
-      box-shadow: 
-        0 0 0 2px rgba(var(--r), var(--g), var(--b), 0.5),
-        0 0 15px rgba(var(--r), var(--g), var(--b), 0.3),
-        0 2px 10px rgba(0,0,0,0.3);
-      animation: pulse-cover 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-cover {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-    }
-
-    /* Info */
-    .info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 2px;
-    }
-
-    .meta {
+    .now-playing {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 10px;
-      color: rgba(255,255,255,0.4);
     }
 
-    .artist {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .time {
-      color: rgb(var(--r), var(--g), var(--b));
-      font-weight: 500;
-      flex-shrink: 0;
-    }
-
-    /* Status Indicator */
-    .status {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(var(--r), var(--g), var(--b), 0.15);
+    .bars {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .status-bars {
-      display: flex;
-      gap: 2px;
       align-items: flex-end;
+      gap: 2px;
       height: 14px;
     }
 
-    .status-bars span {
+    .bar {
       width: 3px;
       background: rgb(var(--r), var(--g), var(--b));
       border-radius: 1px;
-      animation: bar 0.8s ease-in-out infinite;
+      transition: background var(--transition-duration) ease;
     }
 
-    .status-bars span:nth-child(1) { height: 6px; animation-delay: 0s; }
-    .status-bars span:nth-child(2) { height: 10px; animation-delay: 0.15s; }
-    .status-bars span:nth-child(3) { height: 4px; animation-delay: 0.3s; }
+    .bar:nth-child(1) { height: 40%; animation: bar1 0.8s infinite; }
+    .bar:nth-child(2) { height: 70%; animation: bar2 0.8s infinite 0.2s; }
+    .bar:nth-child(3) { height: 50%; animation: bar3 0.8s infinite 0.4s; }
+    .bar:nth-child(4) { height: 80%; animation: bar4 0.8s infinite 0.1s; }
 
-    @keyframes bar {
-      0%, 100% { transform: scaleY(1); }
-      50% { transform: scaleY(0.5); }
+    .widget.paused .bar { animation: none; opacity: 0.3; }
+
+    @keyframes bar1 { 0%,100% { height: 40%; } 50% { height: 80%; } }
+    @keyframes bar2 { 0%,100% { height: 70%; } 50% { height: 30%; } }
+    @keyframes bar3 { 0%,100% { height: 50%; } 50% { height: 90%; } }
+    @keyframes bar4 { 0%,100% { height: 80%; } 50% { height: 40%; } }
+
+    .label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgb(var(--r), var(--g), var(--b));
+      transition: color var(--transition-duration) ease;
     }
 
-    .widget.paused .status-bars span {
-      animation: none;
-      opacity: 0.3;
+    .widget.paused .label { color: rgba(255,255,255,0.3); }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MAIN CONTENT MIT COVER
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .main {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
     }
 
-    /* Progress im unteren Bereich */
-    .progress-wrap {
+    .cover-container {
+      width: 120px;
+      height: 120px;
+      flex-shrink: 0;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 
+        0 8px 30px rgba(0,0,0,0.4),
+        0 0 30px rgba(var(--r), var(--g), var(--b), 0.2);
+      transition: box-shadow var(--transition-duration) ease;
+    }
+
+    .cover {
       position: absolute;
-      bottom: 6px;
-      left: 60px;
-      right: 60px;
-      height: 2px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-color: rgba(255,255,255,0.03);
+      transition: opacity var(--transition-duration) ease,
+                  transform var(--transition-duration) ease;
     }
+
+    .cover.new {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .cover.old {
+      opacity: 0;
+      transform: scale(1.05);
+    }
+
+    .info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       TEXT MIT SLIDE ANIMATION
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .text-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .title-container { height: 26px; margin-bottom: 6px; }
+    .artist-container { height: 20px; }
+
+    .title, .artist {
+      position: absolute;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: transform var(--transition-duration) ease,
+                  opacity var(--transition-duration) ease;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(var(--r), var(--g), var(--b), 0.3);
+      transition: text-shadow var(--transition-duration) ease,
+                  transform var(--transition-duration) ease,
+                  opacity var(--transition-duration) ease;
+    }
+
+    .artist {
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .title.new, .artist.new {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .title.old, .artist.old {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+
+    .title.entering, .artist.entering {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       PROGRESS BAR MIT GLOW
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .progress-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .time {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      font-variant-numeric: tabular-nums;
+      min-width: 35px;
+    }
+
+    .time:last-child { text-align: right; }
 
     .progress {
-      height: 100%;
-      background: rgba(255,255,255,0.1);
-      border-radius: 1px;
+      flex: 1;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
       overflow: hidden;
     }
 
     .progress-fill {
       height: 100%;
-      background: rgb(var(--r), var(--g), var(--b));
       width: 0%;
-      transition: width 1s linear;
-      box-shadow: 0 0 6px rgba(var(--r), var(--g), var(--b), 0.5);
+      background: linear-gradient(90deg,
+        rgb(var(--r), var(--g), var(--b)),
+        rgba(var(--r), var(--g), var(--b), 0.6)
+      );
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(var(--r), var(--g), var(--b), 0.5);
+      transition: width 1s linear, 
+                  background var(--transition-duration) ease,
+                  box-shadow var(--transition-duration) ease;
     }
-
-    /* ═══════════════════════════════════════════════════════════════════════════
-       ENDE CSS
-       ═══════════════════════════════════════════════════════════════════════════ */
   </style>
 </head>
 <body>
-  <!--
-    ═══════════════════════════════════════════════════════════════════════════
-    HTML STRUKTUR - IDs nicht ändern!
-    ═══════════════════════════════════════════════════════════════════════════
-  -->
-
   <!-- Idle State -->
   <div class="idle" id="idle">
-    <div class="idle-icon">
+    <div class="idle-cover">
       <svg viewBox="0 0 24 24" fill="white">
         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
       </svg>
@@ -274,108 +323,202 @@
 
   <!-- Widget -->
   <div class="widget hidden" id="widget">
-    <div class="cover" id="cover"></div>
-    <div class="info">
-      <div class="title" id="title">—</div>
-      <div class="meta">
-        <span class="artist" id="artist">—</span>
-        <span class="time"><span id="time-current">0:00</span> / <span id="time-total">0:00</span></span>
+    <div class="header">
+      <div class="now-playing">
+        <div class="bars">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+        <span class="label">Now Playing</span>
       </div>
     </div>
-    <div class="status">
-      <div class="status-bars">
-        <span></span>
-        <span></span>
-        <span></span>
+
+    <div class="main">
+      <div class="cover-container">
+        <div class="cover new" id="cover"></div>
+        <div class="cover old" id="cover-old"></div>
+      </div>
+      <div class="info">
+        <div class="text-container title-container">
+          <div class="title new" id="title">—</div>
+          <div class="title old" id="title-old">—</div>
+        </div>
+        <div class="text-container artist-container">
+          <div class="artist new" id="artist">—</div>
+          <div class="artist old" id="artist-old">—</div>
+        </div>
       </div>
     </div>
-    <div class="progress-wrap">
+
+    <div class="progress-section">
+      <span class="time" id="time-current">0:00</span>
       <div class="progress">
         <div class="progress-fill" id="progress"></div>
       </div>
+      <span class="time" id="time-total">0:00</span>
     </div>
   </div>
 
-  <!--
-    ═══════════════════════════════════════════════════════════════════════════
-    JAVASCRIPT - NICHT BEARBEITEN!
-    ═══════════════════════════════════════════════════════════════════════════
-  -->
+  <!-- JAVASCRIPT -->
   <script type="module">
-    const { listen } = window.__TAURI__.event;
-    const { invoke } = window.__TAURI__.tauri;
-    const appWindow = window.__TAURI__.window?.appWindow || window.__TAURI__.window?.getCurrent?.();
+    async function waitForTauri() {
+      let attempts = 0;
+      while (!window.__TAURI__ && attempts < 100) {
+        await new Promise(r => setTimeout(r, 50));
+        attempts++;
+      }
+      return window.__TAURI__;
+    }
 
-    if (appWindow) {
-      document.addEventListener('mousedown', async (e) => {
-        if (e.buttons === 1) {
-          try { await appWindow.startDragging(); } catch(e) {}
-        }
+    (async () => {
+      const tauri = await waitForTauri();
+      if (!tauri) { console.error('Tauri API nicht verfügbar'); return; }
+
+      const listen = tauri.event?.listen || tauri.listen;
+      const invoke = tauri.tauri?.invoke || tauri.invoke;
+      const appWindow = tauri.window?.appWindow || tauri.window?.getCurrent?.() || tauri.appWindow;
+
+      if (!listen || !invoke) { console.error('Tauri listen/invoke nicht gefunden'); return; }
+
+      if (appWindow) {
+        document.addEventListener('mousedown', async (e) => {
+          if (e.buttons === 1) {
+            try { await appWindow.startDragging(); } catch(e) {}
+          }
+        });
+      }
+
+      const $ = (id) => document.getElementById(id);
+      let currentTrack = null;
+      let isTransitioning = false;
+
+      window.addEventListener('accent-color-change', (e) => {
+        setColor(e.detail.r, e.detail.g, e.detail.b);
       });
-    }
 
-    const $ = (id) => document.getElementById(id);
-    let currentTrack = null;
-
-    function formatTime(ms) {
-      const s = Math.floor(ms / 1000);
-      return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-    }
-
-    function update(track) {
-      const widget = $('widget');
-      const idle = $('idle');
-      const cover = $('cover');
-      const title = $('title');
-      const artist = $('artist');
-      const progress = $('progress');
-      const timeCurrent = $('time-current');
-      const timeTotal = $('time-total');
-
-      if (!track?.track) {
-        widget?.classList.add('hidden');
-        idle?.classList.remove('hidden');
-        return;
+      function setColor(r, g, b) {
+        document.documentElement.style.setProperty('--r', r);
+        document.documentElement.style.setProperty('--g', g);
+        document.documentElement.style.setProperty('--b', b);
       }
 
-      idle?.classList.add('hidden');
-      widget?.classList.remove('hidden');
-      widget?.classList.toggle('paused', !track.isPlaying);
-
-      if (track.albumCover && track.albumCover !== currentTrack?.albumCover) {
-        if (cover) cover.style.backgroundImage = `url('${track.albumCover}')`;
+      function formatTime(ms) {
+        const s = Math.floor(ms / 1000);
+        return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
       }
 
-      if (title) title.textContent = track.track;
-      if (artist) artist.textContent = track.artist;
+      async function transitionToNewTrack(track) {
+        if (isTransitioning) return;
+        isTransitioning = true;
 
-      if (track.color) {
-        document.documentElement.style.setProperty('--r', track.color.r);
-        document.documentElement.style.setProperty('--g', track.color.g);
-        document.documentElement.style.setProperty('--b', track.color.b);
+        const cover = $('cover');
+        const coverOld = $('cover-old');
+        const title = $('title');
+        const titleOld = $('title-old');
+        const artist = $('artist');
+        const artistOld = $('artist-old');
+
+        if (currentTrack) {
+          coverOld.style.backgroundImage = cover.style.backgroundImage;
+          titleOld.textContent = title.textContent;
+          artistOld.textContent = artist.textContent;
+
+          coverOld.classList.remove('old');
+          coverOld.classList.add('new');
+          cover.classList.remove('new');
+          cover.classList.add('old');
+
+          titleOld.classList.remove('old');
+          titleOld.classList.add('new');
+          title.classList.add('entering');
+          title.classList.remove('new');
+
+          artistOld.classList.remove('old');
+          artistOld.classList.add('new');
+          artist.classList.add('entering');
+          artist.classList.remove('new');
+        }
+
+        cover.style.backgroundImage = `url('${track.albumCover}')`;
+        title.textContent = track.track;
+        artist.textContent = track.artist;
+
+        if (track.color) {
+          setColor(track.color.r, track.color.g, track.color.b);
+        }
+
+        await new Promise(r => setTimeout(r, 50));
+
+        cover.classList.remove('old');
+        cover.classList.add('new');
+        coverOld.classList.remove('new');
+        coverOld.classList.add('old');
+
+        title.classList.remove('entering');
+        title.classList.add('new');
+        titleOld.classList.remove('new');
+        titleOld.classList.add('old');
+
+        artist.classList.remove('entering');
+        artist.classList.add('new');
+        artistOld.classList.remove('new');
+        artistOld.classList.add('old');
+
+        await new Promise(r => setTimeout(r, 500));
+        isTransitioning = false;
       }
 
-      if (track.durationMs > 0) {
-        if (progress) progress.style.width = `${(track.progressMs / track.durationMs) * 100}%`;
-        if (timeCurrent) timeCurrent.textContent = formatTime(track.progressMs);
-        if (timeTotal) timeTotal.textContent = formatTime(track.durationMs);
-      }
-
-      currentTrack = track;
-    }
-
-    listen('track-update', (e) => update(e.payload));
-    invoke('get_track').then(update);
-
-    setInterval(() => {
-      if (currentTrack?.isPlaying && currentTrack.durationMs > 0) {
-        currentTrack.progressMs = Math.min(currentTrack.progressMs + 1000, currentTrack.durationMs);
+      function update(track) {
+        const widget = $('widget');
+        const idle = $('idle');
         const progress = $('progress');
         const timeCurrent = $('time-current');
-        if (progress) progress.style.width = `${(currentTrack.progressMs / currentTrack.durationMs) * 100}%`;
-        if (timeCurrent) timeCurrent.textContent = formatTime(currentTrack.progressMs);
+        const timeTotal = $('time-total');
+
+        if (!track?.track) {
+          widget?.classList.add('hidden');
+          idle?.classList.remove('hidden');
+          currentTrack = null;
+          return;
+        }
+
+        idle?.classList.add('hidden');
+        widget?.classList.remove('hidden');
+
+        const isNewTrack = !currentTrack || 
+          currentTrack.track !== track.track || 
+          currentTrack.artist !== track.artist;
+
+        if (isNewTrack) {
+          transitionToNewTrack(track);
+        }
+
+        widget?.classList.toggle('paused', !track.isPlaying);
+
+        if (track.durationMs > 0) {
+          if (progress) progress.style.width = `${(track.progressMs / track.durationMs) * 100}%`;
+          if (timeCurrent) timeCurrent.textContent = formatTime(track.progressMs);
+          if (timeTotal) timeTotal.textContent = formatTime(track.durationMs);
+        }
+
+        currentTrack = { ...track };
       }
-    }, 1000);
+
+      await listen('track-update', (e) => update(e.payload));
+      try { const track = await invoke('get_track'); update(track); } catch (e) {}
+
+      setInterval(() => {
+        if (currentTrack?.isPlaying && currentTrack.durationMs > 0) {
+          currentTrack.progressMs = Math.min(currentTrack.progressMs + 1000, currentTrack.durationMs);
+          const progress = $('progress');
+          const timeCurrent = $('time-current');
+          if (progress) progress.style.width = `${(currentTrack.progressMs / currentTrack.durationMs) * 100}%`;
+          if (timeCurrent) timeCurrent.textContent = formatTime(currentTrack.progressMs);
+        }
+      }, 1000);
+    })();
   </script>
 </body>
 </html>
