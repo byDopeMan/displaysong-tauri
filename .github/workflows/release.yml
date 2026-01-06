@@ -44,7 +44,7 @@ jobs:
           node-version: 20
 
       - name: Install Rust (stable)
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
         
       # macOS: Beide Targets installieren
       - name: Install macOS targets
