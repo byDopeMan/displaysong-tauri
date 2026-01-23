@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DisplaySong</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Titlebar -->
+    <div class="titlebar" data-tauri-drag-region>
+      <span class="title">DisplaySong</span>
+      <div class="tb-controls">
+        <button class="tb-btn" data-action="minimize">─</button>
+        <button class="tb-btn tb-close" data-action="close">✕</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs hidden" id="nav-tabs">
+      <button class="tab active" data-tab="player">Player</button>
+      <button class="tab" data-tab="history">Verlauf</button>
+      <button class="tab" data-tab="designs">Designs</button>
+      <button class="tab" data-tab="settings">Einstellungen</button>
+    </nav>
+
+    <div class="content">
+      <!-- Loading View (beim Start) -->
+      <div id="loading-view" class="view">
+        <div class="loading-container">
+          <div class="logo">🎵</div>
+          <h1>DisplaySong</h1>
+          <div class="spinner"></div>
+          <p id="loading-status">Starte...</p>
+        </div>
+      </div>
+
+      <!-- Setup View -->
+      <div id="setup-view" class="view hidden">
+        <div class="setup-container">
+          <div class="logo">🎵</div>
+          <h1>DisplaySong</h1>
+          <p>Spotify Now Playing Widget für OBS</p>
+          
+          <form id="credentials-form" class="credentials-form" autocomplete="off">
+            <div class="form-group">
+              <label for="client-id">Client ID</label>
+              <input type="text" id="client-id" placeholder="Deine Spotify Client ID" required>
+            </div>
+            <div class="form-group">
+              <label for="client-secret">Client Secret</label>
+              <input type="password" id="client-secret" placeholder="Dein Spotify Client Secret" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Speichern & Verbinden</button>
+          </form>
+          
+          <div class="setup-help">
+            <p>Du brauchst eine Spotify App:</p>
+            <a href="https://developer.spotify.com/dashboard" target="_blank" class="setup-link">
+              Spotify Developer Dashboard →
+            </a>
+            <p class="hint">Redirect URI: <code>http://127.0.0.1:8888/callback</code></p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Access Request Modal (geheim - 420) -->
+      <div id="access-request-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="modal-title">🔑 Zugang anfragen</span>
+            <button class="modal-close" data-close-modal>&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Der Developer muss dich manuell freischalten. Gib deine Daten ein:</p>
+            
+            <form id="access-request-form" autocomplete="off">
+              <div class="form-group">
+                <label for="access-name">Name</label>
+                <input type="text" id="access-name" placeholder="Dein Name" required>
+              </div>
+              <div class="form-group">
+                <label for="access-email">Spotify E-Mail</label>
+                <input type="text" id="access-email" placeholder="name@example.com" inputmode="email" autocomplete="off" required>
+                <span class="hint">Die E-Mail deines Spotify Accounts!</span>
+              </div>
+              <div class="form-group">
+                <label for="access-discord">Discord (optional)</label>
+                <input type="text" id="access-discord" placeholder="username#1234">
+              </div>
+              
+              <div class="access-status hidden" id="access-status">
+              </div>
+              
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Abbrechen</button>
+                <button type="submit" class="btn btn-primary" id="btn-submit-access-a">Anfrage senden</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth View -->
+      <div id="auth-view" class="view hidden">
+        <div class="auth-container">
+          <div class="spinner"></div>
+          <h2>Spotify Autorisierung</h2>
+          <p>Browser öffnet sich...</p>
+          <p class="hint">Nach dem Login wirst du automatisch zurückgeleitet.</p>
+          <button id="btn-cancel-auth" class="btn btn-secondary">Abbrechen</button>
+        </div>
+      </div>
+
+      <!-- Player View -->
+      <div id="player-view" class="view hidden">
+        <div class="player-container">
+          <div class="cover-bg" id="cover-bg"></div>
+          <div class="cover-image" id="cover-image"></div>
+          
+          <div class="track-info">
+            <div class="status-badge" id="status-badge">
+              <span class="status-dot"></span>
+              <span class="status-text">Läuft jetzt</span>
+            </div>
+            <h2 class="track-title" id="track-title">Nichts läuft</h2>
+            <p class="track-artist" id="track-artist">—</p>
+            <p class="track-album" id="track-album"></p>
+            <button id="btn-copy-song" class="btn-copy" title="Song-Info kopieren">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-bar-bg">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="progress-times">
+              <span id="progress-current">0:00</span>
+              <span id="progress-total">0:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History View -->
+      <div id="history-view" class="view hidden">
+        <div class="history-header">
+          <div>
+            <h2>Song-Verlauf</h2>
+            <p class="history-subtitle">Zuletzt gespielte Songs</p>
+          </div>
+          <div class="history-design-toggle">
+            <button class="design-toggle-btn active" data-design="simple" title="Einfache Liste">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+            <button class="design-toggle-btn" data-design="embedded" title="Spotify Embed">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Simple List -->
+        <div id="history-simple" class="history-list">
+          <div class="history-empty">
+            <span>📻</span>
+            <p>Noch keine Songs gespielt</p>
+          </div>
+        </div>
+        
+        <!-- Embedded List (preloaded, hidden) -->
+        <div id="history-embedded" class="history-list embedded" style="display: none;"></div>
+      </div>
+
+      <!-- Designs View -->
+      <div id="designs-view" class="view hidden">
+        <h2>Widget Designs</h2>
+        <div class="design-grid">
+          <div class="design-card">
+            <div class="design-preview design-1">
+              <div class="preview-bar"></div>
+            </div>
+            <h3>Compact Bar</h3>
+            <p class="design-desc">Horizontal, minimalistisch</p>
+            <div class="design-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="accent-widget-1" class="setting-checkbox widget-accent-check" data-widget="widget-1">
+                <span>Akzentfarbe</span>
+              </label>
+            </div>
+            <button class="btn btn-show" data-widget="widget-1">Anzeigen</button>
+          </div>
+          <div class="design-card">
+            <div class="design-preview design-2">
+              <div class="preview-square"></div>
+            </div>
+            <h3>Album Focus</h3>
+            <p class="design-desc">Großes Cover, vertikal</p>
+            <div class="design-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="accent-widget-2" class="setting-checkbox widget-accent-check" data-widget="widget-2">
+                <span>Akzentfarbe</span>
+              </label>
+            </div>
+            <button class="btn btn-show" data-widget="widget-2">Anzeigen</button>
+          </div>
+          <div class="design-card">
+            <div class="design-preview design-custom">
+              <span>C1</span>
+            </div>
+            <h3>Custom 1</h3>
+            <p class="design-desc">Anpassbar im Editor</p>
+            <button class="btn btn-show" data-widget="widget-custom1">Anzeigen</button>
+          </div>
+          <div class="design-card">
+            <div class="design-preview design-custom">
+              <span>C2</span>
+            </div>
+            <h3>Custom 2</h3>
+            <p class="design-desc">Anpassbar im Editor</p>
+            <button class="btn btn-show" data-widget="widget-custom2">Anzeigen</button>
+          </div>
+        </div>
+        
+        <div class="active-widgets">
+          <h3>Aktive Widgets</h3>
+          <div id="widget-list"><span class="no-widgets">Keine aktiv</span></div>
+        </div>
+        
+        <div class="custom-widgets-hint">
+          <h3>Eigene Designs</h3>
+          <p>Du kannst die Custom-Widgets (Custom 1 & 2) mit einem Texteditor anpassen.</p>
+          <p class="hint">Nutze <code>var(--accent-r)</code>, <code>var(--accent-g)</code>, <code>var(--accent-b)</code> für die Akzentfarbe.</p>
+          <div class="btn-row">
+            <button id="btn-open-folder" class="btn btn-secondary">📁 Widget-Ordner öffnen</button>
+            <button id="btn-reload-widgets" class="btn btn-secondary">🔄 Widgets neu laden</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div id="settings-view" class="view hidden">
+        <h2>Einstellungen</h2>
+        
+        <!-- Spotify -->
+        <div class="settings-section">
+          <h3>Spotify</h3>
+          <div class="setting-row">
+            <span>Status:</span>
+            <span id="spotify-status-text">Verbunden</span>
+          </div>
+          <button id="btn-disconnect" class="btn btn-secondary">Verbindung trennen</button>
+        </div>
+
+        <!-- Widget-Verhalten -->
+        <div class="settings-section">
+          <h3>Widget-Verhalten</h3>
+          
+          <div class="setting-row">
+            <label for="polling-interval">Aktualisierungsrate:</label>
+            <select id="polling-interval" class="setting-select">
+              <option value="1000">1 Sekunde</option>
+              <option value="2000" selected>2 Sekunden</option>
+              <option value="5000">5 Sekunden</option>
+              <option value="10000">10 Sekunden</option>
+            </select>
+          </div>
+          
+          <div class="setting-row">
+            <label for="widget-opacity">Widget-Transparenz:</label>
+            <div class="slider-row">
+              <input type="range" id="widget-opacity" class="setting-slider" min="50" max="100" value="100">
+              <span id="widget-opacity-value">100%</span>
+            </div>
+          </div>
+          
+          <div class="setting-row">
+            <label for="auto-show-widgets">Widgets beim Start öffnen:</label>
+            <input type="checkbox" id="auto-show-widgets" class="setting-checkbox">
+          </div>
+          
+          <div class="setting-row">
+            <label for="remember-positions">Widget-Positionen merken:</label>
+            <input type="checkbox" id="remember-positions" class="setting-checkbox">
+          </div>
+        </div>
+
+        <!-- Verlauf -->
+        <div class="settings-section">
+          <h3>Verlauf</h3>
+          
+          <div class="setting-row">
+            <label for="history-length">Anzahl Songs im Verlauf:</label>
+            <select id="history-length" class="setting-select">
+              <option value="10">10 Songs</option>
+              <option value="20" selected>20 Songs</option>
+              <option value="50">50 Songs</option>
+              <option value="100">100 Songs</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- System -->
+        <div class="settings-section">
+          <h3>System</h3>
+          
+          <div class="setting-row">
+            <label for="autostart">Mit Windows starten:</label>
+            <input type="checkbox" id="autostart" class="setting-checkbox">
+          </div>
+          
+          <button id="btn-remove-autostart" class="btn btn-secondary btn-small">Autostart-Eintrag entfernen</button>
+          <p class="hint" style="margin-top: 8px;">Falls Probleme mit Autostart auftreten.</p>
+        </div>
+
+        <!-- Aussehen -->
+        <div class="settings-section">
+          <h3>Aussehen</h3>
+          
+          <div class="setting-row">
+            <label for="theme-select">Theme:</label>
+            <select id="theme-select" class="setting-select">
+              <option value="dark" selected>Dunkel</option>
+              <option value="light">Hell</option>
+            </select>
+          </div>
+          
+          <div class="setting-row">
+            <label for="show-player-tab">Player Tab anzeigen:</label>
+            <input type="checkbox" id="show-player-tab" class="setting-checkbox" checked>
+          </div>
+          
+          <div class="setting-row">
+            <label for="show-history-tab">Verlauf Tab anzeigen:</label>
+            <input type="checkbox" id="show-history-tab" class="setting-checkbox" checked>
+          </div>
+          
+          <div class="setting-row">
+            <label>Akzentfarbe:</label>
+            <div class="color-options">
+              <button class="color-btn active" data-color="spotify" style="background: #1db954;" title="Spotify Grün"></button>
+              <button class="color-btn" data-color="blue" style="background: #3b82f6;" title="Blau"></button>
+              <button class="color-btn" data-color="purple" style="background: #8b5cf6;" title="Lila"></button>
+              <button class="color-btn" data-color="pink" style="background: #ec4899;" title="Pink"></button>
+              <button class="color-btn" data-color="orange" style="background: #f97316;" title="Orange"></button>
+              <button class="color-btn" data-color="red" style="background: #ef4444;" title="Rot"></button>
+              <label class="color-picker-label" title="Eigene Farbe">
+                <input type="color" id="custom-accent-color" class="color-picker-input" value="#1db954">
+                <span class="color-btn color-btn-custom" data-color="custom">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Über -->
+        <div class="settings-section">
+          <h3>Über</h3>
+          <div class="about-info">
+            <p class="app-name">🎵 DisplaySong</p>
+            <p class="app-version">Version 2.2.0</p>
+            <p class="app-desc">Spotify Now Playing Widget für OBS</p>
+          </div>
+          <div class="about-links">
+            <button id="btn-changelog" class="btn btn-text">📋 Changelog</button>
+            <button id="btn-licenses" class="btn btn-text">📄 Lizenzen</button>
+            <button id="btn-logs" class="btn btn-text">📁 Logs öffnen</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Changelog Modal -->
+      <div id="changelog-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Changelog</h3>
+            <button class="modal-close" data-modal="changelog-modal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="changelog-entry">
+              <h4>v2.2.0</h4>
+              <ul>
+                <li>🔄 Auto-Updater - App prüft auf neue Versionen</li>
+                <li>🔑 "Frag Developer nach Zugang" Feature</li>
+                <li>✨ Smooth Song-Wechsel Animationen</li>
+                <li>🎨 Akzentfarbe sofort zurücksetzbar</li>
+                <li>🎵 Spotify Embed voll nutzbar</li>
+              </ul>
+            </div>
+            <div class="changelog-entry">
+              <h4>v2.1.1</h4>
+              <ul>
+                <li>🚀 Lade-Bildschirm beim Start mit Status-Anzeige</li>
+                <li>📥 Visuelle Animation beim Minimieren ins Tray</li>
+                <li>📝 Automatisches Logging in %AppData%/logs</li>
+                <li>🐛 Bugfixes und Performance-Verbesserungen</li>
+              </ul>
+            </div>
+            <div class="changelog-entry">
+              <h4>v2.1.0</h4>
+              <ul>
+                <li>🎨 Custom Akzentfarbe mit Color Picker</li>
+                <li>🎨 Akzentfarbe für Design 1 & 2 optional aktivierbar</li>
+                <li>📋 Song-Info kopieren Button im Player</li>
+                <li>📊 Verlauflänge einstellbar (10-100 Songs)</li>
+                <li>🌫️ Widget-Transparenz einstellbar</li>
+                <li>🎧 Spotify Embed Ansicht im Verlauf</li>
+              </ul>
+            </div>
+            <div class="changelog-entry">
+              <h4>v2.0.0</h4>
+              <ul>
+                <li>🎉 Kompletter Rewrite mit Tauri</li>
+                <li>🚀 Kein Server mehr nötig - läuft komplett lokal</li>
+                <li>🎨 4 Widget-Designs (2 fest, 2 anpassbar)</li>
+                <li>🌈 Dynamische Farben aus Album-Cover</li>
+                <li>📁 Custom Widgets im AppData-Ordner bearbeitbar</li>
+              </ul>
+            </div>
+              <ul>
+                <li>Erste Version mit Node.js Server</li>
+                <li>Browser-basierte Widgets</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Licenses Modal -->
+      <div id="licenses-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Lizenzen</h3>
+            <button class="modal-close" data-modal="licenses-modal">×</button>
+          </div>
+          <div class="modal-body">
+            <p class="license-intro">DisplaySong nutzt folgende Open-Source-Projekte:</p>
+            
+            <div class="license-entry">
+              <h4>Tauri</h4>
+              <p>MIT License - <a href="https://tauri.app" target="_blank">tauri.app</a></p>
+            </div>
+            
+            <div class="license-entry">
+              <h4>Tokio</h4>
+              <p>MIT License - Async Runtime für Rust</p>
+            </div>
+            
+            <div class="license-entry">
+              <h4>Reqwest</h4>
+              <p>MIT License - HTTP Client</p>
+            </div>
+            
+            <div class="license-entry">
+              <h4>Serde</h4>
+              <p>MIT License - Serialization Framework</p>
+            </div>
+            
+            <hr class="license-divider">
+            
+            <div class="license-entry">
+              <h4>DisplaySong</h4>
+              <p>MIT License</p>
+              <p class="license-text">Copyright © 2024 - Frei zur Nutzung, Modifikation und Verteilung.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tray Notification Toast -->
+  <div id="tray-toast" class="tray-toast hidden">
+    <span class="tray-toast-icon">📥</span>
+    <span>App läuft im System-Tray weiter</span>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

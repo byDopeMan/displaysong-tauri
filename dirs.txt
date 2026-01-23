@@ -1,0 +1,969 @@
+E:\CurrentSong[BrowserSource]\Tauri
+├── .git
+│   ├── hooks
+│   ├── info
+│   ├── logs
+│   │   └── refs
+│   │       ├── heads
+│   │       └── remotes
+│   │           └── origin
+│   ├── objects
+│   │   ├── 00
+│   │   ├── 02
+│   │   ├── 05
+│   │   ├── 09
+│   │   ├── 0c
+│   │   ├── 10
+│   │   ├── 12
+│   │   ├── 18
+│   │   ├── 1a
+│   │   ├── 1c
+│   │   ├── 1e
+│   │   ├── 26
+│   │   ├── 29
+│   │   ├── 2b
+│   │   ├── 2c
+│   │   ├── 2d
+│   │   ├── 2e
+│   │   ├── 3d
+│   │   ├── 41
+│   │   ├── 45
+│   │   ├── 47
+│   │   ├── 4b
+│   │   ├── 4c
+│   │   ├── 50
+│   │   ├── 52
+│   │   ├── 54
+│   │   ├── 55
+│   │   ├── 5d
+│   │   ├── 66
+│   │   ├── 68
+│   │   ├── 6c
+│   │   ├── 6f
+│   │   ├── 76
+│   │   ├── 7a
+│   │   ├── 7c
+│   │   ├── 81
+│   │   ├── 83
+│   │   ├── 85
+│   │   ├── 88
+│   │   ├── 89
+│   │   ├── 8c
+│   │   ├── 96
+│   │   ├── 9b
+│   │   ├── 9f
+│   │   ├── a1
+│   │   ├── a6
+│   │   ├── ab
+│   │   ├── af
+│   │   ├── b6
+│   │   ├── b9
+│   │   ├── bb
+│   │   ├── be
+│   │   ├── c3
+│   │   ├── d7
+│   │   ├── dd
+│   │   ├── de
+│   │   ├── e0
+│   │   ├── e2
+│   │   ├── e3
+│   │   ├── eb
+│   │   ├── f1
+│   │   ├── fd
+│   │   ├── ff
+│   │   ├── info
+│   │   └── pack
+│   └── refs
+│       ├── heads
+│       ├── remotes
+│       │   └── origin
+│       └── tags
+├── .github
+│   └── workflows
+├── backend
+│   ├── .wrangler
+│   │   └── tmp
+│   └── src
+├── backup-before-update
+├── keys
+│   └── .tauri
+├── MD
+├── node_modules
+│   ├── .bin
+│   ├── @epic-web
+│   │   └── invariant
+│   │       └── dist
+│   ├── @esbuild
+│   │   └── win32-x64
+│   ├── @isaacs
+│   │   └── cliui
+│   │       └── build
+│   │           └── lib
+│   ├── @pkgjs
+│   │   └── parseargs
+│   │       ├── examples
+│   │       └── internal
+│   ├── @tauri-apps
+│   │   ├── cli
+│   │   │   └── src
+│   │   └── cli-win32-x64-msvc
+│   ├── abort-controller
+│   │   └── dist
+│   ├── ansi-regex
+│   ├── ansi-styles
+│   ├── archiver
+│   │   └── lib
+│   │       └── plugins
+│   ├── archiver-utils
+│   ├── async
+│   │   ├── dist
+│   │   └── internal
+│   ├── b4a
+│   │   └── lib
+│   ├── balanced-match
+│   │   └── .github
+│   ├── bare-events
+│   │   └── lib
+│   ├── base64-js
+│   ├── brace-expansion
+│   │   └── .github
+│   ├── buffer
+│   ├── buffer-crc32
+│   │   └── dist
+│   ├── color-convert
+│   ├── color-name
+│   ├── compress-commons
+│   │   └── lib
+│   │       ├── archivers
+│   │       │   └── zip
+│   │       └── util
+│   ├── core-util-is
+│   │   └── lib
+│   ├── crc-32
+│   │   ├── bin
+│   │   └── types
+│   ├── crc32-stream
+│   │   └── lib
+│   ├── cross-env
+│   │   └── dist
+│   │       └── bin
+│   ├── cross-spawn
+│   │   └── lib
+│   │       └── util
+│   ├── eastasianwidth
+│   ├── emoji-regex
+│   │   └── es2015
+│   ├── esbuild
+│   │   ├── bin
+│   │   └── lib
+│   ├── event-target-shim
+│   │   └── dist
+│   ├── events
+│   │   ├── .github
+│   │   └── tests
+│   ├── events-universal
+│   ├── fast-fifo
+│   ├── foreground-child
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── glob
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── graceful-fs
+│   ├── ieee754
+│   ├── inherits
+│   ├── is-fullwidth-code-point
+│   ├── is-stream
+│   ├── isarray
+│   ├── isexe
+│   │   └── test
+│   ├── jackspeak
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── lazystream
+│   │   ├── lib
+│   │   ├── node_modules
+│   │   │   ├── readable-stream
+│   │   │   │   ├── doc
+│   │   │   │   │   └── wg-meetings
+│   │   │   │   └── lib
+│   │   │   │       └── internal
+│   │   │   │           └── streams
+│   │   │   ├── safe-buffer
+│   │   │   └── string_decoder
+│   │   │       └── lib
+│   │   └── test
+│   ├── lodash
+│   │   └── fp
+│   ├── lru-cache
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── minimatch
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── minipass
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── nanoid
+│   │   ├── async
+│   │   ├── bin
+│   │   ├── non-secure
+│   │   └── url-alphabet
+│   ├── normalize-path
+│   ├── package-json-from-dist
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── path-key
+│   ├── path-scurry
+│   │   └── dist
+│   │       ├── commonjs
+│   │       └── esm
+│   ├── picocolors
+│   ├── postcss
+│   │   └── lib
+│   ├── process
+│   ├── process-nextick-args
+│   ├── readable-stream
+│   │   └── lib
+│   │       ├── internal
+│   │       │   └── streams
+│   │       ├── ours
+│   │       │   └── util
+│   │       └── stream
+│   ├── readdir-glob
+│   │   └── node_modules
+│   │       └── minimatch
+│   │           └── lib
+│   ├── rollup
+│   │   └── dist
+│   │       ├── bin
+│   │       ├── es
+│   │       │   └── shared
+│   │       └── shared
+│   ├── safe-buffer
+│   ├── shebang-command
+│   ├── shebang-regex
+│   ├── signal-exit
+│   │   └── dist
+│   │       ├── cjs
+│   │       └── mjs
+│   ├── source-map-js
+│   │   └── lib
+│   ├── streamx
+│   ├── string-width
+│   ├── string-width-cjs
+│   │   └── node_modules
+│   │       ├── ansi-regex
+│   │       ├── emoji-regex
+│   │       │   └── es2015
+│   │       └── strip-ansi
+│   ├── string_decoder
+│   │   └── lib
+│   ├── strip-ansi
+│   ├── strip-ansi-cjs
+│   │   └── node_modules
+│   │       └── ansi-regex
+│   ├── tar-stream
+│   ├── text-decoder
+│   │   └── lib
+│   ├── util-deprecate
+│   ├── vite
+│   │   ├── bin
+│   │   ├── dist
+│   │   │   ├── client
+│   │   │   ├── node
+│   │   │   │   └── chunks
+│   │   │   └── node-cjs
+│   │   └── types
+│   ├── which
+│   │   └── bin
+│   ├── wrap-ansi
+│   ├── wrap-ansi-cjs
+│   │   └── node_modules
+│   │       ├── ansi-regex
+│   │       ├── ansi-styles
+│   │       ├── emoji-regex
+│   │       │   └── es2015
+│   │       ├── string-width
+│   │       └── strip-ansi
+│   └── zip-stream
+├── scripts
+├── src
+│   ├── core
+│   ├── features
+│   ├── styles
+│   ├── templates
+│   ├── ui
+│   ├── utils
+│   └── widgets
+└── src-tauri
+    ├── icons
+    ├── src
+    │   └── commands
+    ├── target
+    │   └── debug
+    │       ├── .fingerprint
+    │       │   ├── adler2-2b49e806a4583ba0
+    │       │   ├── aho-corasick-1a494a9f150c581f
+    │       │   ├── aho-corasick-be34792159689f1a
+    │       │   ├── alloc-no-stdlib-df988be783143443
+    │       │   ├── alloc-stdlib-0b919bce3bf82dab
+    │       │   ├── anyhow-5f742c575df35aa8
+    │       │   ├── anyhow-aa601dd51ab6285d
+    │       │   ├── anyhow-d034abc77daf7f05
+    │       │   ├── autocfg-0837c6aef9c33bfd
+    │       │   ├── base64-01063cccf8caaaf8
+    │       │   ├── base64-859384f4ec5c3793
+    │       │   ├── bitflags-887797b30c0706d5
+    │       │   ├── block-buffer-3377390df9952be4
+    │       │   ├── brotli-decompressor-530dd73019964ecf
+    │       │   ├── brotli-e7e6ebfc49a722ff
+    │       │   ├── bstr-8177040a6ae1a402
+    │       │   ├── bytemuck-e1635b4a933804cd
+    │       │   ├── byteorder-09744153230ade1e
+    │       │   ├── bytes-9a77e642d8c46455
+    │       │   ├── cargo_toml-e21f74ae2ac6056b
+    │       │   ├── cc-a8f07536d530538b
+    │       │   ├── cfb-f164e488aaedb0d6
+    │       │   ├── cfg-if-4316c8dd3aae8aa0
+    │       │   ├── chrono-c9331707611b494b
+    │       │   ├── color_quant-1cd63cef2b87dab3
+    │       │   ├── colored-4924caaeaa31b756
+    │       │   ├── convert_case-2a9665b9eaa9856f
+    │       │   ├── cpufeatures-7ae3b7b2b54ee163
+    │       │   ├── crc32fast-4809d0bde4a0bd81
+    │       │   ├── crc32fast-66cba225e15aac66
+    │       │   ├── crc32fast-d357259aaaa68be0
+    │       │   ├── crossbeam-channel-4213e1ca8f0c33a5
+    │       │   ├── crossbeam-deque-c0bbfb0d1cc9b387
+    │       │   ├── crossbeam-epoch-5c4f7ceedf8fb78e
+    │       │   ├── crossbeam-utils-7de09edb5b84cdf2
+    │       │   ├── crossbeam-utils-e300b5107aa17931
+    │       │   ├── crossbeam-utils-ea8b83c5c065b1d1
+    │       │   ├── crypto-common-1eb54a3c721172e4
+    │       │   ├── cssparser-18abb2e29a675f17
+    │       │   ├── cssparser-267c5bab65f340c5
+    │       │   ├── cssparser-ca09daf6c4823c3d
+    │       │   ├── cssparser-macros-e16b9514b85b5bcd
+    │       │   ├── ctor-899069c3b310f975
+    │       │   ├── darling-d2cae917a462cf4f
+    │       │   ├── darling_core-498cc7592d5775d3
+    │       │   ├── darling_macro-1963b264b79ca2f3
+    │       │   ├── deranged-17fabbc5d8e6dc8d
+    │       │   ├── derive_more-1052f57b76dd6936
+    │       │   ├── digest-7fea9e61eb6031de
+    │       │   ├── dirs-next-1ebf4f8328dd090a
+    │       │   ├── dirs-next-725d0eb070142934
+    │       │   ├── dirs-sys-next-648f899b34dba4ea
+    │       │   ├── dirs-sys-next-ef99c701abf581c4
+    │       │   ├── displaydoc-a0c297a8b6149930
+    │       │   ├── displaysong-13872814c25dd616
+    │       │   ├── displaysong-75494ae2687a96fd
+    │       │   ├── displaysong-76e7154b422181c2
+    │       │   ├── displaysong-920d328e7b702e4b
+    │       │   ├── displaysong-9919503b37143c85
+    │       │   ├── dtoa-d19313ade4b97ea2
+    │       │   ├── dtoa-short-d6c664a0d3bb4afe
+    │       │   ├── dunce-2834c18d2d83083d
+    │       │   ├── embed-resource-484f642756abb90a
+    │       │   ├── encoding_rs-7de19d5c88ba66b8
+    │       │   ├── equivalent-3b13bca411cdf860
+    │       │   ├── fastrand-51fb76fe43838c33
+    │       │   ├── fdeflate-e9840be7d454ea77
+    │       │   ├── fern-9a8c976826201a19
+    │       │   ├── filetime-611ce7ce50ce32b3
+    │       │   ├── find-msvc-tools-31bbe103dcc73007
+    │       │   ├── flate2-b3f0817e420fbdb6
+    │       │   ├── fnv-5107d17ea291695c
+    │       │   ├── form_urlencoded-a1bd9eb98a7f0b62
+    │       │   ├── form_urlencoded-d89be7d9a49bb1d6
+    │       │   ├── futf-f21fa555c7007601
+    │       │   ├── futures-channel-dfe40b3058478f6c
+    │       │   ├── futures-core-1c3dfa5162e42070
+    │       │   ├── futures-macro-3df0b8eb9da46244
+    │       │   ├── futures-sink-2b63f9cae1e7e183
+    │       │   ├── futures-task-973dd7238dfd7554
+    │       │   ├── futures-util-6452760e37e6abaf
+    │       │   ├── fxhash-184c9c0304bd12b3
+    │       │   ├── generic-array-5b594302f08bfa54
+    │       │   ├── generic-array-7805c3d1f9039c62
+    │       │   ├── generic-array-ab419533f44086d6
+    │       │   ├── getrandom-1d2c752ba8562346
+    │       │   ├── getrandom-80c111892a88ee32
+    │       │   ├── getrandom-b124b88669905034
+    │       │   ├── getrandom-c4df9f8d22e76b12
+    │       │   ├── getrandom-d3645a854f5bf913
+    │       │   ├── getrandom-d6f49d7f45464dd5
+    │       │   ├── getrandom-df359f10e1c4e091
+    │       │   ├── glob-52cd11abf9965579
+    │       │   ├── globset-f063cf90f9a26caf
+    │       │   ├── h2-c56be1c435dfe5ca
+    │       │   ├── hashbrown-7912f1e5dd16267d
+    │       │   ├── hashbrown-a287707bef0417c6
+    │       │   ├── heck-0be19530d1bd0e9f
+    │       │   ├── html5ever-2199651be1af3470
+    │       │   ├── html5ever-55e4a7635b2e7b09
+    │       │   ├── html5ever-598b2f2b620f00c9
+    │       │   ├── html5ever-ea77dc770502de8d
+    │       │   ├── http-a1da5791fdecea78
+    │       │   ├── http-body-faab00b93381f0b7
+    │       │   ├── http-range-9be13392ea9263fb
+    │       │   ├── httparse-a704dd11d8c7f165
+    │       │   ├── httparse-c9c706abc364aaa1
+    │       │   ├── httparse-ef40dbe32d5fbd61
+    │       │   ├── httpdate-29845da3ff373b2b
+    │       │   ├── hyper-c695bcbc62c04c22
+    │       │   ├── hyper-rustls-b7b0e084183db25a
+    │       │   ├── hyper-tls-9b622b50389ac414
+    │       │   ├── ico-59221bb3ad9322fe
+    │       │   ├── icu_collections-030a64b0cb0391fd
+    │       │   ├── icu_locale_core-497b0afeb793452f
+    │       │   ├── icu_normalizer-525b71c1c2af14c8
+    │       │   ├── icu_normalizer_data-9dd219bb2ff8d1e3
+    │       │   ├── icu_normalizer_data-9e4a89f91b2942dd
+    │       │   ├── icu_normalizer_data-cd2311ba488ce6fa
+    │       │   ├── icu_properties-4d7dccfdb14e8be9
+    │       │   ├── icu_properties_data-8f61784870f1377a
+    │       │   ├── icu_properties_data-d9f146557318e9d1
+    │       │   ├── icu_properties_data-fab9e4e8a76ca32e
+    │       │   ├── icu_provider-0789bf7ea3cd4d73
+    │       │   ├── ident_case-c915491c3ea25ecb
+    │       │   ├── idna-01dd9d1a595b35d1
+    │       │   ├── idna_adapter-44754f3f0f4dd81c
+    │       │   ├── ignore-66086fd19cb272d3
+    │       │   ├── image-c81a247754917f44
+    │       │   ├── indexmap-106e6f727b2781e1
+    │       │   ├── indexmap-133c7a9cdf6337d6
+    │       │   ├── indexmap-422b7068aa5be35c
+    │       │   ├── indexmap-4a2f7740380672ab
+    │       │   ├── indexmap-6404966cbf872a3a
+    │       │   ├── indexmap-71f4dcf4b0dd4930
+    │       │   ├── indexmap-909436c71190f209
+    │       │   ├── infer-35da6ecfda2edb25
+    │       │   ├── instant-1cfe050a52468955
+    │       │   ├── ipnet-a4d211ab97e1585d
+    │       │   ├── is-terminal-86615c9167335131
+    │       │   ├── itoa-62269a2aaab99485
+    │       │   ├── itoa-b6569403e6bb5399
+    │       │   ├── jpeg-decoder-87cc32b77e777838
+    │       │   ├── json-patch-c9489b0d76bdcadd
+    │       │   ├── json-patch-f4dafe0cf6ec9d6c
+    │       │   ├── jsonptr-649c9b107dbfe3c8
+    │       │   ├── jsonptr-b3e378727b8bdd7b
+    │       │   ├── keyring-33159937a7bf4641
+    │       │   ├── kuchikiki-ea21d86b1e4a7592
+    │       │   ├── kuchikiki-eee0011e5f0096d4
+    │       │   ├── lazy_static-e787aea162c998f3
+    │       │   ├── libc-146cb09ea83d5561
+    │       │   ├── libc-2cf0f81046cfbb79
+    │       │   ├── libc-6f0aee0ce8768472
+    │       │   ├── litemap-29a96c48ca2edefa
+    │       │   ├── lock_api-2b0b847e7616845a
+    │       │   ├── log-719b399b6d34e835
+    │       │   ├── log-e484a21de75fe7ed
+    │       │   ├── mac-24782d76c194015d
+    │       │   ├── markup5ever-0e2f0f3803940fe9
+    │       │   ├── markup5ever-1d343b48dcc7983e
+    │       │   ├── markup5ever-3bcf4cd028a11406
+    │       │   ├── markup5ever-7dc63a065cc6ac1d
+    │       │   ├── matches-88033d789d1c9c33
+    │       │   ├── memchr-aa8f9a3cbbce4db0
+    │       │   ├── mime-71952044ed9caabf
+    │       │   ├── minisign-verify-93ae4e792289e610
+    │       │   ├── miniz_oxide-ca2a2930efae8dbc
+    │       │   ├── mio-5a40b47c363d2b7f
+    │       │   ├── native-tls-023913a01330dd08
+    │       │   ├── native-tls-91ed57cfe107ff7a
+    │       │   ├── native-tls-a0d25a5a03526413
+    │       │   ├── new_debug_unreachable-e9acd64b15ebb1ca
+    │       │   ├── nodrop-88a01996f2461f90
+    │       │   ├── num-conv-a8c1be0ba56b9919
+    │       │   ├── num-traits-6c4afd0f2659f18d
+    │       │   ├── num-traits-b28177a24dadfb4b
+    │       │   ├── num-traits-fb6ccd5fdb859173
+    │       │   ├── once_cell-5bbd183c350e7435
+    │       │   ├── open-2ef23d7535a1105e
+    │       │   ├── parking_lot-38fc775943d0181c
+    │       │   ├── parking_lot_core-62270fb0de8406d7
+    │       │   ├── parking_lot_core-d7075c44b5f985c0
+    │       │   ├── parking_lot_core-e4696137f8c58c42
+    │       │   ├── percent-encoding-503c068a1cd7389b
+    │       │   ├── percent-encoding-b382f538ce1d2e62
+    │       │   ├── phf-0bdbfc6ebf267be5
+    │       │   ├── phf-bdc226a38def64c4
+    │       │   ├── phf-c16256de7b5f8726
+    │       │   ├── phf-dbd860b90a936fc0
+    │       │   ├── phf_codegen-59176b33d494c2c7
+    │       │   ├── phf_codegen-b5ffb0775d747587
+    │       │   ├── phf_generator-1b9c70285cf1082f
+    │       │   ├── phf_generator-8b5f5fb29156ea73
+    │       │   ├── phf_generator-cacb0591d6e861bd
+    │       │   ├── phf_macros-56fd204ffc3129ee
+    │       │   ├── phf_macros-ad08773b48ba4fdd
+    │       │   ├── phf_shared-2219783b66c4f770
+    │       │   ├── phf_shared-ad21660373c2c5d5
+    │       │   ├── phf_shared-ca0059a5e00a98a4
+    │       │   ├── phf_shared-d63ff9d1cafc1c18
+    │       │   ├── pin-project-lite-ddac7feb6ac14d2f
+    │       │   ├── pin-utils-1031b741708e9025
+    │       │   ├── png-6929e9312126e6b2
+    │       │   ├── potential_utf-a58d4ffe74ad21ae
+    │       │   ├── powerfmt-27c542e32633565c
+    │       │   ├── ppv-lite86-0e7b0c06b2acf0f5
+    │       │   ├── precomputed-hash-c8a5f622c386fbaa
+    │       │   ├── proc-macro-hack-294b6b4a6fe834f8
+    │       │   ├── proc-macro-hack-3f3accd1b509ba11
+    │       │   ├── proc-macro-hack-643b32aaac1a629e
+    │       │   ├── proc-macro2-0eb74cb24f3019fc
+    │       │   ├── proc-macro2-186c4fb5da6efe22
+    │       │   ├── proc-macro2-3cc9208089643631
+    │       │   ├── quote-b9f59e07358033b7
+    │       │   ├── quote-dc7e7ebf43132733
+    │       │   ├── quote-f22a4c9f7765b805
+    │       │   ├── rand-64db7a5baca24ae5
+    │       │   ├── rand-864b5f0cbf46c26d
+    │       │   ├── rand-e3b6350e2af76da3
+    │       │   ├── rand_chacha-437140295dd2b168
+    │       │   ├── rand_chacha-9c03d73d1fdb8187
+    │       │   ├── rand_core-35871f9ba9977bda
+    │       │   ├── rand_core-a2a9287770e893af
+    │       │   ├── rand_pcg-6aefd33973815159
+    │       │   ├── raw-window-handle-88c355e72c747584
+    │       │   ├── regex-04fb55ffeb85fb61
+    │       │   ├── regex-7f4b71100c69a138
+    │       │   ├── regex-automata-0bb1ae6ee760060f
+    │       │   ├── regex-automata-ca849abc6727f1ad
+    │       │   ├── regex-syntax-296ab56307276480
+    │       │   ├── reqwest-f8715e4f1e29b6ff
+    │       │   ├── rfd-1adf1a69f4dd11e3
+    │       │   ├── rfd-28afd47e98ab8caf
+    │       │   ├── rfd-57e1fc284e502c2b
+    │       │   ├── ring-68950cbf6b46ea1b
+    │       │   ├── ring-6ac447251804356d
+    │       │   ├── ring-d83d7e7a5f366b21
+    │       │   ├── rustc_version-f0a959ecd0d797cd
+    │       │   ├── rustls-3610b8ea4badfaa1
+    │       │   ├── rustls-62663e5385bb4ba8
+    │       │   ├── rustls-991c02b5e0f99f71
+    │       │   ├── rustls-pemfile-0422eb455d21ddf5
+    │       │   ├── rustls-webpki-59eaeea7061cb0bc
+    │       │   ├── ryu-a7e7766ee5fea7c8
+    │       │   ├── same-file-57b9bb2cd82d8d23
+    │       │   ├── same-file-af5726354c73f04a
+    │       │   ├── schannel-ab8c17d8f2e5867f
+    │       │   ├── scopeguard-db585e72fa1e7b80
+    │       │   ├── sct-2df3882912d160e6
+    │       │   ├── selectors-05ff272b57ba69fb
+    │       │   ├── selectors-7b79da3d60b0c052
+    │       │   ├── selectors-bd638b57fa65f337
+    │       │   ├── selectors-fd4c9d933ed47bd3
+    │       │   ├── semver-612defacce48d211
+    │       │   ├── semver-813a8258014ae392
+    │       │   ├── serde-03bfd166f3740d7f
+    │       │   ├── serde-194bf86baa16e700
+    │       │   ├── serde-48166ab98eeaf37e
+    │       │   ├── serde_core-547eb6df78073831
+    │       │   ├── serde_core-ec66da306842655f
+    │       │   ├── serde_core-fd013c2dc2c81220
+    │       │   ├── serde_derive-9d107eebf731bda1
+    │       │   ├── serde_json-14562fb51dcd1e5b
+    │       │   ├── serde_json-593ada2e867130dc
+    │       │   ├── serde_json-7428332f368d4c91
+    │       │   ├── serde_json-86b230b4f50a63fd
+    │       │   ├── serde_json-cd8588a52880acf0
+    │       │   ├── serde_json-e41b9acf54aed672
+    │       │   ├── serde_repr-2123505405d45149
+    │       │   ├── serde_spanned-43ea23e201ab6c3a
+    │       │   ├── serde_urlencoded-85fca0b01f4aa888
+    │       │   ├── serde_with-0465d644eab45926
+    │       │   ├── serde_with_macros-66dc34e6f4e2b0e5
+    │       │   ├── serialize-to-javascript-030030bc5e9c8d5e
+    │       │   ├── serialize-to-javascript-impl-2c42caad1a3199c0
+    │       │   ├── servo_arc-0406df8e555662f0
+    │       │   ├── sha2-066b4d4414bd313a
+    │       │   ├── shlex-4cef7448b830be1b
+    │       │   ├── simd-adler32-240f6a62307f6490
+    │       │   ├── siphasher-61e26fa7c52e593c
+    │       │   ├── siphasher-d416d12b74804f36
+    │       │   ├── slab-230cf4a1e2eadce9
+    │       │   ├── smallvec-628443efc9ab7c1b
+    │       │   ├── socket2-5b9b2ea5adfd7a90
+    │       │   ├── socket2-8f57bf0915402b37
+    │       │   ├── stable_deref_trait-df149bf0d896ceb3
+    │       │   ├── state-d0b97dc044d56393
+    │       │   ├── string_cache-5110dbecd6e8b68b
+    │       │   ├── string_cache_codegen-5d9771da3d6a0133
+    │       │   ├── strsim-7287224b7653410d
+    │       │   ├── syn-0103865f07e13674
+    │       │   ├── syn-8335c09cfc5270c1
+    │       │   ├── syn-9d5349cb7781c883
+    │       │   ├── syn-ea4a14fd21405df7
+    │       │   ├── sync_wrapper-6f315d652af7a893
+    │       │   ├── synstructure-0a352caa81c246ef
+    │       │   ├── tao-5ac79c0e4bf01d09
+    │       │   ├── tao-9facd0c8853dfb9b
+    │       │   ├── tao-f73db9d0fb82933a
+    │       │   ├── tar-6f73b0f4641621e0
+    │       │   ├── tauri-037c3e5ffa49eb04
+    │       │   ├── tauri-0567f17b64723d96
+    │       │   ├── tauri-2c5558e08639db8b
+    │       │   ├── tauri-813070889b3114bb
+    │       │   ├── tauri-build-62d46b3cc1f1b19c
+    │       │   ├── tauri-cf818394d4a8f844
+    │       │   ├── tauri-codegen-cdf60e39496f07ab
+    │       │   ├── tauri-dc503fa045e67b6a
+    │       │   ├── tauri-macros-a2e6bbbc428b7e74
+    │       │   ├── tauri-macros-df869e8c36fc31f7
+    │       │   ├── tauri-runtime-2d4847c1c7f77517
+    │       │   ├── tauri-runtime-cbd3282954c9109b
+    │       │   ├── tauri-runtime-d74d75b9210b37dd
+    │       │   ├── tauri-runtime-wry-d7d08b82ccdcc497
+    │       │   ├── tauri-runtime-wry-f4f9a2ec61654acb
+    │       │   ├── tauri-runtime-wry-f9269c8db8e7651a
+    │       │   ├── tauri-utils-dc1c1d85435f7928
+    │       │   ├── tauri-utils-e7d1217e76d90269
+    │       │   ├── tauri-winres-5d3f137cecc350ce
+    │       │   ├── tempfile-3d39bf6f8510942c
+    │       │   ├── tendril-f0e18aef89946a45
+    │       │   ├── thin-slice-6f9ee2e18b1a6c88
+    │       │   ├── thiserror-0230c46b9c2f5fa4
+    │       │   ├── thiserror-62768f9326b96985
+    │       │   ├── thiserror-68f5bc8fd24a0e25
+    │       │   ├── thiserror-impl-bb42896742b81168
+    │       │   ├── time-2316330c85e51bf9
+    │       │   ├── time-core-a78ccaaee598963a
+    │       │   ├── tinystr-7f95f25958a2208a
+    │       │   ├── tokio-e58aeb42c8bce7cb
+    │       │   ├── tokio-macros-3ac0cde34ec3fa92
+    │       │   ├── tokio-native-tls-a2b285245a3af95f
+    │       │   ├── tokio-rustls-2257eb09d585ca10
+    │       │   ├── tokio-util-f62937ea1127f1a3
+    │       │   ├── toml-4c939de680b50537
+    │       │   ├── toml-fd4f835e8014d5c7
+    │       │   ├── toml_datetime-582804df5cb03103
+    │       │   ├── toml_edit-aba151002c36ce56
+    │       │   ├── toml_edit-bb265f7711c20d48
+    │       │   ├── toml_write-4d45e92ff5226a7f
+    │       │   ├── tower-service-15f3e003cf29b283
+    │       │   ├── tracing-b94756936c960510
+    │       │   ├── tracing-core-970d97eb9aaa6ed3
+    │       │   ├── try-lock-283152f0c8cadb77
+    │       │   ├── typenum-1ee6afc9f8e45c6a
+    │       │   ├── typenum-3000c0155621dea7
+    │       │   ├── typenum-ab37852e6aee0ed2
+    │       │   ├── unicode-ident-59cf9ad09079dcbb
+    │       │   ├── unicode-segmentation-dfa3e6547723d24a
+    │       │   ├── untrusted-4985f342df21c97f
+    │       │   ├── url-4ae69eab36646567
+    │       │   ├── url-fea3d0bbf736d501
+    │       │   ├── urlencoding-309cf5a426be0d56
+    │       │   ├── utf-8-478eb2d2c1dc9cf5
+    │       │   ├── utf8_iter-4ff161950296d652
+    │       │   ├── uuid-c96b036c22f0c3ca
+    │       │   ├── version_check-09678914587011bc
+    │       │   ├── vswhom-9389a04b9f4915a1
+    │       │   ├── vswhom-sys-05427413a14fa21e
+    │       │   ├── vswhom-sys-0ca1fd21496921f0
+    │       │   ├── vswhom-sys-2ccca13c863e05b2
+    │       │   ├── walkdir-7083d4ff56c78f1b
+    │       │   ├── walkdir-a7a2bdaa3c756824
+    │       │   ├── want-92afac76a0d88994
+    │       │   ├── webpki-roots-7f64de18d2e89531
+    │       │   ├── webview2-com-5a7bc297477477c3
+    │       │   ├── webview2-com-macros-da5d35d0901a175d
+    │       │   ├── webview2-com-sys-271402ed701d9eee
+    │       │   ├── webview2-com-sys-9204c5866be14acc
+    │       │   ├── webview2-com-sys-ad92895438f0bc96
+    │       │   ├── winapi-10403b651724ec59
+    │       │   ├── winapi-2878d02932fc4a59
+    │       │   ├── winapi-68e13e89e3033953
+    │       │   ├── winapi-74ea095422b80e2c
+    │       │   ├── winapi-83a4bba078078253
+    │       │   ├── winapi-c88d581194abdf44
+    │       │   ├── winapi-util-362d047edcfdf131
+    │       │   ├── winapi-util-d3dad6831a948608
+    │       │   ├── windows-1f9671cb71630426
+    │       │   ├── windows-ad35687ae984c778
+    │       │   ├── windows-bindgen-b912f7bb4c162ed6
+    │       │   ├── windows-core-e40a7dacece3ad99
+    │       │   ├── windows-ec7981663267cf5e
+    │       │   ├── windows-implement-2ad798dfcc0c21fb
+    │       │   ├── windows-implement-92ca25a6687c60bb
+    │       │   ├── windows-interface-a435685cfbfe8023
+    │       │   ├── windows-link-ce4f0b2c15c7b075
+    │       │   ├── windows-metadata-4c27691577eeb1e3
+    │       │   ├── windows-result-5348ff9acd24738b
+    │       │   ├── windows-strings-4ae4d50791dff6a2
+    │       │   ├── windows-sys-2c2f4f48e8c9876c
+    │       │   ├── windows-sys-3e0d3d2c7ad97966
+    │       │   ├── windows-sys-469154fa827aeb1e
+    │       │   ├── windows-sys-5e8178441ca91170
+    │       │   ├── windows-sys-d50bc2624828ea42
+    │       │   ├── windows-sys-fae9696cfdadff8e
+    │       │   ├── windows-targets-222a37f12487ea30
+    │       │   ├── windows-targets-52dba593c607ac4f
+    │       │   ├── windows-targets-feacb24f334a2eb5
+    │       │   ├── windows-tokens-f8d5b07d871f8df1
+    │       │   ├── windows-version-1c0554111d619426
+    │       │   ├── windows_x86_64_msvc-1cd0957fe4b7371c
+    │       │   ├── windows_x86_64_msvc-3e334312553c0fa9
+    │       │   ├── windows_x86_64_msvc-40f71298104e249c
+    │       │   ├── windows_x86_64_msvc-47a487117b718dd8
+    │       │   ├── windows_x86_64_msvc-5706c223f3ac49e0
+    │       │   ├── windows_x86_64_msvc-57c8fe59d7e39d31
+    │       │   ├── windows_x86_64_msvc-6c9ea9dbecd762ac
+    │       │   ├── windows_x86_64_msvc-7465825d29c1ff28
+    │       │   ├── windows_x86_64_msvc-74f3877e1ebcd19c
+    │       │   ├── windows_x86_64_msvc-757516019e19758b
+    │       │   ├── windows_x86_64_msvc-75f81759121affe6
+    │       │   ├── windows_x86_64_msvc-80f6917fdf84ed3f
+    │       │   ├── windows_x86_64_msvc-896d1870507e7d98
+    │       │   ├── windows_x86_64_msvc-a3759474c18e809f
+    │       │   ├── windows_x86_64_msvc-ba7ea534970cdc1a
+    │       │   ├── windows_x86_64_msvc-c6a189da8b4f43ed
+    │       │   ├── windows_x86_64_msvc-f66f5ffbf53ff939
+    │       │   ├── windows_x86_64_msvc-fb4c1bcb69087e24
+    │       │   ├── winnow-171d13634b386060
+    │       │   ├── winnow-b9c400fecf303df8
+    │       │   ├── winreg-74a1758a52ee2805
+    │       │   ├── winreg-b9f8492b3e098bc4
+    │       │   ├── writeable-2f127b60e06f9fb1
+    │       │   ├── wry-14b46bb9838e0bb6
+    │       │   ├── wry-20da26068ba1a72a
+    │       │   ├── wry-d357c41049f988e4
+    │       │   ├── yoke-b2eddb739dafd840
+    │       │   ├── yoke-derive-7df4bf5804b26797
+    │       │   ├── zerocopy-06dd01fb7c556849
+    │       │   ├── zerocopy-ee595765506b769d
+    │       │   ├── zerocopy-fd6122d0c0c7cda8
+    │       │   ├── zerofrom-902079b77bad1f44
+    │       │   ├── zerofrom-derive-34b810bccdd2045f
+    │       │   ├── zerotrie-1516bab943ff3819
+    │       │   ├── zerovec-b355a870dd0299b6
+    │       │   ├── zerovec-derive-40b2df4b38a9efce
+    │       │   ├── zip-3090503d37c87f28
+    │       │   ├── zmij-3869ab77d611022f
+    │       │   ├── zmij-a1182ed0ed301575
+    │       │   └── zmij-cc97adeca75188cd
+    │       ├── _up_
+    │       │   └── src
+    │       │       ├── templates
+    │       │       └── widgets
+    │       ├── build
+    │       │   ├── anyhow-5f742c575df35aa8
+    │       │   │   └── out
+    │       │   ├── anyhow-d034abc77daf7f05
+    │       │   ├── crc32fast-4809d0bde4a0bd81
+    │       │   │   └── out
+    │       │   ├── crc32fast-66cba225e15aac66
+    │       │   ├── crossbeam-utils-7de09edb5b84cdf2
+    │       │   ├── crossbeam-utils-e300b5107aa17931
+    │       │   │   └── out
+    │       │   ├── cssparser-18abb2e29a675f17
+    │       │   │   └── out
+    │       │   ├── cssparser-ca09daf6c4823c3d
+    │       │   ├── displaysong-13872814c25dd616
+    │       │   ├── displaysong-76e7154b422181c2
+    │       │   ├── displaysong-920d328e7b702e4b
+    │       │   │   └── out
+    │       │   ├── displaysong-9919503b37143c85
+    │       │   │   └── out
+    │       │   │       └── tauri-codegen-assets
+    │       │   ├── generic-array-7805c3d1f9039c62
+    │       │   ├── generic-array-ab419533f44086d6
+    │       │   │   └── out
+    │       │   ├── getrandom-1d2c752ba8562346
+    │       │   │   └── out
+    │       │   ├── getrandom-b124b88669905034
+    │       │   │   └── out
+    │       │   ├── getrandom-c4df9f8d22e76b12
+    │       │   ├── getrandom-d3645a854f5bf913
+    │       │   ├── html5ever-55e4a7635b2e7b09
+    │       │   ├── html5ever-598b2f2b620f00c9
+    │       │   │   └── out
+    │       │   ├── httparse-a704dd11d8c7f165
+    │       │   │   └── out
+    │       │   ├── httparse-c9c706abc364aaa1
+    │       │   ├── icu_normalizer_data-9e4a89f91b2942dd
+    │       │   ├── icu_normalizer_data-cd2311ba488ce6fa
+    │       │   │   └── out
+    │       │   ├── icu_properties_data-d9f146557318e9d1
+    │       │   ├── icu_properties_data-fab9e4e8a76ca32e
+    │       │   │   └── out
+    │       │   ├── indexmap-106e6f727b2781e1
+    │       │   │   └── out
+    │       │   ├── indexmap-133c7a9cdf6337d6
+    │       │   ├── indexmap-422b7068aa5be35c
+    │       │   │   └── out
+    │       │   ├── indexmap-71f4dcf4b0dd4930
+    │       │   ├── libc-146cb09ea83d5561
+    │       │   ├── libc-6f0aee0ce8768472
+    │       │   │   └── out
+    │       │   ├── markup5ever-1d343b48dcc7983e
+    │       │   │   └── out
+    │       │   ├── markup5ever-3bcf4cd028a11406
+    │       │   ├── native-tls-023913a01330dd08
+    │       │   │   └── out
+    │       │   ├── native-tls-91ed57cfe107ff7a
+    │       │   ├── num-traits-6c4afd0f2659f18d
+    │       │   │   └── out
+    │       │   ├── num-traits-fb6ccd5fdb859173
+    │       │   ├── parking_lot_core-62270fb0de8406d7
+    │       │   ├── parking_lot_core-d7075c44b5f985c0
+    │       │   │   └── out
+    │       │   ├── proc-macro-hack-3f3accd1b509ba11
+    │       │   │   └── out
+    │       │   ├── proc-macro-hack-643b32aaac1a629e
+    │       │   ├── proc-macro2-0eb74cb24f3019fc
+    │       │   ├── proc-macro2-186c4fb5da6efe22
+    │       │   │   └── out
+    │       │   ├── quote-b9f59e07358033b7
+    │       │   ├── quote-f22a4c9f7765b805
+    │       │   │   └── out
+    │       │   ├── rfd-1adf1a69f4dd11e3
+    │       │   │   └── out
+    │       │   ├── rfd-28afd47e98ab8caf
+    │       │   ├── ring-6ac447251804356d
+    │       │   ├── ring-d83d7e7a5f366b21
+    │       │   │   └── out
+    │       │   ├── rustls-62663e5385bb4ba8
+    │       │   ├── rustls-991c02b5e0f99f71
+    │       │   │   └── out
+    │       │   ├── selectors-05ff272b57ba69fb
+    │       │   │   └── out
+    │       │   ├── selectors-bd638b57fa65f337
+    │       │   ├── serde-194bf86baa16e700
+    │       │   ├── serde-48166ab98eeaf37e
+    │       │   │   └── out
+    │       │   ├── serde_core-ec66da306842655f
+    │       │   │   └── out
+    │       │   ├── serde_core-fd013c2dc2c81220
+    │       │   ├── serde_json-14562fb51dcd1e5b
+    │       │   │   └── out
+    │       │   ├── serde_json-593ada2e867130dc
+    │       │   │   └── out
+    │       │   ├── serde_json-7428332f368d4c91
+    │       │   ├── serde_json-86b230b4f50a63fd
+    │       │   ├── syn-0103865f07e13674
+    │       │   ├── syn-8335c09cfc5270c1
+    │       │   │   └── out
+    │       │   ├── tao-9facd0c8853dfb9b
+    │       │   │   └── out
+    │       │   ├── tao-f73db9d0fb82933a
+    │       │   ├── tauri-037c3e5ffa49eb04
+    │       │   │   └── out
+    │       │   ├── tauri-0567f17b64723d96
+    │       │   ├── tauri-cf818394d4a8f844
+    │       │   │   └── out
+    │       │   ├── tauri-dc503fa045e67b6a
+    │       │   ├── tauri-runtime-cbd3282954c9109b
+    │       │   │   └── out
+    │       │   ├── tauri-runtime-d74d75b9210b37dd
+    │       │   ├── tauri-runtime-wry-d7d08b82ccdcc497
+    │       │   ├── tauri-runtime-wry-f4f9a2ec61654acb
+    │       │   │   └── out
+    │       │   ├── thiserror-0230c46b9c2f5fa4
+    │       │   ├── thiserror-62768f9326b96985
+    │       │   │   └── out
+    │       │   ├── typenum-1ee6afc9f8e45c6a
+    │       │   ├── typenum-3000c0155621dea7
+    │       │   │   └── out
+    │       │   ├── vswhom-sys-05427413a14fa21e
+    │       │   │   └── out
+    │       │   ├── vswhom-sys-2ccca13c863e05b2
+    │       │   ├── webview2-com-sys-271402ed701d9eee
+    │       │   ├── webview2-com-sys-9204c5866be14acc
+    │       │   │   └── out
+    │       │   │       ├── arm64
+    │       │   │       ├── x64
+    │       │   │       └── x86
+    │       │   ├── winapi-2878d02932fc4a59
+    │       │   │   └── out
+    │       │   ├── winapi-74ea095422b80e2c
+    │       │   │   └── out
+    │       │   ├── winapi-83a4bba078078253
+    │       │   ├── winapi-c88d581194abdf44
+    │       │   ├── windows_x86_64_msvc-1cd0957fe4b7371c
+    │       │   │   └── out
+    │       │   ├── windows_x86_64_msvc-3e334312553c0fa9
+    │       │   │   └── out
+    │       │   ├── windows_x86_64_msvc-5706c223f3ac49e0
+    │       │   ├── windows_x86_64_msvc-57c8fe59d7e39d31
+    │       │   ├── windows_x86_64_msvc-6c9ea9dbecd762ac
+    │       │   │   └── out
+    │       │   ├── windows_x86_64_msvc-7465825d29c1ff28
+    │       │   │   └── out
+    │       │   ├── windows_x86_64_msvc-757516019e19758b
+    │       │   ├── windows_x86_64_msvc-75f81759121affe6
+    │       │   ├── windows_x86_64_msvc-896d1870507e7d98
+    │       │   │   └── out
+    │       │   ├── windows_x86_64_msvc-a3759474c18e809f
+    │       │   ├── windows_x86_64_msvc-c6a189da8b4f43ed
+    │       │   ├── windows_x86_64_msvc-fb4c1bcb69087e24
+    │       │   │   └── out
+    │       │   ├── wry-20da26068ba1a72a
+    │       │   │   └── out
+    │       │   ├── wry-d357c41049f988e4
+    │       │   ├── zerocopy-06dd01fb7c556849
+    │       │   │   └── out
+    │       │   ├── zerocopy-fd6122d0c0c7cda8
+    │       │   ├── zmij-3869ab77d611022f
+    │       │   │   └── out
+    │       │   └── zmij-a1182ed0ed301575
+    │       ├── deps
+    │       ├── examples
+    │       ├── incremental
+    │       │   ├── build_script_build-05wh5uvlbb0kf
+    │       │   │   └── s-hf3r0euq0b-1q7jnuw-bvctr8vx7mu5sqbcpqa4bc7rh
+    │       │   ├── build_script_build-0l7k57puelpzg
+    │       │   │   └── s-hf3rtxi5ma-0g7e9h7-d5sm9tfvtp23so59p5qnrjmll
+    │       │   ├── displaysong-0p7recb8z7xkl
+    │       │   │   └── s-hf3rugqa00-0jni50x-3ljdolkux2ivulknqbs20fd0y
+    │       │   ├── displaysong-27oku50ns0odh
+    │       │   │   └── s-hf3r7a6bm3-1mky06b-8dzjw8bvleb8u9i3wbsit8a76
+    │       │   └── displaysong-3dnv9ffun650t
+    │       │       ├── s-hf3s86g75x-0nxiut6-607ttbd6nmi15cah4niy33z01
+    │       │       └── s-hf3se4s6ut-15snvyy-cf87rmk5ovorl3o7p2ycba3bp
+    │       └── webview2-runtime
+    │           └── Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64
+    │               ├── AdSelectionAttestationsPreloaded
+    │               ├── EBWebView
+    │               │   ├── x64
+    │               │   └── x86
+    │               ├── edge_feedback
+    │               ├── Extensions
+    │               ├── Installer
+    │               ├── Locales
+    │               ├── MEIPreload
+    │               ├── PdfPreview
+    │               ├── Trust Protection Lists
+    │               │   ├── Mu
+    │               │   └── Sigma
+    │               └── WidevineCdm
+    │                   └── _platform_specific
+    │                       └── win_x64
+    └── webview2-runtime
+        └── Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64
+            ├── AdSelectionAttestationsPreloaded
+            ├── EBWebView
+            │   ├── x64
+            │   └── x86
+            ├── edge_feedback
+            ├── Extensions
+            ├── Installer
+            ├── Locales
+            ├── MEIPreload
+            ├── PdfPreview
+            ├── Trust Protection Lists
+            │   ├── Mu
+            │   └── Sigma
+            └── WidevineCdm
+                └── _platform_specific
+                    └── win_x64

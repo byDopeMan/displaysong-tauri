@@ -1,0 +1,75 @@
+# =====================
+# Secrets & Environment
+# =====================
+.env
+.env.*
+TODO.todo
+**/credentials.json
+**/token.json
+backend/
+keys/
+scripts/
+MD/
+
+# =====================
+# Node / Frontend
+# =====================
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+src/app-old-backup.js
+
+# =====================
+# Rust / Tauri
+# =====================
+target/
+src-tauri/target/
+**/.fingerprint/
+**/Cargo.lock
+
+# =====================
+# Tauri Bundles
+# =====================
+*.exe
+*.msi
+*.dmg
+*.app
+*.AppImage
+*.deb
+*.rpm
+
+# =====================
+# Logs & Cache
+# =====================
+logs/
+*.log
+.cache/
+.turbo/
+.parcel-cache/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# =====================
+# OS / Editor
+# =====================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =====================
+# Optional / Generated Files
+# =====================
+src-tauri/icons/
+src-tauri/src-tauri-debug/
+backup-before-update/
