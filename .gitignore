@@ -70,6 +70,5 @@ Thumbs.db
 # =====================
 # Optional / Generated Files
 # =====================
-src-tauri/icons/
 src-tauri/src-tauri-debug/
 backup-before-update/

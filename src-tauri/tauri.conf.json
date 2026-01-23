@@ -78,7 +78,7 @@
         "https://github.com/byDopeMan/displaysong-tauri/releases/latest/download/latest.json"
       ],
       "dialog": true,
-      "pubkey": "UPDATER_PUBKEY_PLACEHOLDER"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM1QTAzQTcyRTc2QzBCMjAKUldRZ0Myem5janFnTmJ5MEg4MWFhdzFpZllmeEF1R1BpRUFucUF6UjRMdHBpVWt6YzlCWTQxZUMK"
     },
     "systemTray": {
       "iconPath": "icons/icon.png",
