@@ -13,10 +13,10 @@ mod commands;
 mod tray;
 mod logging;
 mod polling;
+mod plugins;
 
 use std::fs;
 use log::{info, error};
-use tauri::Manager;
 
 use state::AppState;
 
@@ -64,6 +64,23 @@ fn main() {
             // Cache Management
             commands::clear_color_cache,
             commands::get_color_cache_size,
+            // Plugins
+            commands::list_plugins,
+            commands::load_plugin_code,
+            commands::set_plugin_enabled,
+            commands::open_plugins_folder,
+            commands::install_plugin_from_zip,
+            commands::uninstall_plugin,
+            // Plugin API
+            commands::plugin_store_data,
+            commands::plugin_get_data,
+            commands::plugin_delete_data,
+            commands::plugin_store_secret,
+            commands::plugin_get_secret,
+            commands::plugin_delete_secret,
+            commands::plugin_http_request,
+            commands::plugin_invoke,
+            commands::plugin_get_allowed_commands,
         ])
         .setup(|app| {
             let data_dir = app.path_resolver().app_data_dir();

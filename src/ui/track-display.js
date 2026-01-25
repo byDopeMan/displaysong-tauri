@@ -33,6 +33,14 @@ export function updateTrackDisplay(track) {
   elements.trackArtist.textContent = track.artist;
   if (elements.trackAlbum) elements.trackAlbum.textContent = track.album;
 
+  // Global Background immer updaten (für wenn Player Tab deaktiviert)
+  if (track.albumCover) {
+    const globalBg = document.getElementById('global-cover-bg');
+    if (globalBg && globalBg.style.backgroundImage !== `url("${track.albumCover}")`) {
+      globalBg.style.backgroundImage = `url('${track.albumCover}')`;
+    }
+  }
+
   if (isNewTrack && track.albumCover && elements.coverImage) {
     elements.coverImage.style.opacity = '0';
     if (elements.coverBg) elements.coverBg.style.opacity = '0';

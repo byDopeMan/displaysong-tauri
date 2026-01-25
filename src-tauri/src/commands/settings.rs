@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use std::fs;
 use std::path::PathBuf;
-use tauri::{AppHandle, State, Manager};
+use tauri::{AppHandle, State};
 use log::info;
 
 use crate::state::AppState;

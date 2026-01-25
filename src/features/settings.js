@@ -134,8 +134,30 @@ export function applySettings() {
   const showHistoryCheck = document.getElementById('show-history-tab');
   if (showHistoryCheck) showHistoryCheck.checked = settings.showHistoryTab !== false;
   
+  // Sub-Setting für History-Länge anzeigen/ausblenden
+  const historyLengthSetting = document.getElementById('history-length-setting');
+  if (historyLengthSetting) {
+    historyLengthSetting.classList.toggle('hidden', !settings.showHistoryTab);
+  }
+  
   updateTabVisibility();
+  updateGlobalBackground();
   applyWidgetOpacity();
+}
+
+/**
+ * Update global background visibility based on player tab setting
+ */
+export function updateGlobalBackground() {
+  const globalBg = document.getElementById('global-cover-bg');
+  if (!globalBg) return;
+  
+  // Zeige globalen Background wenn Player Tab deaktiviert ist
+  if (settings.showPlayerTab === false) {
+    globalBg.classList.add('visible');
+  } else {
+    globalBg.classList.remove('visible');
+  }
 }
 
 /**
@@ -302,6 +324,7 @@ export function setupSettingsListeners() {
       settings.showPlayerTab = showPlayerTab.checked;
       saveSettings();
       updateTabVisibility();
+      updateGlobalBackground();
       showNotification(settings.showPlayerTab ? 'Player Tab eingeblendet' : 'Player Tab ausgeblendet');
     });
   }
@@ -312,6 +335,13 @@ export function setupSettingsListeners() {
       settings.showHistoryTab = showHistoryTab.checked;
       saveSettings();
       updateTabVisibility();
+      
+      // Sub-Setting anzeigen/ausblenden
+      const historyLengthSetting = document.getElementById('history-length-setting');
+      if (historyLengthSetting) {
+        historyLengthSetting.classList.toggle('hidden', !settings.showHistoryTab);
+      }
+      
       showNotification(settings.showHistoryTab ? 'Verlauf Tab eingeblendet' : 'Verlauf Tab ausgeblendet');
     });
   }

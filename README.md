@@ -2,8 +2,8 @@
 
 **Spotify Now Playing Widget für OBS** - Eine elegante Desktop-App, die den aktuell spielenden Spotify-Track als Widget anzeigt.
 
-![Version](https://img.shields.io/badge/version-2.1.0-green)
-![Platform](https://img.shields.io/badge/platform-Windows%20|%20macOS%20|%20Linux-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-green)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Tauri-orange)
 
 ---
@@ -14,12 +14,13 @@
 - 🎯 **OBS-ready** - Transparenter Hintergrund für nahtlose Stream-Integration
 - 🔄 **Echtzeit-Updates** - Song, Artist, Album, Cover und Fortschritt werden live aktualisiert
 - 🌈 **Dynamische Farben** - Widget-Akzentfarbe passt sich automatisch dem Album-Cover an
-- 🎨 **Custom Akzentfarbe** - Wähle deine eigene Farbe oder nutze Presets (Spotify Grün, Twitch Lila, etc.)
+- 🎨 **Custom Akzentfarbe** - Wähle deine eigene Farbe oder nutze Presets
 - ✨ **Smooth Transitions** - Elegante Animationen beim Song-Wechsel
-- 📜 **Song-Verlauf** - Die letzten 20 Songs mit Spotify-Embed Ansicht
+- 📜 **Song-Verlauf** - Konfigurierbar 10-100 Songs mit Spotify-Embed Ansicht
 - 💾 **Kein Server nötig** - Läuft komplett lokal auf deinem PC
 - 🔒 **Sicher** - Credentials werden im System-Keyring gespeichert
-- ⚡ **Leichtgewichtig** - Dank Tauri nur ~10MB, minimaler RAM-Verbrauch
+- ⚡ **Lazy Loading** - Widgets werden erst bei Bedarf erstellt, minimaler RAM-Verbrauch
+- 🔄 **Auto-Updater** - Prüft automatisch auf neue Versionen
 - 📝 **Logging** - Automatische Logs für Debugging
 
 ---
@@ -29,14 +30,12 @@
 ### Voraussetzungen
 
 - Spotify Premium Account (für API-Zugriff)
-- Windows 10/11, macOS 10.15+, oder Linux
+- Windows 10/11
 
 ### Download
 
 Lade die neueste Version von der [Releases](../../releases) Seite herunter:
 - **Windows:** `DisplaySong_x.x.x_x64-setup.exe` oder `.msi`
-- **macOS:** `DisplaySong_x.x.x_x64.dmg`
-- **Linux:** `DisplaySong_x.x.x_amd64.AppImage` oder `.deb`
 
 ### Spotify App erstellen
 
@@ -90,9 +89,11 @@ Lade die neueste Version von der [Releases](../../releases) Seite herunter:
 | **Autostart** | App beim Windows-Start automatisch starten |
 | **Widget-Positionen merken** | Widgets öffnen an der letzten Position |
 | **Aktualisierungsrate** | Wie oft Spotify abgefragt wird (1-10 Sek.) |
-| **Verlauf-Länge** | Anzahl der gespeicherten Songs (10-100) |
+| **Verlauf Tab anzeigen** | Ein-/Ausblenden des Verlauf-Tabs |
+| **Anzahl Songs im Verlauf** | Anzahl der gespeicherten Songs (10-100) |
 | **Widget-Transparenz** | Deckkraft der Widgets (50-100%) |
 | **Akzentfarbe** | Preset oder eigene Farbe wählen |
+| **Player/Verlauf Tab** | Tabs können ein-/ausgeblendet werden |
 
 ---
 
@@ -105,13 +106,16 @@ Lade die neueste Version von der [Releases](../../releases) Seite herunter:
   --r: 29;   /* Rot-Wert der Album-Farbe (0-255) */
   --g: 185;  /* Grün-Wert */
   --b: 84;   /* Blau-Wert */
-  --transition-duration: 0.4s;  /* Animation-Dauer */
+  --accent-r: 29;  /* Akzentfarbe Rot */
+  --accent-g: 185; /* Akzentfarbe Grün */
+  --accent-b: 84;  /* Akzentfarbe Blau */
+  --transition-duration: 0.4s;
 }
 
 /* Verwendung: */
 .element {
   color: rgb(var(--r), var(--g), var(--b));
-  background: rgba(var(--r), var(--g), var(--b), 0.2);
+  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.2);
 }
 ```
 
@@ -199,8 +203,6 @@ window.addEventListener('accent-color-reset', () => {
 | Betriebssystem | Pfad |
 |----------------|------|
 | **Windows** | `%APPDATA%\com.displaysong.app\` |
-| **macOS** | `~/Library/Application Support/com.displaysong.app/` |
-| **Linux** | `~/.config/com.displaysong.app/` |
 
 ### Ordnerstruktur
 
@@ -210,7 +212,7 @@ com.displaysong.app/
 │   ├── custom1.html
 │   └── custom2.html
 └── logs/              # Log-Dateien
-    └── displaysong_2024-01-15.log
+    └── displaysong_2026-01-24.log
 ```
 
 ---
@@ -238,6 +240,10 @@ com.displaysong.app/
 - Spotify erlaubt begrenzte API-Aufrufe
 - Erhöhe die Aktualisierungsrate auf 5+ Sekunden
 
+### Weiße Titlebar an Widgets
+- Dies sollte mit v2.2.0 behoben sein (gebündelte WebView2 Runtime)
+- Falls das Problem auftritt, erstelle ein Issue auf GitHub
+
 ---
 
 ## 🛠️ Entwicklung
@@ -246,19 +252,24 @@ com.displaysong.app/
 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust](https://rustup.rs/) (stable)
-- Tauri CLI: `cargo install tauri-cli`
+- Tauri CLI: `npm install -g @tauri-apps/cli@1.6.2`
 
 ### Setup
 
 ```bash
 # Repository klonen
 git clone https://github.com/byDopeMan/displaysong-tauri.git
-cd displaysong
+cd displaysong-tauri
 
 # Dependencies installieren
 npm install
 
-# Entwicklung starten
+# Entwicklung starten (mit Fixed WebView2 Runtime)
+cd src-tauri
+.\dev-with-fixed-webview.bat
+
+# ODER manuell:
+$env:WEBVIEW2_BROWSER_EXECUTABLE_FOLDER=".\src-tauri\webview2-runtime\Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64"
 npm run tauri dev
 
 # Release bauen
@@ -272,15 +283,28 @@ displaysong-tauri/
 ├── src/                    # Frontend
 │   ├── index.html
 │   ├── app.js
+│   ├── core/               # Core Modules
+│   ├── features/           # Feature Modules
+│   ├── ui/                 # UI Components
+│   ├── utils/              # Utility Functions
 │   ├── styles/
 │   ├── widgets/            # Widget HTML-Dateien
 │   └── templates/          # Custom Widget Templates
 ├── src-tauri/              # Backend (Rust)
 │   ├── src/
-│   │   ├── main.rs         # Hauptlogik, Commands
+│   │   ├── main.rs         # App Setup
+│   │   ├── commands/       # Tauri Commands
+│   │   │   ├── widgets.rs  # Widget Commands (Lazy Loading)
+│   │   │   ├── spotify.rs  # Spotify Commands
+│   │   │   └── settings.rs # Settings Commands
+│   │   ├── state.rs        # App State
+│   │   ├── polling.rs      # Spotify Polling
+│   │   ├── tray.rs         # System Tray
+│   │   ├── logging.rs      # Logging Setup
 │   │   ├── spotify.rs      # Spotify API Client
 │   │   ├── credentials.rs  # Keyring-Speicherung
-│   │   └── color.rs        # Farbextraktion
+│   │   └── color.rs        # Farbextraktion + Cache
+│   ├── webview2-runtime/   # Fixed WebView2 Runtime
 │   └── tauri.conf.json
 └── package.json
 ```
@@ -289,14 +313,19 @@ displaysong-tauri/
 
 ## 📋 Changelog
 
+### v2.2.0
+- 🔧 **WebView2 Transparenz-Fix** - Behebt weiße Titlebar durch gebündelte WebView2 Runtime
+- ⚡ **Lazy Loading** - Widgets werden erst bei Bedarf erstellt (~200 MB RAM gespart)
+- 🎨 **Color Cache** - Album-Farben werden gecacht für bessere Performance
+- 🏗️ **Modularer Code** - Backend in separate Module aufgeteilt
+- 🔄 **Auto-Updater** - Prüft automatisch auf neue Versionen
+- ✨ **Smooth Animationen** - Elegante Übergänge beim Song-Wechsel
+- 🎵 **Spotify Embed** - Voll nutzbar im Verlauf
+
 ### v2.1.1
 - 🚀 Lade-Bildschirm beim Start mit Status
 - 📥 Visuelle Animation beim Minimieren ins Tray
 - 📝 Automatisches Logging in AppData/logs
-- ✨ Smooth Song-Wechsel Animationen
-- 🎨 Akzentfarbe zurücksetzen funktioniert sofort
-- 🐛 Mehrfaches Polling verhindert
-- 🎵 Spotify Embed voll nutzbar (Save, Links, etc.)
 
 ### v2.1.0
 - 🎨 Custom Akzentfarbe mit Color Picker

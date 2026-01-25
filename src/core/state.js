@@ -57,6 +57,7 @@ export function initViews() {
     player: document.getElementById('player-view'),
     history: document.getElementById('history-view'),
     designs: document.getElementById('designs-view'),
+    plugins: document.getElementById('plugins-view'),
     settings: document.getElementById('settings-view'),
     auth: document.getElementById('auth-view'),
   });

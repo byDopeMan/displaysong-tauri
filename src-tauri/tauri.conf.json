@@ -27,6 +27,7 @@
         "relaunch": true
       },
       "dialog": {
+        "open": true,
         "confirm": true
       }
     },

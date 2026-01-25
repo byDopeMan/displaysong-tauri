@@ -7,7 +7,6 @@ use tauri::{AppHandle, Manager};
 use log::{info, warn, error, debug};
 
 use crate::state::AppState;
-use crate::spotify;
 use crate::credentials;
 use crate::color;
 

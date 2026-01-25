@@ -20,6 +20,7 @@ import { setupAccessRequestListeners, initAccessSystem } from './features/access
 import { checkExistingCredentialsWithStatus } from './features/auth.js';
 import { checkForUpdates } from './features/updater.js';
 import { updateHistoryTabVisibility } from './ui/navigation.js';
+import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins.js';
 
 /**
  * Main initialization function
@@ -50,6 +51,7 @@ async function init() {
   setupEventListeners();
   setupSettingsListeners();
   setupAccessRequestListeners();
+  setupPluginListeners();
   
   // Load settings & positions
   loadSettings();
@@ -92,6 +94,10 @@ async function init() {
   
   // Check for updates after startup
   setTimeout(checkForUpdates, 2000);
+  
+  // Load plugins
+  await renderPluginList();
+  await loadEnabledPlugins();
   
   console.log('🚀 DisplaySong v2.2.0 (Optimized) initialized!');
   console.log('📊 Active widgets:', state.activeWidgets.size);

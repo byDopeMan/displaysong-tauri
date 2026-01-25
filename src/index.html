@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DisplaySong</title>
-  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/forms.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/views.css">
+  <link rel="stylesheet" href="styles/plugins.css">
 </head>
 <body>
   <div class="app">
@@ -22,10 +27,13 @@
       <button class="tab active" data-tab="player">Player</button>
       <button class="tab" data-tab="history">Verlauf</button>
       <button class="tab" data-tab="designs">Designs</button>
+      <button class="tab" data-tab="plugins" id="plugins-tab" style="display: none;">Plugins</button>
       <button class="tab" data-tab="settings">Einstellungen</button>
     </nav>
 
     <div class="content">
+      <!-- Global Cover Background (wenn Player Tab deaktiviert) -->
+      <div class="global-cover-bg" id="global-cover-bg"></div>
       <!-- Loading View (beim Start) -->
       <div id="loading-view" class="view">
         <div class="loading-container">
@@ -251,6 +259,61 @@
         </div>
       </div>
 
+      <!-- Plugins View -->
+      <div id="plugins-view" class="view hidden">
+        <div class="plugins-header">
+          <h2>Plugins</h2>
+          <div class="plugins-actions">
+            <button id="btn-plugins-folder" class="btn btn-icon" title="Plugin-Ordner öffnen">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </button>
+            <button id="btn-import-plugin" class="btn btn-icon" title="Plugin aus ZIP importieren">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </button>
+            <button id="btn-refresh-plugins" class="btn btn-icon" title="Liste aktualisieren">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <p class="plugins-intro">Erweitere DisplaySong mit Plugins. Plugins können auf Track-Daten zugreifen, HTTP-Requests machen und eigene Daten speichern.</p>
+        
+        <div id="plugin-list" class="plugin-list">
+          <div class="plugins-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2v6M12 22v-6M4.93 4.93l4.24 4.24M14.83 14.83l4.24 4.24M2 12h6M22 12h-6M4.93 19.07l4.24-4.24M14.83 9.17l4.24-4.24"></path>
+            </svg>
+            <p>Keine Plugins installiert</p>
+            <p class="hint">Plugins in den Plugin-Ordner kopieren oder ZIP importieren</p>
+          </div>
+        </div>
+        
+        <!-- Plugin Settings (von Plugins dynamisch befüllt) -->
+        <div id="plugin-settings-container"></div>
+        
+        <div class="plugins-docs">
+          <h3>Plugin entwickeln</h3>
+          <p>Plugins sind JavaScript-Module mit einer <code>manifest.json</code>. Sie haben Zugriff auf:</p>
+          <ul class="api-list">
+            <li><code>api.getTrack()</code> – Aktuellen Song abrufen</li>
+            <li><code>api.onTrackChange(cb)</code> – Bei Song-Wechsel reagieren</li>
+            <li><code>api.storeSecret(key, val)</code> – Secrets sicher speichern</li>
+            <li><code>api.httpRequest(...)</code> – HTTP Requests machen</li>
+          </ul>
+          <p class="hint">Beispiel-Plugin im Plugin-Ordner enthalten.</p>
+        </div>
+      </div>
+
       <!-- Settings View -->
       <div id="settings-view" class="view hidden">
         <h2>Einstellungen</h2>
@@ -298,21 +361,6 @@
           </div>
         </div>
 
-        <!-- Verlauf -->
-        <div class="settings-section">
-          <h3>Verlauf</h3>
-          
-          <div class="setting-row">
-            <label for="history-length">Anzahl Songs im Verlauf:</label>
-            <select id="history-length" class="setting-select">
-              <option value="10">10 Songs</option>
-              <option value="20" selected>20 Songs</option>
-              <option value="50">50 Songs</option>
-              <option value="100">100 Songs</option>
-            </select>
-          </div>
-        </div>
-
         <!-- System -->
         <div class="settings-section">
           <h3>System</h3>
@@ -346,6 +394,16 @@
           <div class="setting-row">
             <label for="show-history-tab">Verlauf Tab anzeigen:</label>
             <input type="checkbox" id="show-history-tab" class="setting-checkbox" checked>
+          </div>
+          
+          <div class="setting-row setting-sub" id="history-length-setting">
+            <label for="history-length">Anzahl Songs im Verlauf:</label>
+            <select id="history-length" class="setting-select">
+              <option value="10">10 Songs</option>
+              <option value="20" selected>20 Songs</option>
+              <option value="50">50 Songs</option>
+              <option value="100">100 Songs</option>
+            </select>
           </div>
           
           <div class="setting-row">
@@ -478,6 +536,31 @@
               <h4>DisplaySong</h4>
               <p>MIT License</p>
               <p class="license-text">Copyright © 2024 - Frei zur Nutzung, Modifikation und Verteilung.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Plugin Settings Modal -->
+      <div id="plugin-settings-modal" class="modal plugin-settings-modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="modal-icon" id="plugin-modal-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
+              </svg>
+            </div>
+            <h3 id="plugin-modal-title">Plugin Einstellungen</h3>
+            <button class="modal-close" data-modal="plugin-settings-modal">×</button>
+          </div>
+          <div class="modal-body" id="plugin-modal-body">
+            <div class="plugin-no-settings">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4M12 8h.01"></path>
+              </svg>
+              <p>Dieses Plugin hat keine Einstellungen</p>
             </div>
           </div>
         </div>
