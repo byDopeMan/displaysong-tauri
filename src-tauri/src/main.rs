@@ -41,6 +41,28 @@ fn main() {
         }
     }
 
+    // Enforce a single running instance: hold a localhost lock port for the
+    // whole process lifetime. Only "address already in use" means another
+    // instance is running (then this duplicate exits). Any OTHER bind error
+    // (e.g. a Hyper-V/WSL reserved dynamic-port range — which is why the port
+    // must sit below 49152) must NOT block startup. The port frees on app exit.
+    #[cfg(windows)]
+    {
+        use std::io::ErrorKind;
+        match std::net::TcpListener::bind("127.0.0.1:41730") {
+            Ok(listener) => {
+                std::mem::forget(listener); // hold the lock until the process ends
+            }
+            Err(ref e) if e.kind() == ErrorKind::AddrInUse => {
+                eprintln!("DisplaySong läuft bereits – zweite Instanz wird beendet.");
+                std::process::exit(0);
+            }
+            Err(e) => {
+                eprintln!("Single-Instance-Lock nicht verfügbar ({e}); starte trotzdem.");
+            }
+        }
+    }
+
     let state = AppState::new();
     let twitch_state = TwitchState::new();
     let windows_media_state = std::sync::Arc::new(WindowsMediaState::new());
