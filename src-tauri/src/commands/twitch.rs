@@ -321,6 +321,18 @@ pub async fn twitch_get_settings(
     }))
 }
 
+/// Returns the required Twitch scopes the current token is missing.
+/// Empty = up to date. Non-empty = the user should reconnect (e.g. after the
+/// app added new scopes like channel point redemptions).
+#[tauri::command]
+pub async fn twitch_check_scopes(
+    twitch: State<'_, TwitchState>,
+) -> Result<Vec<String>, String> {
+    let client = twitch.client.read().await;
+    let c = client.as_ref().ok_or("Twitch nicht verbunden")?;
+    c.missing_scopes().await
+}
+
 #[tauri::command]
 pub async fn twitch_set_mode(
     mode: String,

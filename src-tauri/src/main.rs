@@ -134,6 +134,7 @@ fn main() {
             commands::twitch_set_cooldown,
             commands::twitch_set_reward_id,
             commands::twitch_get_settings,
+            commands::twitch_check_scopes,
             commands::twitch_send_chat,
             commands::twitch_delete_credentials,
             commands::twitch_get_rewards,

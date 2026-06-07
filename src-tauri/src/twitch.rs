@@ -21,6 +21,13 @@ const APP_API_URL: &str = "https://displaysong-api.bydopeman.workers.dev/api/app
 // - moderator:read:chatters = zum lesen der Chat-Nachrichten via EventSub
 const SCOPES: &str = "channel:read:redemptions channel:manage:redemptions user:read:chat user:write:chat chat:read chat:edit user:read:email moderator:read:chatters";
 
+/// Response shape of the Twitch token validation endpoint (only the part we need).
+#[derive(Debug, Deserialize)]
+struct ValidateResponse {
+    #[serde(default)]
+    scopes: Vec<String>,
+}
+
 // ============================================================================
 // CREDENTIALS STRUCTURES
 // ============================================================================
@@ -408,6 +415,39 @@ impl TwitchClient {
             .map_err(|e| format!("Validate request failed: {}", e))?;
 
         Ok(response.status().is_success())
+    }
+
+    /// Returns the required scopes that the current token is MISSING.
+    /// Empty = all good. Used to prompt a re-auth after the app's scope set grows
+    /// (an existing token keeps its original, now-incomplete scopes until re-auth).
+    pub async fn missing_scopes(&self) -> Result<Vec<String>, String> {
+        let token = self.access_token.as_ref()
+            .ok_or("Not authenticated")?;
+
+        let response = self.http
+            .get(VALIDATE_URL)
+            .header("Authorization", format!("OAuth {}", token))
+            .send()
+            .await
+            .map_err(|e| format!("Validate request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            return Err("Token invalid".to_string());
+        }
+
+        let validated: ValidateResponse = response.json().await
+            .map_err(|e| format!("Parse error: {}", e))?;
+
+        let granted: std::collections::HashSet<&str> =
+            validated.scopes.iter().map(|s| s.as_str()).collect();
+
+        let missing = SCOPES
+            .split_whitespace()
+            .filter(|req| !granted.contains(req))
+            .map(|s| s.to_string())
+            .collect();
+
+        Ok(missing)
     }
 
     pub async fn fetch_user_info(&mut self) -> Result<(), String> {

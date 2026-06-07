@@ -888,3 +888,12 @@
   color: var(--text-muted);
   opacity: 0.8;
 }
+
+/* Channel-points reward creation form */
+.reward-create-form {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}

@@ -61,6 +61,7 @@ export async function initTwitch() {
       
       if (isConnected) {
         startEventSub();
+        checkTwitchScopes();
       }
     }
   } catch (e) {
@@ -69,6 +70,37 @@ export async function initTwitch() {
 
   updateTwitchUI();
   loadMessagesFromStorage();
+}
+
+/**
+ * Check whether the stored Twitch token still has all required scopes.
+ * After the app's scope set grows (e.g. channel point redemptions), an old
+ * token keeps its original scopes until the user reconnects — which silently
+ * breaks EventSub/chat. Warn and offer a reconnect when scopes are missing.
+ */
+async function checkTwitchScopes() {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+
+  try {
+    const missing = await invoke('twitch_check_scopes');
+    if (Array.isArray(missing) && missing.length > 0) {
+      console.warn('[Twitch] Missing scopes:', missing);
+      showNotification(
+        'Twitch-Berechtigungen sind veraltet — bitte neu verbinden (Trennen → Verbinden).',
+        { type: 'warning', duration: 8000 }
+      );
+      // Surface a persistent hint in the UI if the element exists.
+      const hint = document.getElementById('twitch-scope-warning');
+      if (hint) hint.classList.remove('hidden');
+    } else {
+      const hint = document.getElementById('twitch-scope-warning');
+      if (hint) hint.classList.add('hidden');
+    }
+  } catch (e) {
+    // Not connected or validation failed — ignore silently.
+    console.debug('[Twitch] Scope check skipped:', e);
+  }
 }
 
 /**
@@ -741,6 +773,105 @@ export function getTwitchMessages() {
 }
 
 /**
+ * Apply the request mode to the UI (show/hide command vs channel-points settings).
+ */
+function applyTwitchMode(mode) {
+  document.querySelectorAll('#twitch-mode-toggle .toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  const commandSettings = document.getElementById('twitch-command-mode-settings');
+  const pointsSettings = document.getElementById('twitch-points-mode-settings');
+  if (commandSettings) commandSettings.classList.toggle('hidden', mode !== 'commands');
+  if (pointsSettings) pointsSettings.classList.toggle('hidden', mode !== 'points');
+}
+
+/**
+ * Switch request mode, persist it and reconnect EventSub so the correct
+ * subscription (chat messages vs. channel-point redemptions) becomes active.
+ */
+async function setTwitchMode(mode) {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+
+  applyTwitchMode(mode);
+  try {
+    await updateTwitchSettings({ mode });
+    if (mode === 'points') {
+      await loadRewards();
+    }
+    if (isConnected) await invoke('twitch_connect_eventsub');
+  } catch (e) {
+    console.error('[Twitch] Set mode error:', e);
+  }
+}
+
+/** Escape user-provided text before inserting it into option markup. */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/**
+ * Load the channel's existing point rewards into the dropdown.
+ */
+async function loadRewards(selectedId) {
+  const invoke = getTauriInvoke();
+  const select = document.getElementById('twitch-reward-select');
+  if (!invoke || !select) return;
+
+  try {
+    const rewards = await invoke('twitch_get_rewards');
+    const current = selectedId ?? select.value;
+    select.innerHTML = '<option value="">— Belohnung wählen —</option>' +
+      (rewards || []).map(r =>
+        `<option value="${r.id}">${escapeHtml(r.title)} (${r.cost})</option>`
+      ).join('');
+    if (current) select.value = current;
+  } catch (e) {
+    console.error('[Twitch] Load rewards error:', e);
+    showNotification('Belohnungen konnten nicht geladen werden: ' + e, { type: 'error' });
+  }
+}
+
+/**
+ * Persist the selected reward id and reconnect EventSub for the redemption sub.
+ */
+async function setReward(rewardId) {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  try {
+    await invoke('twitch_set_reward_id', { rewardId: rewardId || null });
+    if (isConnected) await invoke('twitch_connect_eventsub');
+  } catch (e) {
+    console.error('[Twitch] Set reward error:', e);
+  }
+}
+
+/**
+ * Create a new "Song Request" channel-point reward, then select it.
+ */
+async function createReward() {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+
+  const titleInput = document.getElementById('twitch-reward-title');
+  const costInput = document.getElementById('twitch-reward-cost');
+  const title = titleInput?.value?.trim() || 'Song Request';
+  const cost = parseInt(costInput?.value) || 500;
+
+  try {
+    const reward = await invoke('twitch_create_reward', { title, cost });
+    showNotification(`Belohnung "${reward.title}" erstellt!`);
+    document.getElementById('twitch-create-reward-form')?.classList.add('hidden');
+    await loadRewards(reward.id);
+    await setReward(reward.id);
+  } catch (e) {
+    console.error('[Twitch] Create reward error:', e);
+    showNotification('Belohnung konnte nicht erstellt werden: ' + e, { type: 'error' });
+  }
+}
+
+/**
  * Setup Twitch event listeners
  */
 export function setupTwitchListeners() {
@@ -764,6 +895,17 @@ export function setupTwitchListeners() {
   document.getElementById('twitch-sub-only')?.addEventListener('change', async (e) => {
     await updateTwitchSettings({ subOnly: e.target.checked });
   });
+
+  // Channel Points: mode toggle + reward selection/creation
+  document.querySelectorAll('#twitch-mode-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => setTwitchMode(btn.dataset.mode));
+  });
+  document.getElementById('twitch-reward-select')?.addEventListener('change', (e) => setReward(e.target.value));
+  document.getElementById('btn-twitch-refresh-rewards')?.addEventListener('click', () => loadRewards());
+  document.getElementById('btn-twitch-create-reward')?.addEventListener('click', () => {
+    document.getElementById('twitch-create-reward-form')?.classList.toggle('hidden');
+  });
+  document.getElementById('btn-twitch-save-reward')?.addEventListener('click', createReward);
 
   // Local settings (stored in localStorage, not backend)
   document.getElementById('twitch-add-to-spotify')?.addEventListener('change', (e) => {
@@ -838,6 +980,13 @@ async function loadTwitchSettingsToUI() {
     if (useBotSelect) {
       useBotSelect.value = settings.useBotAccount ? 'true' : 'false';
       updateChatPreview();
+    }
+
+    // Apply request mode (chat command vs channel points) and load rewards.
+    const mode = settings.mode || 'commands';
+    applyTwitchMode(mode);
+    if (mode === 'points') {
+      await loadRewards(settings.rewardId);
     }
 
   } catch (e) {
