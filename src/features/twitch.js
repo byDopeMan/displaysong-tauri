@@ -210,6 +210,8 @@ function setupEventSubListeners() {
  * Bot sends /permit to allow links temporarily
  */
 async function handlePermitRequest(userId, userName) {
+  if (!songRequestsEnabled()) return;
+
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -297,7 +299,18 @@ function extractSpotifyTrackId(input) {
  * Handle song request from chat or channel points
  * Now supports YouTube, Apple Music, SoundCloud, etc.
  */
+/**
+ * Whether song requests are enabled (the master toggle in Twitch settings).
+ * When off, all request entry points (chat command, permit, channel points,
+ * test) must do nothing — previously the toggle only collapsed the UI.
+ */
+function songRequestsEnabled() {
+  return localStorage.getItem('song-requests-enabled') !== 'false';
+}
+
 async function handleSongRequest(userId, userName, input, source) {
+  if (!songRequestsEnabled()) return;
+
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
