@@ -276,12 +276,16 @@ impl WindowsMediaProvider {
             (0, 0)
         };
 
-        // Robust live-stream guard: real music/video has a finite duration, but
-        // Twitch and other browser live streams report no EndTime (duration 0).
-        // This catches streams whose titles contain none of the usual keywords
-        // (e.g. a channel title like "🤏 MR. GEIL STREAMT 🤏 ... zarbex").
-        if is_browser && duration_ms == 0 {
-            debug!("[WindowsMedia] Skipping live browser stream (no duration): {} - {} ({})", artist, track, source);
+        // Robust live-stream guard: real music/video has a sane, finite duration.
+        // Browser live streams (Twitch, etc.) instead report either no EndTime
+        // (duration 0) or a sentinel "infinite" duration (~u64::MAX/10000), as
+        // confirmed by diagnostics (Twitch reported dur_ms ≈ 1.84e15). Treat any
+        // browser playback whose duration falls outside [1 ms, 24 h] as a live
+        // stream and skip it — this also catches titles with no "twitch"/"live"
+        // keyword (e.g. a channel title like "🤏 MR. GEIL STREAMT 🤏 ... zarbex").
+        const MAX_REAL_DURATION_MS: u64 = 24 * 60 * 60 * 1000; // 24h
+        if is_browser && (duration_ms == 0 || duration_ms > MAX_REAL_DURATION_MS) {
+            debug!("[WindowsMedia] Skipping live browser stream (dur_ms={}): {} - {} ({})", duration_ms, artist, track, source);
             return None;
         }
 
