@@ -2,6 +2,13 @@
 
 Alle wichtigen Änderungen an DisplaySong.
 
+## [4.1.0]
+
+### 🎫 Requester-Anzeige
+- Bei Song-Requests wird der **Name des Requesters** angezeigt — im **Player-Tab**
+  und in den **Widgets**.
+- Neue Checkbox in **Designs**: „Requester bei Song-Requests in Widgets anzeigen".
+
 ## [4.0.0]
 
 ### 🎵 Universelle Musik-Erkennung & Provider

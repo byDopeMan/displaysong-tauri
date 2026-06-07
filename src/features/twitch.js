@@ -14,7 +14,7 @@
 
 import { getTauriInvoke } from '../core/tauri.js';
 import { showNotification } from '../ui/notifications.js';
-import { queueItems } from './queue/queue.js';
+import { queueItems, registerRequester } from './queue/queue.js';
 import { addToHistory } from './requestHistory.js';
 
 // State
@@ -465,6 +465,10 @@ async function handleSongRequest(userId, userName, input, source) {
       spotifyUri,
       source
     });
+
+    // Remember who requested this track so the player/widgets can show
+    // "requested by X" while it plays (survives removal from the queue).
+    registerRequester({ trackId, track: trackName, artist: artistName, user: userName, source });
 
     // Update cooldown
     await invoke('update_request_cooldown', { userId });

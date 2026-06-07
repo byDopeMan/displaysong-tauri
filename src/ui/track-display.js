@@ -6,6 +6,27 @@
 import { state, elements } from '../core/state.js';
 import { formatTime } from '../utils/format.js';
 import { t } from '../utils/i18n.js';
+import { getRequesterForTrack } from '../features/queue/queue.js';
+
+/**
+ * Show "requested by X" in the player when the current track was a song request,
+ * and broadcast it to the widgets (which show it if their design enables it).
+ */
+function updateRequester(track) {
+  const el = document.getElementById('track-requester');
+  const req = track ? getRequesterForTrack(track) : null;
+  const user = req?.user || null;
+  if (el) {
+    if (user) {
+      el.textContent = t('player.requestedBy', { user }, `Request von ${user}`);
+      el.classList.remove('hidden');
+    } else {
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
+  }
+  try { window.__TAURI__?.event?.emit('requester-update', { user }); } catch (e) { /* widgets optional */ }
+}
 
 let animationFrameId = null;
 let lastFrameTime = 0;
@@ -37,6 +58,7 @@ export function updateTrackDisplay(track, syncProgress = true) {
     if (elements.progressTotal) elements.progressTotal.textContent = '0:00';
     interpolatedProgress = 0;
     state.currentTrack = null;
+    updateRequester(null);
     return;
   }
 
@@ -105,7 +127,9 @@ export function updateTrackDisplay(track, syncProgress = true) {
     source: track.source,
     trackId: track.trackId
   };
-  
+
+  updateRequester(track);
+
   isInterpolating = track.isPlaying;
 }
 

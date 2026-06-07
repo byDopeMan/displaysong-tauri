@@ -241,6 +241,17 @@
       opacity: 0;
     }
 
+    .requester {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgb(var(--r), var(--g), var(--b));
+      margin-top: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color var(--transition-duration) ease;
+    }
+
     .progress-wrap { margin-top: 16px; }
 
     .progress {
@@ -322,6 +333,7 @@
         <span id="time-total">0:00</span>
       </div>
     </div>
+    <div class="requester" id="requester" style="display:none"></div>
   </div>
 
   <script type="module">
@@ -360,6 +372,20 @@
       let progressInterval = null;
       let isPageVisible = true;
       let autoHideEnabled = window.autoHideEnabled || false;
+      let requesterUser = null;
+      let requesterEnabled = false;
+      try { requesterEnabled = localStorage.getItem('widget-show-requester') === 'true'; } catch (e) {}
+
+      function renderRequester() {
+        const el = $('requester');
+        if (!el) return;
+        if (requesterEnabled && requesterUser) {
+          el.textContent = '🎵 ' + requesterUser;
+          el.style.display = '';
+        } else {
+          el.style.display = 'none';
+        }
+      }
 
       // ===== PAGE VISIBILITY API - Timer pausieren wenn nicht sichtbar =====
       document.addEventListener('visibilitychange', () => {
@@ -554,6 +580,18 @@
       }
 
       await listen('track-update', (e) => update(e.payload));
+
+      // Requester display (song requests)
+      await listen('requester-update', (e) => {
+        requesterUser = e.payload?.user || null;
+        renderRequester();
+      });
+      await listen('requester-visibility-change', (e) => {
+        requesterEnabled = !!e.payload?.enabled;
+        renderRequester();
+      });
+      renderRequester();
+
       try { const track = await invoke('get_track'); update(track); } catch (e) {}
     })();
   </script>

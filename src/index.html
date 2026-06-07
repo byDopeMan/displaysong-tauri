@@ -198,6 +198,7 @@
             <h2 class="track-title" id="track-title">Nichts läuft</h2>
             <p class="track-artist" id="track-artist">—</p>
             <p class="track-album" id="track-album"></p>
+            <p class="track-requester hidden" id="track-requester"></p>
             <button id="btn-copy-song" class="btn-copy" title="Song-Info kopieren">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -308,6 +309,10 @@
       <!-- Designs View -->
       <div id="designs-view" class="view hidden">
         <h2 data-i18n="designs.title">Widget Designs</h2>
+        <label class="checkbox-label designs-global-option">
+          <input type="checkbox" id="show-requester-widgets" class="setting-checkbox">
+          <span data-i18n="designs.showRequester">Requester bei Song-Requests in Widgets anzeigen</span>
+        </label>
         <div class="design-grid">
           <div class="design-card">
             <div class="design-preview design-1">
@@ -944,7 +949,7 @@
           <h3 data-i18n="settings.about.title">Über</h3>
           <div class="about-info">
             <p class="app-name">DisplaySong</p>
-            <p class="app-version">Version 4.0.0</p>
+            <p class="app-version">Version 4.1.0</p>
             <p class="app-desc" data-i18n="settings.about.description">Now Playing Widget für OBS</p>
           </div>
           <div class="about-links">

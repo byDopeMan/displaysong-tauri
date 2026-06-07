@@ -133,7 +133,16 @@ export function applySettings() {
     const widget = checkbox.dataset.widget;
     checkbox.checked = settings.widgetAutoHide?.[widget] || false;
   });
-  
+
+  // Show-requester-in-widgets (global): mirror to localStorage (shared origin
+  // with the widgets) and broadcast so widgets pick up the initial state.
+  const showRequesterCheck = document.getElementById('show-requester-widgets');
+  if (showRequesterCheck) {
+    showRequesterCheck.checked = settings.showRequesterWidgets || false;
+    localStorage.setItem('widget-show-requester', String(showRequesterCheck.checked));
+    try { window.__TAURI__?.event?.emit('requester-visibility-change', { enabled: showRequesterCheck.checked }); } catch (e) {}
+  }
+
   import('./history.js').then(({ historyDesign }) => {
     document.querySelectorAll('.design-toggle-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.design === historyDesign);
@@ -361,6 +370,17 @@ export function setupSettingsListeners() {
     });
   });
   
+  // Widget: show requester globally (broadcast to all widget windows)
+  const showRequesterWidgets = document.getElementById('show-requester-widgets');
+  if (showRequesterWidgets) {
+    showRequesterWidgets.addEventListener('change', () => {
+      settings.showRequesterWidgets = showRequesterWidgets.checked;
+      localStorage.setItem('widget-show-requester', String(showRequesterWidgets.checked));
+      saveSettings();
+      try { window.__TAURI__?.event?.emit('requester-visibility-change', { enabled: showRequesterWidgets.checked }); } catch (e) {}
+    });
+  }
+
   const showPlayerTab = document.getElementById('show-player-tab');
   if (showPlayerTab) {
     showPlayerTab.addEventListener('change', async () => {

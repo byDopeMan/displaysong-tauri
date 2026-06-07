@@ -273,6 +273,17 @@
   margin-top: 4px;
 }
 
+.track-requester {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(var(--accent-rgb, 29, 185, 84));
+  margin-top: 6px;
+}
+
+.track-requester.hidden {
+  display: none;
+}
+
 .progress-container {
   width: 100%;
   max-width: 280px;

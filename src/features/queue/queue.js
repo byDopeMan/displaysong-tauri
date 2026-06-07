@@ -15,6 +15,37 @@ let containerListenersSetup = new Set();
 let autoPlayQueue = false;
 let lastAutoPlayAt = 0;
 
+// Requester memory: who requested a track. Survives the song's removal from the
+// queue, so "requested by X" can still be shown while it plays. Keyed by Spotify
+// track id AND by normalized "artist|title" (the Windows-media source has no
+// track id). Capped so it can't grow unbounded.
+const requesterMemory = new Map();
+
+function reqNormKey(artist, title) {
+  return 'k:' + String(artist || '').toLowerCase().trim() + '|' + String(title || '').toLowerCase().trim();
+}
+
+/** Remember who requested a track (called when a request is added / loaded). */
+export function registerRequester({ trackId, track, artist, user, source }) {
+  if (!user) return;
+  const entry = { user, source: source || 'chat' };
+  if (trackId) requesterMemory.set('id:' + trackId, entry);
+  if (track) requesterMemory.set(reqNormKey(artist, track), entry);
+  while (requesterMemory.size > 300) {
+    requesterMemory.delete(requesterMemory.keys().next().value);
+  }
+}
+
+/** Look up the requester for the currently playing track (by id, then title). */
+export function getRequesterForTrack(track) {
+  if (!track) return null;
+  if (track.trackId && requesterMemory.has('id:' + track.trackId)) {
+    return requesterMemory.get('id:' + track.trackId);
+  }
+  const k = reqNormKey(track.artist, track.track);
+  return requesterMemory.has(k) ? requesterMemory.get(k) : null;
+}
+
 // SVG Icons
 const ICONS = {
   music: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
@@ -188,6 +219,12 @@ async function fetchTrackInfo(spotifyUri) {
     const info = await invoke('get_track_info', { trackId });
     if (info) {
       trackInfoCache.set(spotifyUri, info);
+      // Remember the requester for this track now that we know its title/artist,
+      // so "requested by X" works even after it leaves the queue.
+      const item = queueItems.find((q) => q.spotify_uri === spotifyUri);
+      if (item) {
+        registerRequester({ trackId, track: info.track, artist: info.artist, user: item.user_name, source: item.source });
+      }
       renderQueue();
     }
     return info;
