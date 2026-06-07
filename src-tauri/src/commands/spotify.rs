@@ -115,11 +115,9 @@ async fn run_auth_server(app: AppHandle, state: Arc<AppState>) -> Result<(), Str
                     state.status.lock().await.spotify_connected = true;
                     let _ = app.emit_all("auth-success", ());
                     
-                    let app_clone = app.clone();
-                    let state_clone = state.clone();
-                    tauri::async_runtime::spawn(async move {
-                        polling::start_polling(app_clone, state_clone).await;
-                    });
+                    // DO NOT auto-start polling here!
+                    // Let the frontend control when to poll based on provider setting
+                    // The frontend will call start_spotify_polling if needed
                     
                     "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Erfolgreich!</h1><p>Du kannst dieses Fenster schliessen.</p><script>window.close()</script></body></html>"
                 }
@@ -183,13 +181,9 @@ pub async fn check_credentials(
                 *state.spotify.lock().await = Some(client);
                 state.status.lock().await.spotify_connected = true;
                 
-                let should_start = !state.status.lock().await.is_polling;
-                if should_start {
-                    let state_clone = state.inner().clone();
-                    tauri::async_runtime::spawn(async move {
-                        polling::start_polling(app, state_clone).await;
-                    });
-                }
+                // DO NOT auto-start polling here!
+                // Let the frontend control when to poll based on provider setting
+                // Just return that credentials are valid
                 
                 return Ok(true);
             }
@@ -199,4 +193,170 @@ pub async fn check_credentials(
     }
     
     Ok(false)
+}
+
+// ============================================================================
+// POLLING CONTROL
+// ============================================================================
+
+/// Start Spotify polling (called by frontend when provider is set to Spotify)
+#[tauri::command]
+pub async fn start_spotify_polling(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let is_polling = state.status.lock().await.is_polling;
+    if is_polling {
+        info!("Spotify polling already running");
+        return Ok(());
+    }
+    
+    let spotify = state.spotify.lock().await;
+    if spotify.is_none() {
+        return Err("Spotify nicht verbunden".to_string());
+    }
+    drop(spotify);
+    
+    let state_clone = state.inner().clone();
+    tauri::async_runtime::spawn(async move {
+        polling::start_polling(app, state_clone).await;
+    });
+    
+    info!("Spotify polling started by frontend");
+    Ok(())
+}
+
+/// Stop Spotify polling
+#[tauri::command]
+pub async fn stop_spotify_polling(
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let _ = state.shutdown_tx.send(true);
+    info!("Spotify polling stopped by frontend");
+    Ok(())
+}
+
+// ============================================================================
+// PLAYBACK CONTROL (für Plugins wie TwitchConnect)
+// ============================================================================
+
+#[tauri::command]
+pub async fn add_to_queue(
+    uri: String,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    // Token refreshen falls nötig
+    client.refresh_if_needed().await?;
+    
+    // Zur Queue hinzufügen
+    client.add_to_queue(&uri).await?;
+    
+    info!("Zur Queue hinzugefügt: {}", uri);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn play_track(
+    uri: String,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    // Token refreshen falls nötig
+    client.refresh_if_needed().await?;
+    
+    // Track abspielen
+    client.play_track(&uri).await?;
+    
+    info!("Track abgespielt: {}", uri);
+    Ok(())
+}
+
+/// Get track info by Spotify URI or track ID
+#[tauri::command]
+pub async fn get_track_info(
+    track_id: String,
+    state: State<'_, Arc<AppState>>
+) -> Result<spotify::TrackInfo, String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    client.refresh_if_needed().await?;
+    client.get_track_info(&track_id).await
+}
+
+// ============================================================================
+// PLAYLIST MANAGEMENT (für Song Request Historie)
+// ============================================================================
+
+/// Check if we have all required scopes
+#[tauri::command]
+pub async fn check_spotify_scopes(
+    state: State<'_, Arc<AppState>>
+) -> Result<Vec<String>, String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    client.refresh_if_needed().await?;
+    client.check_scopes().await
+}
+
+/// Create a new playlist
+#[tauri::command]
+pub async fn create_spotify_playlist(
+    name: String,
+    description: String,
+    public: bool,
+    state: State<'_, Arc<AppState>>
+) -> Result<String, String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    client.refresh_if_needed().await?;
+    client.create_playlist(&name, &description, public).await
+}
+
+/// Add track to playlist
+#[tauri::command]
+pub async fn add_to_spotify_playlist(
+    playlist_id: String,
+    uri: String,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    client.refresh_if_needed().await?;
+    client.add_to_playlist(&playlist_id, &uri).await
+}
+
+/// Remove track from playlist
+#[tauri::command]
+pub async fn remove_from_spotify_playlist(
+    playlist_id: String,
+    uri: String,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    client.refresh_if_needed().await?;
+    client.remove_from_playlist(&playlist_id, &uri).await
+}
+
+/// Delete playlist
+#[tauri::command]
+pub async fn delete_spotify_playlist(
+    playlist_id: String,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    
+    client.refresh_if_needed().await?;
+    client.delete_playlist(&playlist_id).await
 }

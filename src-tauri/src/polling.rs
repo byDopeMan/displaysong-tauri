@@ -9,6 +9,7 @@ use log::{info, warn, error, debug};
 use crate::state::AppState;
 use crate::credentials;
 use crate::color;
+use crate::commands::queue::save_track_to_history_db;
 
 pub async fn start_polling(app: AppHandle, state: Arc<AppState>) {
     let mut shutdown_rx = state.shutdown_tx.subscribe();
@@ -118,11 +119,30 @@ async fn poll_track(app: &AppHandle, state: &Arc<AppState>) -> Result<(), String
         drop(current);
         
         if is_new {
+            // Emit track-changed event for queue auto-removal
+            let _ = app.emit_all("track-changed", &new_track);
+            
+            // Save to in-memory history
             let mut history = state.track_history.lock().await;
             history.retain(|t| t.track != new_track.track || t.artist != new_track.artist);
             history.insert(0, new_track.clone());
             let max_size = *state.history_length.lock().await;
             history.truncate(max_size);
+            drop(history);
+            
+            // Also save to local SQLite DB for unified history
+            let track_id = new_track.track_id.as_deref();
+            if let Err(e) = save_track_to_history_db(
+                &new_track.track,
+                &new_track.artist,
+                &new_track.album,
+                &new_track.album_cover,
+                "Spotify",
+                track_id,
+                new_track.duration_ms as i64,
+            ) {
+                debug!("Failed to save Spotify track to local DB: {}", e);
+            }
         }
     }
     
