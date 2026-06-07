@@ -19,6 +19,7 @@ class CentralTimer {
     if (this.interval) return;
     
     this.lastTick = Date.now();
+    // Use 100ms interval for smooth progress bar animation
     this.interval = setInterval(() => {
       const now = Date.now();
       const delta = now - this.lastTick;
@@ -32,9 +33,7 @@ class CentralTimer {
           console.error(`Timer callback ${id} error:`, e);
         }
       });
-    }, 1000);
-    
-    console.log('⏱️ Central timer started');
+    }, 100);
   }
 
   /**
@@ -44,7 +43,6 @@ class CentralTimer {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
-      console.log('⏱️ Central timer stopped');
     }
   }
 
@@ -64,7 +62,7 @@ class CentralTimer {
     }
     
     if (name) {
-      console.log(`⏱️ Timer subscribed: ${name} (id: ${id})`);
+      //console.log(`⏱️ Timer subscribed: ${name} (id: ${id})`);
     }
     
     return id;

@@ -61,10 +61,17 @@
 /* ===== TABS ===== */
 .tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px 16px;
+  gap: 2px;
+  padding: 6px 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .tabs.hidden {
@@ -72,14 +79,16 @@
 }
 
 .tab {
-  padding: 8px 16px;
+  padding: 7px 12px;
   border: none;
   background: transparent;
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   border-radius: 6px;
   transition: color var(--transition-fast), background var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab:hover {
@@ -101,15 +110,15 @@
   position: relative;
 }
 
-/* Global Cover Background */
+/* Global Cover Background - extends further down for settings view */
 .global-cover-bg {
   position: absolute;
-  top: -50%;
+  top: -100px;
   left: -50%;
   width: 200%;
-  height: 200%;
+  height: 500%; /* Extended height for long scrollable pages like Settings */
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   filter: blur(80px);
   opacity: 0;
   z-index: 0;
@@ -119,7 +128,7 @@
 }
 
 .global-cover-bg.visible {
-  opacity: 0.3;
+  opacity: 0.35;
 }
 
 .view {

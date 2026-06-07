@@ -909,18 +909,505 @@
   border-top: 1px solid var(--border);
 }
 
-/* ===== MINIMIZE ANIMATION ===== */
-@keyframes minimize-shrink {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.3) translateY(100px);
-    opacity: 0;
-  }
+/* ===== CONNECTIONS ===== */
+.connection-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
 }
 
-.app.minimizing {
-  animation: minimize-shrink 0.3s ease-in forwards;
+.connection-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.connection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.connection-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.connection-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29, 185, 84, 0.15);
+  color: #1db954;
+  flex-shrink: 0;
+}
+
+.connection-icon.twitch {
+  background: rgba(145, 70, 255, 0.15);
+  color: #9146ff;
+}
+
+.connection-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.connection-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.connection-status {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.connection-status.connected {
+  color: var(--accent);
+}
+
+.setting-value {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.setting-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color var(--transition-fast);
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ===== TWITCH SETUP ===== */
+.twitch-setup-intro {
+  margin-bottom: 16px;
+  color: var(--text-dim);
+}
+
+.twitch-setup-steps {
+  margin-bottom: 20px;
+}
+
+.setup-step {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(145, 70, 255, 0.2);
+  color: #9146ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.step-content .hint {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.step-content a {
+  color: #9146ff;
+}
+
+.modal-icon.twitch {
+  background: rgba(145, 70, 255, 0.15);
+  color: #9146ff;
+}
+
+.btn.twitch-btn {
+  background: #9146ff;
+}
+
+.btn.twitch-btn:hover {
+  background: #7c3aed;
+}
+
+.auth-status {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  margin-bottom: 16px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  flex-wrap: wrap; /* ✅ Erlaubt Umbruch wenn nötig */
+}
+
+.modal-footer .btn {
+  min-width: 80px;
+  padding: 8px 12px;
+  white-space: nowrap;
+  flex: 0 1 auto;
+}
+
+/* Modal variants */
+.modal-content.modal-small {
+  max-width: 360px;
+}
+
+.oauth-modal-body {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.oauth-modal-body .spinner {
+  margin: 0 auto 16px;
+}
+
+.modal-icon.warning {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+/* Subsection styles */
+.subsection-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+.subsection-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+/* Toggle Group */
+.toggle-group {
+  display: flex;
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toggle-btn:hover {
+  color: var(--text);
+}
+
+.toggle-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+/* Error message */
+.error-message {
+  padding: 10px 12px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 6px;
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+/* ===== SETUP PROVIDER CARDS ===== */
+.setup-providers {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.setup-providers h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.provider-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.provider-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.provider-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-icon.windows {
+  background: linear-gradient(135deg, #00a4ef, #0078d4);
+  color: white;
+}
+
+.provider-icon.spotify {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1db954;
+}
+
+.provider-info {
+  text-align: center;
+  flex: 1;
+}
+
+.provider-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.provider-info p {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.provider-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.provider-badge.recommended {
+  background: rgba(29, 185, 84, 0.15);
+  color: var(--accent);
+}
+
+.provider-badge.optional {
+  background: var(--surface-hover);
+  color: var(--text-dim);
+}
+
+.provider-card .btn {
+  width: 100%;
+}
+
+/* Spotify Setup View */
+#spotify-setup-view .setup-container {
+  position: relative;
+}
+
+.btn-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.btn-back:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.spotify-logo {
+  margin-bottom: 8px;
+}
+
+/* Collapsible Section (Song Requests) */
+.collapsible-section {
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.collapsible-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+}
+
+.collapsible-content {
+  padding: 16px;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.collapsible-content.collapsed {
+  max-height: 0;
+  padding: 0 16px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--surface-hover);
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* History Filter */
+.history-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-filter-select {
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.history-filter-select:hover {
+  border-color: var(--accent);
+}
+
+/* Spotify-dependent features */
+.toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.design-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Connection item states */
+.connection-item.not-connected .connection-icon {
+  opacity: 0.5;
+}
+
+.connection-item.connected .connection-status {
+  color: var(--accent);
 }

@@ -37,7 +37,12 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
-    .idle.hidden { display: none; }
+    .idle.hidden { 
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+
 
     .idle-icon {
       width: 72px;
@@ -93,7 +98,16 @@
       will-change: background;
     }
 
-    .widget.hidden { display: none; }
+    .widget.hidden { 
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    /* Smooth transitions for show/hide */
+    .idle, .widget {
+      transition: opacity var(--transition-duration) ease;
+    }
 
     /* ===== COVER MIT TRANSITION ===== */
     .cover-container {
@@ -321,6 +335,7 @@
       let isTransitioning = false;
       let progressInterval = null;
       let isPageVisible = true;
+      let autoHideEnabled = window.autoHideEnabled || false;
 
       // ===== PAGE VISIBILITY API - Timer pausieren wenn nicht sichtbar =====
       document.addEventListener('visibilitychange', () => {
@@ -362,6 +377,17 @@
         accentColor = null;
         if (currentTrack?.color) {
           setColor(currentTrack.color.r, currentTrack.color.g, currentTrack.color.b);
+        }
+      });
+
+      // Auto-hide Event Listener
+      window.addEventListener('autohide-change', (e) => {
+        autoHideEnabled = e.detail.enabled;
+        // Re-evaluate visibility
+        if (currentTrack) {
+          update(currentTrack);
+        } else {
+          update(null);
         }
       });
 
@@ -439,8 +465,14 @@
         const progress = $('progress');
 
         if (!track?.track) {
-          widget?.classList.add('hidden');
-          idle?.classList.remove('hidden');
+          if (autoHideEnabled) {
+            // Hide everything when auto-hide is enabled
+            widget?.classList.add('hidden');
+            idle?.classList.add('hidden');
+          } else {
+            widget?.classList.add('hidden');
+            idle?.classList.remove('hidden');
+          }
           currentTrack = null;
           stopProgressTimer();
           return;

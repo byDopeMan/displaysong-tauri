@@ -4,7 +4,6 @@
 
 import { getTauriAppWindow } from '../core/tauri.js';
 import { getTauriInvoke } from '../core/tauri.js';
-import { showTrayToast } from './notifications.js';
 
 /**
  * Setup titlebar button listeners
@@ -22,12 +21,13 @@ export function setupTitlebarControls() {
           app.classList.add('minimizing');
         }
         
-        showTrayToast();
+        // Animation zeigt visuell wohin die App geht (nach unten rechts zum Tray)
+        // Kein Toast nötig - Animation ist selbsterklärend
         
         setTimeout(async () => {
           await appWindow.hide();
           if (app) app.classList.remove('minimizing');
-        }, 250);
+        }, 450); // Etwas kürzer als Animation (500ms)
       }
       if (action === 'close') {
         const invoke = getTauriInvoke();

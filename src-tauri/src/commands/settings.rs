@@ -239,3 +239,31 @@ pub fn clear_color_cache() -> Result<usize, String> {
 pub fn get_color_cache_size() -> Result<usize, String> {
     Ok(color::cache_size())
 }
+
+// ============================================================================
+// FRONTEND LOGGING
+// ============================================================================
+
+#[tauri::command]
+pub fn log_frontend(level: String, message: String) {
+    crate::logging::log_frontend(&level, &message);
+}
+
+// ============================================================================
+// ACCESS REQUEST DATA (420 code - persists in Windows Credential Manager)
+// ============================================================================
+
+#[tauri::command]
+pub fn save_access_data(email: String, request_id: String, status: String) -> Result<(), String> {
+    crate::credentials::save_access_data(&email, &request_id, &status)
+}
+
+#[tauri::command]
+pub fn load_access_data() -> Result<(String, String, String), String> {
+    crate::credentials::load_access_data()
+}
+
+#[tauri::command]
+pub fn delete_access_data() -> Result<(), String> {
+    crate::credentials::delete_access_data()
+}

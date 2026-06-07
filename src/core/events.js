@@ -8,8 +8,8 @@ import { updateTrackDisplay } from '../ui/track-display.js';
 import { switchTab, showView } from '../ui/navigation.js';
 import { showNotification } from '../ui/notifications.js';
 import { toggleWidget, openConfigFolder, reloadWidgets } from '../features/widgets.js';
-import { saveCredentials, disconnectSpotify } from '../features/auth.js';
-import { refreshHistory, setHistoryDesign } from '../features/history.js';
+import { disconnectSpotify } from '../features/auth.js';
+import { refreshHistory } from '../features/history.js';
 
 /**
  * Setup all UI event listeners
@@ -21,20 +21,8 @@ export function setupEventListeners() {
     });
   }
 
-  if (elements.credentialsForm) {
-    elements.credentialsForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const clientId = elements.clientId.value.trim();
-      const clientSecret = elements.clientSecret.value.trim();
-      
-      if (clientId.length !== 32 || clientSecret.length !== 32) {
-        showNotification('Client ID und ClientSecret müssen jeweils 32 Zeichen lang sein');
-        return;
-      }
-      
-      await saveCredentials(clientId, clientSecret);
-    });
-  }
+  // NOTE: credentials-form handler is in setup.js
+  // Do not add a duplicate handler here!
 
   document.querySelectorAll('.btn-show').forEach(btn => {
     btn.addEventListener('click', () => toggleWidget(btn.dataset.widget));
@@ -86,10 +74,24 @@ export async function setupDeepLinkHandler() {
     state.isAuthenticated = true;
     showView('player');
     const { updateSpotifyStatus } = await import('../features/auth.js');
-    updateSpotifyStatus(true);
-    showNotification('Erfolgreich verbunden!');
+    const { setSpotifyConnected } = await import('../features/provider-ui.js');
+    const { PROVIDER, loadSavedProvider } = await import('../features/provider.js');
     
-    // ✅ WICHTIG: Access-System nach Login starten!
+    updateSpotifyStatus(true);
+    setSpotifyConnected(true);
+    showNotification('Spotify verbunden!');
+    
+    // Show nav tabs
+    document.getElementById('nav-tabs')?.classList.remove('hidden');
+    
+    // DO NOT auto-switch to Spotify provider or start Spotify polling
+    // The user must manually switch the provider if they want Spotify API
+    // Keep current Windows Audio polling running
+    
+    const currentProvider = loadSavedProvider();
+    console.log('[Auth] Spotify connected, current provider:', currentProvider);
+    
+    // Only start access system (for 420 code users)
     const { initAccessSystem } = await import('../features/access-request.js');
     initAccessSystem();
   });

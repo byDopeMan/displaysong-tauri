@@ -75,3 +75,58 @@ pub fn delete() -> Result<(), String> {
     debug!("Credentials gelöscht");
     Ok(())
 }
+
+// ============================================================================
+// ACCESS REQUEST DATA (for 420 code - persists across reinstalls)
+// ============================================================================
+
+pub fn save_access_data(email: &str, request_id: &str, status: &str) -> Result<(), String> {
+    let email_entry = Entry::new(SERVICE, "access_email")
+        .map_err(|e| format!("Keyring error: {}", e))?;
+    let id_entry = Entry::new(SERVICE, "access_request_id")
+        .map_err(|e| format!("Keyring error: {}", e))?;
+    let status_entry = Entry::new(SERVICE, "access_status")
+        .map_err(|e| format!("Keyring error: {}", e))?;
+    
+    email_entry.set_password(email)
+        .map_err(|e| format!("Speichern fehlgeschlagen: {}", e))?;
+    id_entry.set_password(request_id)
+        .map_err(|e| format!("Speichern fehlgeschlagen: {}", e))?;
+    status_entry.set_password(status)
+        .map_err(|e| format!("Speichern fehlgeschlagen: {}", e))?;
+    
+    debug!("Access data gespeichert");
+    Ok(())
+}
+
+pub fn load_access_data() -> Result<(String, String, String), String> {
+    let email_entry = Entry::new(SERVICE, "access_email")
+        .map_err(|e| format!("Keyring error: {}", e))?;
+    let id_entry = Entry::new(SERVICE, "access_request_id")
+        .map_err(|e| format!("Keyring error: {}", e))?;
+    let status_entry = Entry::new(SERVICE, "access_status")
+        .map_err(|e| format!("Keyring error: {}", e))?;
+    
+    let email = email_entry.get_password()
+        .map_err(|_| "Access email nicht gefunden")?;
+    let request_id = id_entry.get_password()
+        .map_err(|_| "Access request ID nicht gefunden")?;
+    let status = status_entry.get_password()
+        .map_err(|_| "Access status nicht gefunden")?;
+    
+    debug!("Access data geladen");
+    Ok((email, request_id, status))
+}
+
+pub fn delete_access_data() -> Result<(), String> {
+    let entries = ["access_email", "access_request_id", "access_status"];
+    
+    for key in entries {
+        if let Ok(entry) = Entry::new(SERVICE, key) {
+            let _ = entry.delete_password();
+        }
+    }
+    
+    debug!("Access data gelöscht");
+    Ok(())
+}

@@ -106,7 +106,6 @@ export async function showWidget(widgetLabel) {
     // Akzentfarbe senden
     setTimeout(() => sendAccentColorToWidget(widgetLabel), 100);
     
-    console.log(`✅ Widget shown: ${widgetLabel}`);
   } catch (e) {
     console.error('Show widget error:', e);
     showNotification('Widget konnte nicht geöffnet werden');
@@ -131,7 +130,6 @@ export async function hideWidget(widgetLabel) {
     state.activeWidgets.delete(widgetLabel);
     updateWidgetList();
     
-    console.log(`❌ Widget hidden: ${widgetLabel}`);
   } catch (e) {
     console.error('Hide widget error:', e);
   }
@@ -166,7 +164,6 @@ export async function autoShowWidgets() {
   try {
     const saved = getItem('displaysong-active-widgets');
     if (saved && Array.isArray(saved)) {
-      console.log('🔄 Auto-showing widgets:', saved);
       for (const widgetLabel of saved) {
         await showWidget(widgetLabel);
       }
@@ -254,7 +251,6 @@ export async function sendAccentColorToWidget(widgetLabel) {
       b: color.b 
     });
   } catch (e) {
-    console.log('Send accent to widget:', e);
   }
 }
 
@@ -268,7 +264,6 @@ export async function resetWidgetToTrackColor(widgetLabel) {
   try {
     await invoke('reset_widget_accent', { label: widgetLabel });
   } catch (e) {
-    console.log('Reset widget accent:', e);
   }
 }
 
@@ -325,5 +320,4 @@ export async function closeAllWidgets() {
   for (const widgetLabel of widgets) {
     await hideWidget(widgetLabel);
   }
-  console.log('🧹 All widgets closed');
 }

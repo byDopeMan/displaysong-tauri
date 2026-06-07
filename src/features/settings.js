@@ -8,6 +8,7 @@ import { getTauriInvoke, getTauriWebviewWindow } from '../core/tauri.js';
 import { showNotification } from '../ui/notifications.js';
 import { broadcastAccentColor } from './widgets.js';
 import { updateTabVisibility } from '../ui/navigation.js';
+import { setPluginSettingsStyle } from './plugins.js';
 
 export const DEFAULT_SETTINGS = {
   pollingInterval: 2000,
@@ -21,7 +22,9 @@ export const DEFAULT_SETTINGS = {
   historyLength: 20,
   widgetOpacity: 100,
   historyDesign: 'simple',
-  widgetAccentColors: {}
+  widgetAccentColors: {},
+  widgetAutoHide: {},  // Auto-hide widgets when nothing playing
+  pluginSettingsStyle: 'panel'
 };
 
 export let settings = { ...DEFAULT_SETTINGS };
@@ -75,6 +78,10 @@ export function applySettings() {
   document.documentElement.style.setProperty('--accent', `rgb(${color.r}, ${color.g}, ${color.b})`);
   document.documentElement.style.setProperty('--accent-rgb', `${color.r}, ${color.g}, ${color.b}`);
   
+  // Plugin Settings Style
+  setPluginSettingsStyle(settings.pluginSettingsStyle || 'panel');
+  const pluginStyleSelect = document.getElementById('plugin-settings-style');
+  if (pluginStyleSelect) pluginStyleSelect.value = settings.pluginSettingsStyle || 'panel';
 
   const pollingSelect = document.getElementById('polling-interval');
   if (pollingSelect) pollingSelect.value = settings.pollingInterval;
@@ -120,6 +127,11 @@ export function applySettings() {
   document.querySelectorAll('.widget-accent-check').forEach(checkbox => {
     const widget = checkbox.dataset.widget;
     checkbox.checked = settings.widgetAccentColors?.[widget] || false;
+  });
+  
+  document.querySelectorAll('.widget-autohide-check').forEach(checkbox => {
+    const widget = checkbox.dataset.widget;
+    checkbox.checked = settings.widgetAutoHide?.[widget] || false;
   });
   
   import('./history.js').then(({ historyDesign }) => {
@@ -258,6 +270,17 @@ export function setupSettingsListeners() {
     });
   }
   
+  // Plugin Settings Style (Modal/Panel)
+  const pluginStyleSelect = document.getElementById('plugin-settings-style');
+  if (pluginStyleSelect) {
+    pluginStyleSelect.addEventListener('change', () => {
+      settings.pluginSettingsStyle = pluginStyleSelect.value;
+      saveSettings();
+      setPluginSettingsStyle(pluginStyleSelect.value);
+      showNotification(pluginStyleSelect.value === 'modal' ? 'Plugin-Einstellungen: Fenster' : 'Plugin-Einstellungen: Panel');
+    });
+  }
+  
   document.querySelectorAll('.color-btn:not(.color-btn-custom)').forEach(btn => {
     btn.addEventListener('click', () => {
       settings.accentColor = btn.dataset.color;
@@ -318,13 +341,38 @@ export function setupSettingsListeners() {
     });
   });
   
+  // Widget Auto-Hide checkboxes
+  document.querySelectorAll('.widget-autohide-check').forEach(checkbox => {
+    checkbox.addEventListener('change', async () => {
+      const widget = checkbox.dataset.widget;
+      if (!settings.widgetAutoHide) settings.widgetAutoHide = {};
+      settings.widgetAutoHide[widget] = checkbox.checked;
+      saveSettings();
+      
+      // Send setting to widget
+      const invoke = getTauriInvoke();
+      if (invoke) {
+        try {
+          await invoke('set_widget_autohide', { label: widget, enabled: checkbox.checked });
+        } catch (e) {
+          console.error('Set widget autohide failed:', e);
+        }
+      }
+    });
+  });
+  
   const showPlayerTab = document.getElementById('show-player-tab');
   if (showPlayerTab) {
-    showPlayerTab.addEventListener('change', () => {
+    showPlayerTab.addEventListener('change', async () => {
       settings.showPlayerTab = showPlayerTab.checked;
       saveSettings();
       updateTabVisibility();
       updateGlobalBackground();
+      
+      // Update Queue rendering
+      const { onPlayerTabVisibilityChange } = await import('./queue/queue.js');
+      onPlayerTabVisibilityChange();
+      
       showNotification(settings.showPlayerTab ? 'Player Tab eingeblendet' : 'Player Tab ausgeblendet');
     });
   }
@@ -415,6 +463,42 @@ export function setupSettingsListeners() {
       if (e.target === modal) modal.classList.add('hidden');
     });
   });
+  
+  // Language picker
+  const languageSelect = document.getElementById('language-select');
+  if (languageSelect) {
+    languageSelect.addEventListener('change', async () => {
+      const lang = languageSelect.value;
+      localStorage.setItem('language', lang);
+      
+      const { loadLanguage, updatePageTranslations } = await import('../utils/i18n.js');
+      await loadLanguage(lang);
+      updatePageTranslations();
+      
+      // Update Twitch UI after language change
+      const { updateTwitchUI } = await import('./twitch.js');
+      updateTwitchUI();
+      
+      showNotification('Sprache gewechselt');
+    });
+  }
+  
+  // Twitch Bot-Toggle
+  const twitchUseBotSelect = document.getElementById('twitch-use-bot');
+  if (twitchUseBotSelect) {
+    twitchUseBotSelect.addEventListener('change', async () => {
+      const useBot = twitchUseBotSelect.value === 'true';
+      const invoke = getTauriInvoke();
+      if (invoke) {
+        try {
+          await invoke('twitch_set_use_bot', { useBot });
+          showNotification(useBot ? 'Bot-Account aktiviert' : 'Eigener Account aktiviert');
+        } catch (e) {
+          showNotification('Fehler: ' + e, 'error');
+        }
+      }
+    });
+  }
 }
 
 /**

@@ -22,7 +22,7 @@ export function switchTab(tabName) {
   
   if (tabName === 'history') {
     import('../features/settings.js').then(({ settings }) => {
-      if (settings.historyEnabled !== false) {
+      if (settings.showHistoryTab !== false) {
         import('../features/history.js').then(({ loadHistory }) => loadHistory());
       }
     });
@@ -35,7 +35,9 @@ export function switchTab(tabName) {
 export function showView(viewName) {
   if (!elements.tabs) return;
   
-  const showTabs = state.isAuthenticated && viewName !== 'setup' && viewName !== 'auth';
+  // Hide tabs for setup-related views
+  const setupViews = ['setup', 'spotify-setup', 'auth', 'loading'];
+  const showTabs = state.isAuthenticated && !setupViews.includes(viewName);
   elements.tabs.classList.toggle('hidden', !showTabs);
   
   // Prüfe ob der gewünschte Tab sichtbar ist
@@ -116,8 +118,22 @@ export function updateHistoryTabVisibility() {
 }
 
 /**
- * Open external URL in browser
+ * Open external URL in default browser
+ * Uses Tauri shell API (v1)
  */
-export function openExternal(url) {
-  window.open(url, '_blank');
+export async function openExternal(url) {
+  try {
+    // Tauri v1 with withGlobalTauri: true
+    if (window.__TAURI__?.shell?.open) {
+      await window.__TAURI__.shell.open(url);
+      return;
+    }
+    
+    // Fallback: Try dynamic import
+    const { open } = await import('@tauri-apps/api/shell');
+    await open(url);
+  } catch (e) {
+    console.error('[Navigation] Shell error, using fallback:', e);
+    window.open(url, '_blank');
+  }
 }

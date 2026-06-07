@@ -234,6 +234,20 @@ pub async fn reset_widget_accent(label: String, app: AppHandle) -> Result<(), St
 }
 
 #[tauri::command]
+pub async fn set_widget_autohide(label: String, enabled: bool, app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_window(&label) {
+        let js = format!(
+            r#"window.autoHideEnabled = {}; window.dispatchEvent(new CustomEvent('autohide-change', {{ detail: {{ enabled: {} }} }}));"#,
+            enabled, enabled
+        );
+        window.eval(&js).map_err(|e| e.to_string())?;
+        info!("Widget {} autohide set to: {}", label, enabled);
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_custom_widget_content(name: String, app: AppHandle) -> Result<String, String> {
     // 1. Gespeicherte Custom-Version prüfen
     if let Some(data_dir) = app.path_resolver().app_data_dir() {

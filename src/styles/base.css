@@ -46,6 +46,20 @@ body {
   overflow: hidden;
 }
 
+/* Ensure text color is inherited */
+h1, h2, h3, h4, h5, h6, p, span, div, label, a {
+  color: inherit;
+}
+
+/* Ensure labels and text have correct color */
+label {
+  color: var(--text);
+}
+
+.setting-row label {
+  color: var(--text);
+}
+
 ::-webkit-scrollbar {
   width: 0;
   height: 0;

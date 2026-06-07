@@ -26,12 +26,10 @@ export function startSSEConnection() {
     eventSource = null;
   }
   
-  console.log('📡 Starting SSE connection for request:', requestId);
   
   eventSource = new EventSource(`${ACCESS_API_URL}/events/${requestId}`);
   
   eventSource.onopen = () => {
-    console.log('✅ SSE Connected');
     updateConnectionStatus(true);
   };
   
@@ -51,7 +49,6 @@ export function startSSEConnection() {
     
     setTimeout(() => {
       if (getString('accessRequestId')) {
-        console.log('🔄 Reconnecting SSE...');
         startSSEConnection();
       }
     }, 5000);
@@ -60,7 +57,6 @@ export function startSSEConnection() {
 
 export function stopSSEConnection() {
   if (eventSource) {
-    console.log('📡 Closing SSE connection');
     eventSource.close();
     eventSource = null;
     updateConnectionStatus(false);
@@ -69,12 +65,16 @@ export function stopSSEConnection() {
 
 async function handleSSEUpdate(data) {
   const { status } = data;
+  const invoke = getTauriInvoke();
+  const email = getString('user_email') || getString('accessRequestEmail');
+  const requestId = getString('accessRequestId');
   
   switch (status) {
     case 'approved':
-      console.log('✅ APPROVED via SSE!');
       showNotification('🎉 Dein Zugang wurde genehmigt!');
       stopSSEConnection();
+      setString('accessRequestStatus', 'approved');
+      if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'approved' });
       await handleApproved();
       break;
       
@@ -82,34 +82,36 @@ async function handleSSEUpdate(data) {
       console.warn('🚫 BLOCKED via SSE!');
       showNotification('⛔ Dein Zugang wurde blockiert!');
       stopSSEConnection();
+      setString('accessRequestStatus', 'blocked');
+      if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'blocked' });
       await handleBlocked();
       break;
 
     case 'unblocked':
-      console.log('🔓 UNBLOCKED via SSE!');
       showNotification('🎉 Du wurdest entsperrt - automatisches Login...');
       stopSSEConnection();
+      setString('accessRequestStatus', 'approved');
+      if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'approved' });
       await autoLoginAfterUnblock();
       break;
       
     case 'denied':
-      console.log('❌ DENIED via SSE');
       showNotification('❌ Anfrage abgelehnt');
       stopSSEConnection();
       setString('accessRequestStatus', 'denied');
+      if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'denied' });
       break;
       
     case 'deleted':
-      console.log('🗑️ DELETED via SSE');
       showNotification('🗑️ Anfrage wurde gelöscht');
       stopSSEConnection();
       removeItem('accessRequestId');
       removeItem('accessRequestEmail');
       removeItem('accessRequestStatus');
+      if (invoke) await invoke('delete_access_data');
       break;
       
     default:
-      console.log('📊 SSE Update:', data);
   }
 }
 
@@ -129,7 +131,6 @@ export function startStatusPolling() {
   const requestId = getString('accessRequestId');
   if (!requestId || state.statusCheckInterval) return;
   
-  console.log('⏳ Fallback: Status-Polling gestartet');
   
   state.statusCheckInterval = setInterval(async () => {
     await checkAccessStatus();
@@ -140,7 +141,6 @@ export function stopStatusPolling() {
   if (state.statusCheckInterval) {
     clearInterval(state.statusCheckInterval);
     state.statusCheckInterval = null;
-    console.log('Status-Polling gestoppt');
   }
 }
 
@@ -158,11 +158,9 @@ async function checkAccessStatus() {
     const data = await response.json();
     
     if (data.status === 'approved') {
-      console.log('✅ Approved (polling)');
       stopStatusPolling();
       await handleApproved();
     } else if (data.status === 'blocked') {
-      console.warn('🚫 Blocked (polling)');
       stopStatusPolling();
       await handleBlocked();
     }
@@ -183,14 +181,12 @@ export function startBlockCheckSSE() {
     state.blockCheckSSE.close();
   }
   
-  console.log('🔒 Starting Block-Check SSE for:', email);
   
   state.blockCheckSSE = new EventSource(`${ACCESS_API_URL}/block-check/${encodeURIComponent(email)}`);
   
   state.blockCheckSSE.onmessage = async (event) => {
     try {
       const data = JSON.parse(event.data);
-      console.log('📨 Block-Check SSE:', data);
       
       if (data.type === 'block' && data.blocked) {
         console.warn('🚫 User BLOCKED via SSE!');
@@ -199,7 +195,6 @@ export function startBlockCheckSSE() {
       } 
       
       else if (data.type === 'unblock' && !data.blocked) {
-        console.log('🔓 User UNBLOCKED via SSE!');
         state.blockCheckSSE.close();
         showNotification('🎉 Du wurdest entsperrt! Anmeldung läuft...');
         await autoLoginAfterUnblock();
@@ -210,7 +205,6 @@ export function startBlockCheckSSE() {
   };
   
   state.blockCheckSSE.onerror = () => {
-    console.log('Block-check SSE disconnected, falling back to polling');
     state.blockCheckSSE.close();
     startBlockCheckPolling();
   };
@@ -222,7 +216,6 @@ export function startBlockCheckPolling() {
   const email = getString('user_email');
   if (!email) return;
   
-  console.log('🔒 Fallback: Block-Check Polling');
   
   state.blockCheckInterval = setInterval(async () => {
     try {
@@ -383,6 +376,8 @@ async function submitAccessRequest() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Wird gesendet...';
   
+  const invoke = getTauriInvoke();
+  
   try {
     const response = await fetch(`${ACCESS_API_URL}/request`, {
       method: 'POST',
@@ -397,24 +392,26 @@ async function submitAccessRequest() {
       setString('accessRequestEmail', email);
       
       if (data.status === 'approved') {
-        // ✅ Status setzen
         setString('accessRequestStatus', 'approved');
+        // Save persistently to Windows Credential Manager
+        if (invoke) await invoke('save_access_data', { email, requestId: data.id || '', status: 'approved' });
         statusDiv?.classList.remove('hidden');
         statusDiv.innerHTML = '<div class="status-approved">✅ Zugang bereits genehmigt! Verbinde...</div>';
         await autoLogin();
         return;
         
       } else if (data.status === 'blocked') {
-        // ✅ Status setzen
         setString('accessRequestStatus', 'blocked');
+        if (invoke) await invoke('save_access_data', { email, requestId: data.id || '', status: 'blocked' });
         statusDiv?.classList.remove('hidden');
         statusDiv.innerHTML = '<div class="status-denied">🚫 Du wurdest blockiert.</div>';
         return;
         
       } else if (data.status === 'pending') {
         setString('accessRequestId', data.id);
-        // ✅ Status setzen
         setString('accessRequestStatus', 'pending');
+        // Save persistently to Windows Credential Manager
+        if (invoke) await invoke('save_access_data', { email, requestId: data.id, status: 'pending' });
         statusDiv?.classList.remove('hidden');
         statusDiv.innerHTML = '<div class="status-pending">📡 Anfrage gesendet! Live-Updates aktiviert...</div>';
         showNotification('Anfrage gesendet!');
@@ -454,12 +451,16 @@ export async function checkAccessStatusOnStartup() {
       // ✅ Status setzen
       setString('accessRequestStatus', 'approved');
       if (btnRequestAccess) {
-        btnRequestAccess.textContent = '✅ Zugang genehmigt - Verbinden...';
+        btnRequestAccess.textContent = '✅ Zugang genehmigt';
         btnRequestAccess.disabled = true;
       }
       stopSSEConnection();
       stopStatusPolling();
-      await handleApproved();
+      
+      // Nur wenn NICHT bereits authentifiziert
+      if (!state.isAuthenticated) {
+        await handleApproved();
+      }
       
     } else if (data.status === 'denied') {
       // ✅ Status setzen
@@ -483,7 +484,6 @@ export async function checkAccessStatusOnStartup() {
       startStatusPolling();
     }
   } catch (e) {
-    console.log('Startup status check failed:', e);
   }
 }
 
@@ -522,7 +522,6 @@ async function handleApproved() {
   stopSSEConnection();
   stopStatusPolling();
   
-  console.log('🔄 Switching from Request-SSE to Block-Check-SSE');
   startBlockCheckSSE();
 }
 
@@ -631,7 +630,13 @@ export function setupAccessRequestListeners() {
   let secretBuffer = '';
   
   document.addEventListener('keydown', (e) => {
-    if (!state.isAuthenticated && e.key >= '0' && e.key <= '9') {
+    // Allow 420 code on setup views (setup-view, spotify-setup-view) or when not authenticated
+    const setupView = document.getElementById('setup-view');
+    const spotifySetupView = document.getElementById('spotify-setup-view');
+    const isOnSetupView = (setupView && !setupView.classList.contains('hidden')) || 
+                          (spotifySetupView && !spotifySetupView.classList.contains('hidden'));
+    
+    if ((isOnSetupView || !state.isAuthenticated) && e.key >= '0' && e.key <= '9') {
       secretBuffer += e.key;
       if (secretBuffer.length > 3) secretBuffer = secretBuffer.slice(-3);
       
@@ -645,31 +650,41 @@ export function setupAccessRequestListeners() {
   });
 }
 
-export function initAccessSystem() {
+export async function initAccessSystem() {
+  const invoke = getTauriInvoke();
+  
+  // Try to load persistent data from Windows Credential Manager first
+  if (invoke) {
+    try {
+      const [email, requestId, status] = await invoke('load_access_data');
+      if (email && requestId) {
+        // Restore to localStorage
+        setString('user_email', email);
+        setString('accessRequestEmail', email);
+        setString('accessRequestId', requestId);
+        setString('accessRequestStatus', status);
+        setString('using_developer_credentials', 'true');
+        console.log('[Access] Restored persistent data:', { email, status });
+      }
+    } catch (e) {
+      // No persistent data found - that's OK
+      console.log('[Access] No persistent access data found');
+    }
+  }
+  
   const userEmail = getString('user_email');
   const requestId = getString('accessRequestId');
   const requestStatus = getString('accessRequestStatus');
   const usingDevCredentials = getString('using_developer_credentials') === 'true';
   
-  console.log('🔧 initAccessSystem:', { 
-    userEmail, 
-    requestId,
-    requestStatus,
-    usingDevCredentials,
-    isAuthenticated: state.isAuthenticated 
-  });
-  
   // ✅ SSE NUR wenn Developer-Credentials genutzt werden!
   if (!usingDevCredentials) {
-    console.log('⏭️ Skipping SSE - user uses own credentials');
     return;
   }
   
   // ✅ Wenn blockiert: Trotzdem Block-Check-SSE für Unblock-Detection!
   if (requestStatus === 'blocked') {
-    console.log('⛔ User blocked - waiting for unblock or new request');
     if (userEmail) {
-      console.log('🔓 Starting block-check SSE for unblock detection');
       startBlockCheckSSE();
     }
     return;
@@ -677,7 +692,6 @@ export function initAccessSystem() {
   
   // PRIORITÄT 1: Pending Request → Request-SSE
   if (requestId && !state.isAuthenticated && requestStatus === 'pending') {
-    console.log('📡 Starting request SSE for:', requestId);
     startSSEConnection();
     startStatusPolling();
     return;
@@ -685,7 +699,6 @@ export function initAccessSystem() {
   
   // PRIORITÄT 2: Approved & Eingeloggt → Block-Check-SSE
   if (requestStatus === 'approved' && state.isAuthenticated && userEmail) {
-    console.log('🔓 Starting block-check SSE for:', userEmail);
     startBlockCheckSSE();
   }
 }

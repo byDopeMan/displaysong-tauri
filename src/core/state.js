@@ -54,7 +54,9 @@ export function initViews() {
   Object.assign(views, {
     loading: document.getElementById('loading-view'),
     setup: document.getElementById('setup-view'),
+    'spotify-setup': document.getElementById('spotify-setup-view'),
     player: document.getElementById('player-view'),
+    queue: document.getElementById('queue-view'),
     history: document.getElementById('history-view'),
     designs: document.getElementById('designs-view'),
     plugins: document.getElementById('plugins-view'),

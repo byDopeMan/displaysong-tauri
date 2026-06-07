@@ -8,6 +8,8 @@ import { showView, openExternal } from '../ui/navigation.js';
 import { showNotification } from '../ui/notifications.js';
 import { removeItem } from '../utils/storage.js';
 import { updateWidgetList } from './widgets.js';
+import { t } from '../utils/i18n.js';
+import { setSpotifyConnected } from './provider-ui.js';
 
 /**
  * Save Spotify credentials and start auth
@@ -27,7 +29,7 @@ export async function saveCredentials(clientId, clientSecret) {
     const authUrl = await invoke('get_auth_url');
     if (authUrl) {
       showView('auth');
-      openExternal(authUrl);
+      await openExternal(authUrl);
     }
   } catch (e) {
     showNotification('Fehler: ' + e);
@@ -47,18 +49,40 @@ export async function disconnectSpotify() {
     removeItem('using_developer_credentials');
     
     state.isAuthenticated = false;
-    state.currentTrack = null;
-    state.activeWidgets.clear();
-    updateWidgetList();
-    showView('setup');
     updateSpotifyStatus(false);
+    setSpotifyConnected(false);
     
-    // Stop all polling after state cleanup
+    // Auto-switch to Windows Audio provider when Spotify is disconnected
+    const { PROVIDER, setProvider, loadSavedProvider } = await import('./provider.js');
+    const currentProvider = loadSavedProvider();
+    
+    if (currentProvider === PROVIDER.SPOTIFY) {
+      setProvider(PROVIDER.WINDOWS_AUDIO);
+      
+      // Update provider select UI
+      const providerSelect = document.getElementById('music-provider-select');
+      if (providerSelect) {
+        providerSelect.value = PROVIDER.WINDOWS_AUDIO;
+      }
+      
+      // Restart Windows Audio polling
+      const { startWindowsAudioPolling } = await import('../app.js');
+      startWindowsAudioPolling(invoke);
+      
+      showNotification('Zu Windows Audio gewechselt');
+    }
+    
+    // Do NOT show setup view - stay on current view
+    // showView('setup'); // REMOVED
+    
+    // Stop access request polling
     import('./access-request.js').then(module => {
       if (module.stopBlockCheck) module.stopBlockCheck();
       if (module.stopStatusPolling) module.stopStatusPolling();
     });
-  } catch (e) {}
+  } catch (e) {
+    console.error('Disconnect error:', e);
+  }
 }
 
 /**
@@ -66,8 +90,11 @@ export async function disconnectSpotify() {
  */
 export function updateSpotifyStatus(connected) {
   if (elements.spotifyStatusText) {
-    elements.spotifyStatusText.textContent = connected ? 'Verbunden' : 'Nicht verbunden';
+    elements.spotifyStatusText.textContent = connected 
+      ? t('settings.connections.connected', {}, 'Verbunden') 
+      : t('settings.connections.notConnected', {}, 'Nicht verbunden');
     elements.spotifyStatusText.style.color = connected ? 'var(--accent)' : '#888';
+    elements.spotifyStatusText.classList.toggle('connected', connected);
   }
 }
 
@@ -79,7 +106,7 @@ export async function checkExistingCredentialsWithStatus(setStatus) {
     const invoke = getTauriInvoke();
     if (!invoke) { 
       showView('setup'); 
-      return; 
+      return false; 
     }
     
     setStatus('Suche gespeicherte Anmeldedaten...');
@@ -94,19 +121,15 @@ export async function checkExistingCredentialsWithStatus(setStatus) {
       await new Promise(r => setTimeout(r, 500));
       
       state.isAuthenticated = true;
-      showView('player');
       updateSpotifyStatus(true);
-      
-      // ✅ WICHTIG: Access-System nach Login starten!
-      const { initAccessSystem } = await import('./access-request.js');
-      initAccessSystem();
+      return true;
     } else {
       setStatus('Keine Anmeldedaten gefunden');
       await new Promise(r => setTimeout(r, 300));
-      showView('setup');
+      return false;
     }
   } catch (e) {
     console.error('Credential check failed:', e);
-    showView('setup');
+    return false;
   }
 }

@@ -1,39 +1,54 @@
 /**
  * Track Display & Progress
- * Nutzt zentralen Timer für Progress-Interpolation
+ * Simple requestAnimationFrame-based progress interpolation
  */
 
 import { state, elements } from '../core/state.js';
-import { timer } from '../core/timer.js';
 import { formatTime } from '../utils/format.js';
+import { t } from '../utils/i18n.js';
 
-let progressTimerId = null;
+let animationFrameId = null;
+let lastFrameTime = 0;
+
+// Separate progress tracking - NOT in state.currentTrack
+let interpolatedProgress = 0;
+let isInterpolating = false;
 
 /**
  * Update track display with current track info
+ * @param {Object} track - Track data from backend
+ * @param {boolean} syncProgress - If true, sync progress from backend. If false, keep interpolated.
  */
-export function updateTrackDisplay(track) {
+export function updateTrackDisplay(track, syncProgress = true) {
   if (!elements.trackTitle) return;
   
   if (!track || !track.track) {
-    elements.trackTitle.textContent = 'Nichts läuft';
+    elements.trackTitle.textContent = t('player.nothingPlaying', {}, 'Nichts läuft');
     elements.trackArtist.textContent = '—';
     if (elements.trackAlbum) elements.trackAlbum.textContent = '';
     if (elements.statusBadge) {
       elements.statusBadge.classList.add('paused');
       const statusText = elements.statusBadge.querySelector('.status-text');
-      if (statusText) statusText.textContent = 'Pausiert';
+      if (statusText) statusText.textContent = t('player.paused', {}, 'Pausiert');
     }
+    // Reset progress bar
+    if (elements.progressBar) elements.progressBar.style.width = '0%';
+    if (elements.progressCurrent) elements.progressCurrent.textContent = '0:00';
+    if (elements.progressTotal) elements.progressTotal.textContent = '0:00';
+    interpolatedProgress = 0;
+    state.currentTrack = null;
     return;
   }
 
-  const isNewTrack = !state.currentTrack || state.currentTrack.track !== track.track;
+  const isNewTrack = !state.currentTrack || 
+    state.currentTrack.track !== track.track || 
+    state.currentTrack.artist !== track.artist;
 
   elements.trackTitle.textContent = track.track;
   elements.trackArtist.textContent = track.artist;
   if (elements.trackAlbum) elements.trackAlbum.textContent = track.album;
 
-  // Global Background immer updaten (für wenn Player Tab deaktiviert)
+  // Global Background immer updaten
   if (track.albumCover) {
     const globalBg = document.getElementById('global-cover-bg');
     if (globalBg && globalBg.style.backgroundImage !== `url("${track.albumCover}")`) {
@@ -56,52 +71,118 @@ export function updateTrackDisplay(track) {
   if (elements.statusBadge) {
     elements.statusBadge.classList.toggle('paused', !track.isPlaying);
     const statusText = elements.statusBadge.querySelector('.status-text');
-    if (statusText) statusText.textContent = track.isPlaying ? 'Läuft jetzt' : 'Pausiert';
+    if (statusText) {
+      statusText.textContent = track.isPlaying 
+        ? t('player.nowPlaying', {}, 'Läuft jetzt') 
+        : t('player.paused', {}, 'Pausiert');
+    }
   }
 
+  // Handle progress
+  if (isNewTrack || syncProgress) {
+    // New track or explicit sync: use backend progress
+    interpolatedProgress = track.progressMs || 0;
+    lastFrameTime = performance.now();
+  }
+  // else: keep interpolatedProgress as is
+  
+  // Update progress bar with interpolated value
   if (track.durationMs > 0 && elements.progressBar) {
-    const progress = (track.progressMs / track.durationMs) * 100;
-    elements.progressBar.style.width = `${progress}%`;
-    if (elements.progressCurrent) elements.progressCurrent.textContent = formatTime(track.progressMs);
+    const progress = (interpolatedProgress / track.durationMs) * 100;
+    elements.progressBar.style.width = `${Math.min(100, progress)}%`;
+    if (elements.progressCurrent) elements.progressCurrent.textContent = formatTime(interpolatedProgress);
     if (elements.progressTotal) elements.progressTotal.textContent = formatTime(track.durationMs);
   }
 
-  state.currentTrack = track;
+  // Store track metadata (but NOT progressMs - we track that separately)
+  state.currentTrack = {
+    track: track.track,
+    artist: track.artist,
+    album: track.album,
+    albumCover: track.albumCover,
+    isPlaying: track.isPlaying,
+    durationMs: track.durationMs,
+    source: track.source,
+    trackId: track.trackId
+  };
+  
+  isInterpolating = track.isPlaying;
 }
 
 /**
- * Start progress bar interpolation using central timer
+ * Update only metadata without touching progress
+ */
+export function updateTrackMetadata(track) {
+  if (!track || !state.currentTrack) return;
+  
+  state.currentTrack.isPlaying = track.isPlaying;
+  state.currentTrack.durationMs = track.durationMs;
+  isInterpolating = track.isPlaying;
+  
+  // Update status badge
+  if (elements.statusBadge) {
+    elements.statusBadge.classList.toggle('paused', !track.isPlaying);
+    const statusText = elements.statusBadge.querySelector('.status-text');
+    if (statusText) {
+      statusText.textContent = track.isPlaying 
+        ? t('player.nowPlaying', {}, 'Läuft jetzt') 
+        : t('player.paused', {}, 'Pausiert');
+    }
+  }
+}
+
+/**
+ * Get current interpolated progress
+ */
+export function getInterpolatedProgress() {
+  return interpolatedProgress;
+}
+
+/**
+ * Start progress bar interpolation using requestAnimationFrame
  */
 export function startProgressInterpolation() {
-  // Wenn bereits registriert, nicht nochmal
-  if (progressTimerId !== null) return;
+  if (animationFrameId !== null) return;
   
-  progressTimerId = timer.subscribe((now, delta) => {
-    if (state.currentTrack?.isPlaying && state.currentTrack.durationMs > 0) {
-      // Delta-basiert für genauere Interpolation
-      state.currentTrack.progressMs = Math.min(
-        state.currentTrack.progressMs + delta, 
-        state.currentTrack.durationMs
-      );
+  lastFrameTime = performance.now();
+  
+  function animate(currentTime) {
+    const delta = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+    
+    // Only interpolate if playing
+    if (isInterpolating && state.currentTrack?.durationMs > 0) {
+      // Add delta to progress
+      interpolatedProgress += delta;
       
+      // Clamp to duration
+      if (interpolatedProgress > state.currentTrack.durationMs) {
+        interpolatedProgress = state.currentTrack.durationMs;
+      }
+      
+      // Update UI
       if (elements.progressBar) {
-        const progress = (state.currentTrack.progressMs / state.currentTrack.durationMs) * 100;
-        elements.progressBar.style.width = `${progress}%`;
-        if (elements.progressCurrent) {
-          elements.progressCurrent.textContent = formatTime(state.currentTrack.progressMs);
-        }
+        const progress = (interpolatedProgress / state.currentTrack.durationMs) * 100;
+        elements.progressBar.style.width = `${Math.min(100, progress)}%`;
+      }
+      if (elements.progressCurrent) {
+        elements.progressCurrent.textContent = formatTime(interpolatedProgress);
       }
     }
-  }, 'progress-interpolation');
+    
+    animationFrameId = requestAnimationFrame(animate);
+  }
+  
+  animationFrameId = requestAnimationFrame(animate);
 }
 
 /**
  * Stop progress interpolation
  */
 export function stopProgressInterpolation() {
-  if (progressTimerId !== null) {
-    timer.unsubscribe(progressTimerId);
-    progressTimerId = null;
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
   }
 }
 
@@ -112,13 +193,13 @@ export async function copySongInfo() {
   const { showNotification } = await import('../ui/notifications.js');
   
   if (!state.currentTrack || !state.currentTrack.track) {
-    showNotification('Kein Song zum Kopieren');
+    showNotification(t('player.nothingPlaying', {}, 'Kein Song zum Kopieren'));
     return;
   }
   
   const text = `${state.currentTrack.artist} - ${state.currentTrack.track}`;
   navigator.clipboard.writeText(text).then(() => {
-    showNotification('Kopiert: ' + text);
+    showNotification(t('notifications.copied', {}, 'Kopiert!'));
     const btn = document.getElementById('btn-copy-song');
     if (btn) {
       btn.classList.add('copied');
@@ -126,6 +207,6 @@ export async function copySongInfo() {
     }
   }).catch(err => {
     console.error('Copy failed:', err);
-    showNotification('Kopieren fehlgeschlagen');
+    showNotification(t('common.error', {}, 'Fehler'));
   });
 }
