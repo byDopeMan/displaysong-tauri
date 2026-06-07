@@ -28,20 +28,28 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap; /* let the actions drop to their own line on narrow panels */
   margin-bottom: 16px;
+}
+
+.queue-title {
+  min-width: 0; /* allow the title to shrink instead of squashing the actions */
 }
 
 /* Right-hand controls: Auto-Play toggle + Queue leeren */
 .queue-header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .queue-autoplay-label {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
+  white-space: nowrap; /* never break "Auto-Play" across two lines */
 }
 
 .queue-title {

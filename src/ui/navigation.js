@@ -19,7 +19,10 @@ export function switchTab(tabName) {
       views[name].classList.toggle('hidden', name !== tabName);
     }
   });
-  
+
+  // Smoothly scroll back to the top when switching tabs.
+  document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+
   if (tabName === 'history') {
     import('../features/settings.js').then(({ settings }) => {
       if (settings.showHistoryTab !== false) {

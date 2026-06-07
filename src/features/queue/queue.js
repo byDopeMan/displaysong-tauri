@@ -11,9 +11,8 @@ let trackInfoCache = new Map();
 let queueEventListenerSetup = false;
 let containerListenersSetup = new Set();
 
-// Auto-advance: play queued requests one after another when nothing is playing.
+// Auto-advance: play queued requests one after another (track-changed driven).
 let autoPlayQueue = false;
-let autoAdvanceTimer = null;
 let lastAutoPlayAt = 0;
 
 // SVG Icons
@@ -56,34 +55,23 @@ function setupAutoPlay() {
       autoPlayQueue = e.target.checked;
       localStorage.setItem('queue-autoplay', String(autoPlayQueue));
       toggles.forEach((other) => { if (other !== e.target) other.checked = autoPlayQueue; });
-      updateAutoAdvanceMonitor();
+      // If turned on while truly nothing is playing, start the queue right away.
+      if (autoPlayQueue && !state.currentTrack) maybeAutoAdvance();
     });
   });
-  updateAutoAdvanceMonitor();
-}
-
-function updateAutoAdvanceMonitor() {
-  if (autoPlayQueue && !autoAdvanceTimer) {
-    autoAdvanceTimer = setInterval(autoAdvanceTick, 4000);
-  } else if (!autoPlayQueue && autoAdvanceTimer) {
-    clearInterval(autoAdvanceTimer);
-    autoAdvanceTimer = null;
-  }
 }
 
 /**
- * Play the next queued request when playback is idle. Uses the app's unified
- * current track (state.currentTrack, fed by whichever provider is active —
- * Spotify counts as a Windows media source too), with a cooldown so the player
- * has time to report the freshly started song before we consider advancing.
+ * Play the next queued request — driven by track-changed (see the listener
+ * below), so the queue takes over when the CURRENT song ENDS and the player
+ * moves on to the streamer's own playlist. A cooldown swallows the track-change
+ * that our own freshly started queue song produces, so we only advance on the
+ * next real song end. Pausing does not fire track-changed, so pausing no longer
+ * triggers the queue.
  */
-function autoAdvanceTick() {
+function maybeAutoAdvance() {
   if (!autoPlayQueue || queueItems.length === 0) return;
-  if (Date.now() - lastAutoPlayAt < 8000) return; // settle time after starting a song
-
-  const cur = state.currentTrack;
-  if (cur && cur.isPlaying) return; // never interrupt something that's playing
-
+  if (Date.now() - lastAutoPlayAt < 6000) return; // ignore our own song's start
   const next = queueItems[0];
   if (!next) return;
   lastAutoPlayAt = Date.now();
@@ -133,12 +121,14 @@ function setupQueueEventListener() {
     updateQueueVisibility();
   });
   
-  // Listen for track changes to auto-remove from queue
+  // Listen for track changes: auto-remove the matching queue item, and (when
+  // Auto-Play is on) advance the queue once the current song ends.
   window.__TAURI__.event.listen('track-changed', (event) => {
     const track = event.payload;
     if (track?.trackId) {
       checkAndRemovePlayingTrack(track.trackId);
     }
+    maybeAutoAdvance();
   });
 }
 
