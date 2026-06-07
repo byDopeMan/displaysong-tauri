@@ -1318,7 +1318,10 @@
 .collapsible-content {
   padding: 16px;
   transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
-  max-height: 1000px;
+  /* Generous cap: the Channel-Points mode is much taller (reward + create +
+     test sections), and the section uses overflow:hidden — at 1000px the
+     bottom (message buttons + Request History) was clipped and invisible. */
+  max-height: 6000px;
   opacity: 1;
 }
 
