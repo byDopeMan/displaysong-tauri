@@ -9,7 +9,7 @@
   },
   "package": {
     "productName": "DisplaySong",
-    "version": "2.2.0"
+    "version": "3.0.0"
   },
   "tauri": {
     "allowlist": {
@@ -59,14 +59,16 @@
         "../src/templates/*"
       ],
       "shortDescription": "Spotify Now Playing Widget",
-      "targets": "all",
+      "targets": [
+        "msi",
+        "nsis"
+      ],
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
         "timestampUrl": "",
         "webviewInstallMode": {
-          "type": "fixedRuntime",
-          "path": "./webview2-runtime/Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64"
+          "type": "downloadBootstrapper"
         }
       }
     },
@@ -74,7 +76,7 @@
       "csp": null
     },
     "updater": {
-      "active": true,
+      "active": false,
       "endpoints": [
         "https://github.com/byDopeMan/displaysong-tauri/releases/latest/download/latest.json"
       ],

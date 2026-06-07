@@ -72,3 +72,12 @@ Thumbs.db
 # =====================
 src-tauri/src-tauri-debug/
 backup-before-update/
+src-tauri/nsis
+
+# =====================
+# Local dev notes / scratch (not for the repo)
+# =====================
+TEST.txt
+Tod.todo
+TODO.todo
+REFACTORING_PLAN.md
