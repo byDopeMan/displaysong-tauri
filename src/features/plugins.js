@@ -8,24 +8,275 @@ import { showNotification } from '../ui/notifications.js';
 // Geladene Plugin-Instanzen
 const loadedPlugins = new Map();
 
+// Plugin Windows
+const pluginWindows = new Map();
+let windowIdCounter = 0;
+
 // Plugin-Anzahl für Tab-Sichtbarkeit
 let pluginCount = 0;
 
 // Registrierte Plugin-Settings Konfigurationen
 const pluginSettingsConfigs = new Map();
 
-// Aktuell geöffnetes Plugin im Modal
-let currentModalPluginId = null;
+// Aktuell geöffnetes Plugin
+let currentPluginId = null;
+
+// Settings Style: 'modal' oder 'panel'
+let settingsStyle = 'panel';
+
 
 // ============================================================================
-// PLUGIN API - Was Plugins nutzen können
+// PLUGIN WINDOW CLASS
+// ============================================================================
+
+/**
+ * PluginWindow - Allows plugins to create their own windows
+ * Uses a floating div with customizable content
+ */
+class PluginWindow {
+  constructor(pluginId, options = {}) {
+    this.pluginId = pluginId;
+    this.windowId = `plugin-window-${pluginId}-${++windowIdCounter}`;
+    this.options = {
+      title: options.title || pluginId,
+      width: options.width || 400,
+      height: options.height || 300,
+      html: options.html || '',
+      resizable: options.resizable !== false,
+      alwaysOnTop: options.alwaysOnTop || false,
+      transparent: options.transparent || false,
+      x: options.x || null,
+      y: options.y || null,
+      minWidth: options.minWidth || 200,
+      minHeight: options.minHeight || 100,
+    };
+    
+    this.element = null;
+    this.contentElement = null;
+    this.isVisible = false;
+    this.isDragging = false;
+    this.isResizing = false;
+    
+    pluginWindows.set(this.windowId, this);
+  }
+  
+  /**
+   * Show the window
+   */
+  show() {
+    if (this.element) {
+      this.element.style.display = 'flex';
+      this.isVisible = true;
+      return;
+    }
+    
+    this._create();
+    this.isVisible = true;
+  }
+  
+  /**
+   * Hide the window
+   */
+  hide() {
+    if (this.element) {
+      this.element.style.display = 'none';
+      this.isVisible = false;
+    }
+  }
+  
+  /**
+   * Close and destroy the window
+   */
+  close() {
+    if (this.element) {
+      this.element.remove();
+      this.element = null;
+      this.contentElement = null;
+      this.isVisible = false;
+      pluginWindows.delete(this.windowId);
+    }
+  }
+  
+  /**
+   * Set HTML content
+   */
+  setContent(html) {
+    this.options.html = html;
+    if (this.contentElement) {
+      this.contentElement.innerHTML = html;
+    }
+  }
+  
+  /**
+   * Get the content element for direct DOM manipulation
+   */
+  getContentElement() {
+    return this.contentElement;
+  }
+  
+  /**
+   * Set window title
+   */
+  setTitle(title) {
+    this.options.title = title;
+    const titleEl = this.element?.querySelector('.plugin-window-title');
+    if (titleEl) titleEl.textContent = title;
+  }
+  
+  /**
+   * Resize the window
+   */
+  setSize(width, height) {
+    this.options.width = width;
+    this.options.height = height;
+    if (this.element) {
+      this.element.style.width = width + 'px';
+      this.element.style.height = height + 'px';
+    }
+  }
+  
+  /**
+   * Move the window
+   */
+  setPosition(x, y) {
+    this.options.x = x;
+    this.options.y = y;
+    if (this.element) {
+      this.element.style.left = x + 'px';
+      this.element.style.top = y + 'px';
+    }
+  }
+  
+  /**
+   * Internal: Create the window DOM
+   */
+  _create() {
+    const win = document.createElement('div');
+    win.id = this.windowId;
+    win.className = 'plugin-window';
+    if (this.options.transparent) win.classList.add('transparent');
+    if (this.options.alwaysOnTop) win.classList.add('always-on-top');
+    
+    win.style.width = this.options.width + 'px';
+    win.style.height = this.options.height + 'px';
+    
+    // Position
+    if (this.options.x !== null) {
+      win.style.left = this.options.x + 'px';
+    } else {
+      win.style.left = '50%';
+      win.style.transform = 'translateX(-50%)';
+    }
+    if (this.options.y !== null) {
+      win.style.top = this.options.y + 'px';
+    } else {
+      win.style.top = '100px';
+    }
+    
+    win.innerHTML = `
+      <div class="plugin-window-header" data-drag="true">
+        <span class="plugin-window-title">${this._esc(this.options.title)}</span>
+        <div class="plugin-window-controls">
+          <button class="plugin-window-btn minimize" title="Minimieren">─</button>
+          <button class="plugin-window-btn close" title="Schließen">✕</button>
+        </div>
+      </div>
+      <div class="plugin-window-content"></div>
+      ${this.options.resizable ? '<div class="plugin-window-resize"></div>' : ''}
+    `;
+    
+    this.element = win;
+    this.contentElement = win.querySelector('.plugin-window-content');
+    this.contentElement.innerHTML = this.options.html;
+    
+    // Event handlers
+    this._setupDrag(win);
+    if (this.options.resizable) this._setupResize(win);
+    
+    win.querySelector('.plugin-window-btn.close')?.addEventListener('click', () => this.close());
+    win.querySelector('.plugin-window-btn.minimize')?.addEventListener('click', () => this.hide());
+    
+    document.body.appendChild(win);
+  }
+  
+  _setupDrag(win) {
+    const header = win.querySelector('.plugin-window-header');
+    let startX, startY, startLeft, startTop;
+    
+    const onMouseMove = (e) => {
+      if (!this.isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      win.style.left = (startLeft + dx) + 'px';
+      win.style.top = (startTop + dy) + 'px';
+      win.style.transform = 'none';
+    };
+    
+    const onMouseUp = () => {
+      this.isDragging = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('plugin-window-btn')) return;
+      this.isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = win.offsetLeft;
+      startTop = win.offsetTop;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  }
+  
+  _setupResize(win) {
+    const handle = win.querySelector('.plugin-window-resize');
+    if (!handle) return;
+    
+    let startX, startY, startW, startH;
+    
+    const onMouseMove = (e) => {
+      if (!this.isResizing) return;
+      const dw = e.clientX - startX;
+      const dh = e.clientY - startY;
+      win.style.width = Math.max(this.options.minWidth, startW + dw) + 'px';
+      win.style.height = Math.max(this.options.minHeight, startH + dh) + 'px';
+    };
+    
+    const onMouseUp = () => {
+      this.isResizing = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    
+    handle.addEventListener('mousedown', (e) => {
+      this.isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startW = win.offsetWidth;
+      startH = win.offsetHeight;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    });
+  }
+  
+  _esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+}
+
+// ============================================================================
+// PLUGIN API
 // ============================================================================
 
 function createPluginAPI(pluginId) {
   const invoke = getTauriInvoke();
   
   return {
-    // ==================== TRACK ====================
     async getTrack() {
       if (invoke) return await invoke('get_track');
       return null;
@@ -43,12 +294,10 @@ function createPluginAPI(pluginId) {
       return () => {};
     },
     
-    // ==================== UI ====================
     showNotification(msg) {
       showNotification(msg);
     },
     
-    // ==================== DATA STORAGE ====================
     async storeData(key, value) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_store_data', { pluginId, key, value });
@@ -64,7 +313,6 @@ function createPluginAPI(pluginId) {
       return await invoke('plugin_delete_data', { pluginId, key });
     },
     
-    // ==================== SECRETS (Keyring) ====================
     async storeSecret(key, value) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_store_secret', { pluginId, key, value });
@@ -80,29 +328,21 @@ function createPluginAPI(pluginId) {
       return await invoke('plugin_delete_secret', { pluginId, key });
     },
     
-    // ==================== HTTP REQUESTS ====================
     async httpRequest(method, url, options = {}) {
       if (!invoke) throw new Error('Backend not available');
-      
       const result = await invoke('plugin_http_request', {
-        pluginId,
-        method,
-        url,
+        pluginId, method, url,
         headers: options.headers || null,
         body: options.body || null
       });
-      
       return {
         status: result.status,
         headers: result.headers,
         body: result.body,
-        json() {
-          return JSON.parse(result.body);
-        }
+        json() { return JSON.parse(result.body); }
       };
     },
     
-    // ==================== EVENTS ====================
     on(event, callback) {
       window.addEventListener(`plugin:${event}`, (e) => callback(e.detail));
     },
@@ -111,7 +351,6 @@ function createPluginAPI(pluginId) {
       window.dispatchEvent(new CustomEvent(`plugin:${event}`, { detail: data }));
     },
     
-    // ==================== UTILITIES ====================
     createElement(tag, attrs = {}, children = []) {
       const el = document.createElement(tag);
       for (const [k, v] of Object.entries(attrs)) {
@@ -130,9 +369,7 @@ function createPluginAPI(pluginId) {
       try {
         const data = JSON.parse(localStorage.getItem(`plugin:${pluginId}`) || '{}');
         return data[key] ?? defaultValue;
-      } catch {
-        return defaultValue;
-      }
+      } catch { return defaultValue; }
     },
     
     setLocalSetting(key, value) {
@@ -140,54 +377,151 @@ function createPluginAPI(pluginId) {
         const data = JSON.parse(localStorage.getItem(`plugin:${pluginId}`) || '{}');
         data[key] = value;
         localStorage.setItem(`plugin:${pluginId}`, JSON.stringify(data));
-      } catch (e) {
-        console.error('Plugin setting save failed:', e);
-      }
+      } catch (e) { console.error('Plugin setting save failed:', e); }
     },
     
-    getPluginId() {
-      return pluginId;
+    getPluginId() { return pluginId; },
+    getAppVersion() { return '2.2.0'; },
+    
+    // Spotify Playback Control
+    async addToQueue(spotifyUri) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('add_to_queue', { uri: spotifyUri });
     },
     
-    getAppVersion() {
-      return '2.2.0';
+    async playTrack(spotifyUri) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('play_track', { uri: spotifyUri });
     },
     
-    // ==================== SETTINGS UI ====================
+    // ============================================================
+    // PLUGIN WINDOW API
+    // ============================================================
+    
     /**
-     * Registriert Settings für das Plugin (erscheinen im Settings-Modal)
-     * 
-     * config = {
-     *   title: 'Plugin Name',
-     *   icon: '<svg>...</svg>',  // optional
-     *   fields: [
-     *     { type: 'text', key: 'name', label: 'Name', placeholder: '...' },
-     *     { type: 'password', key: 'token', label: 'Token' },
-     *     { type: 'toggle', key: 'enabled', label: 'Aktiv', default: false },
-     *     { type: 'select', key: 'mode', label: 'Modus', options: [{value, label}] },
-     *     { type: 'button', label: 'Aktion', buttonText: 'Klick', onClick: () => {} },
-     *     { type: 'info', label: 'Status', id: 'status', text: 'OK' }
-     *   ]
-     * }
+     * Create a plugin window/widget
+     * @param {Object} options - Window configuration
+     * @param {string} options.title - Window title
+     * @param {number} options.width - Width in pixels (default: 400)
+     * @param {number} options.height - Height in pixels (default: 300)
+     * @param {string} options.html - HTML content for the window
+     * @param {boolean} options.resizable - Allow resize (default: true)
+     * @param {boolean} options.alwaysOnTop - Stay on top (default: false)
+     * @param {boolean} options.transparent - Transparent background (default: false)
+     * @returns {PluginWindow} Window controller
      */
+    createWindow(options = {}) {
+      return new PluginWindow(pluginId, options);
+    },
+    
+    // ============================================================
+    // TWITCH API (for plugins that want Twitch integration)
+    // ============================================================
+    
+    /**
+     * Listen for Twitch redemptions
+     * @param {Function} callback - Called with redemption data
+     */
+    onTwitchRedemption(callback) {
+      if (window.__TAURI__?.event) {
+        return window.__TAURI__.event.listen('twitch-redemption', (e) => callback(e.payload));
+      }
+      return () => {};
+    },
+    
+    /**
+     * Send a Twitch chat message
+     * @param {string} message - Message to send
+     */
+    async sendTwitchChat(message) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('twitch_send_chat', { message });
+    },
+    
+    /**
+     * Get Twitch connection info
+     */
+    async getTwitchConnection() {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('twitch_get_connection');
+    },
+    
+    // ============================================================
+    // PYTHON API
+    // ============================================================
+    
+    /**
+     * Check if Python is available
+     */
+    async pythonAvailable() {
+      if (!invoke) return false;
+      return await invoke('python_available');
+    },
+    
+    /**
+     * Get Python version
+     */
+    async pythonVersion() {
+      if (!invoke) return null;
+      return await invoke('python_version');
+    },
+    
+    /**
+     * Run Python code
+     * @param {string} code - Python code to execute
+     * @returns {Object} { success, stdout, stderr, exit_code }
+     */
+    async pythonRun(code) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('python_run_code', { code });
+    },
+    
+    /**
+     * Run a Python script file
+     * @param {string} scriptPath - Path to Python script
+     * @param {string[]} args - Arguments to pass to script
+     */
+    async pythonRunScript(scriptPath, args = []) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('python_run_script', { scriptPath, args });
+    },
+    
+    /**
+     * Install a Python package via pip
+     * @param {string} package - Package name to install
+     */
+    async pythonInstall(packageName) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('python_pip_install', { package: packageName });
+    },
+    
+    /**
+     * Check if a Python package is installed
+     * @param {string} package - Package name to check
+     */
+    async pythonPackageInstalled(packageName) {
+      if (!invoke) return false;
+      return await invoke('python_package_installed', { package: packageName });
+    },
+    
+    // Settings UI
     registerSettings(config) {
-      console.log('[Plugin API] registerSettings called for:', pluginId, config);
       pluginSettingsConfigs.set(pluginId, { ...config, pluginId });
-      // Wenn Modal gerade offen ist für dieses Plugin, neu rendern
-      if (currentModalPluginId === pluginId) {
-        renderPluginSettingsModal(pluginId);
+      if (currentPluginId === pluginId) {
+        renderPluginSettings(pluginId);
       }
     },
     
     updateSettingsInfo(fieldId, text) {
-      const el = document.querySelector(`#plugin-modal-body [data-field="${fieldId}"]`);
+      const container = settingsStyle === 'modal' ? '#plugin-modal-body' : '#plugin-panel-body';
+      const el = document.querySelector(`${container} [data-field="${fieldId}"]`);
       if (el) el.textContent = text;
     },
     
     unregisterSettings() {
       pluginSettingsConfigs.delete(pluginId);
-      if (currentModalPluginId === pluginId) {
-        closePluginSettingsModal();
+      if (currentPluginId === pluginId) {
+        closePluginSettings();
       }
     }
   };
@@ -203,14 +537,11 @@ export async function loadEnabledPlugins() {
   
   try {
     const plugins = await invoke('list_plugins');
-    
     for (const plugin of plugins) {
       if (plugin.enabled && !plugin.has_error) {
         await loadPlugin(plugin.id, plugin.name);
       }
     }
-    
-    console.log(`Plugins: ${loadedPlugins.size} geladen`);
   } catch (e) {
     console.error('Plugin loading failed:', e);
   }
@@ -224,16 +555,29 @@ async function loadPlugin(pluginId, pluginName) {
   
   try {
     const code = await invoke('load_plugin_code', { pluginId });
-    const api = createPluginAPI(pluginId);
-    const fn = new Function('DisplaySong', code);
-    const instance = fn({ api, pluginId });
     
-    if (instance?.init) await instance.init();
+    if (!code || code.trim().length === 0) {
+      console.error('[Plugin Loader] No code loaded for:', pluginId);
+      return;
+    }
+    
+    const api = createPluginAPI(pluginId);
+    
+    // Einfaches Format: Plugin hat Zugriff auf 'api' und 'pluginId'
+    // und gibt { init, cleanup } zurück
+    const fn = new Function('api', 'pluginId', code);
+    const instance = fn(api, pluginId);
+    
+    if (instance?.init) {
+      await instance.init();
+    } else {
+      console.warn('[Plugin Loader] No init() function found');
+    }
     
     loadedPlugins.set(pluginId, instance);
-    console.log(`Plugin geladen: ${pluginName}`);
   } catch (e) {
-    console.error(`Plugin ${pluginId} Fehler:`, e);
+    console.error(`[Plugin Loader] ${pluginId} Fehler:`, e);
+    console.error('[Plugin Loader] Stack:', e.stack);
   }
 }
 
@@ -247,30 +591,49 @@ async function unloadPlugin(pluginId) {
 }
 
 // ============================================================================
-// PLUGIN SETTINGS MODAL
+// PLUGIN SETTINGS (Modal & Panel)
 // ============================================================================
 
-function openPluginSettingsModal(pluginId, pluginName) {
-  currentModalPluginId = pluginId;
-  
-  const modal = document.getElementById('plugin-settings-modal');
-  const title = document.getElementById('plugin-modal-title');
-  
-  if (title) title.textContent = `${pluginName} - Einstellungen`;
-  
-  renderPluginSettingsModal(pluginId);
-  
-  if (modal) modal.classList.remove('hidden');
+export function setPluginSettingsStyle(style) {
+  settingsStyle = style;
 }
 
-function closePluginSettingsModal() {
-  const modal = document.getElementById('plugin-settings-modal');
-  if (modal) modal.classList.add('hidden');
-  currentModalPluginId = null;
+function openPluginSettings(pluginId, pluginName) {
+  currentPluginId = pluginId;
+  
+  if (settingsStyle === 'modal') {
+    // Modal öffnen
+    const modal = document.getElementById('plugin-settings-modal');
+    const title = document.getElementById('plugin-modal-title');
+    if (title) title.textContent = `${pluginName} - Einstellungen`;
+    renderPluginSettings(pluginId);
+    if (modal) modal.classList.remove('hidden');
+  } else {
+    // Panel öffnen
+    const panel = document.getElementById('plugin-settings-panel');
+    const title = document.getElementById('plugin-panel-title');
+    if (title) title.textContent = pluginName;
+    renderPluginSettings(pluginId);
+    if (panel) panel.classList.remove('hidden');
+  }
 }
 
-function renderPluginSettingsModal(pluginId) {
-  const body = document.getElementById('plugin-modal-body');
+function closePluginSettings() {
+  if (settingsStyle === 'modal') {
+    const modal = document.getElementById('plugin-settings-modal');
+    if (modal) modal.classList.add('hidden');
+  } else {
+    const panel = document.getElementById('plugin-settings-panel');
+    if (panel) panel.classList.add('hidden');
+  }
+  currentPluginId = null;
+}
+
+function renderPluginSettings(pluginId) {
+  const bodyId = settingsStyle === 'modal' ? 'plugin-modal-body' : 'plugin-panel-body';
+  const iconId = settingsStyle === 'modal' ? 'plugin-modal-icon' : 'plugin-panel-icon';
+  
+  const body = document.getElementById(bodyId);
   if (!body) return;
   
   const config = pluginSettingsConfigs.get(pluginId);
@@ -288,18 +651,17 @@ function renderPluginSettingsModal(pluginId) {
     return;
   }
   
-  // Icon aktualisieren wenn vorhanden
-  const iconEl = document.getElementById('plugin-modal-icon');
+  // Icon
+  const iconEl = document.getElementById(iconId);
   if (iconEl && config.icon) {
     iconEl.innerHTML = config.icon;
   }
   
-  // Fields rendern
+  // Fields
   const fieldsHtml = config.fields.map(field => createSettingsFieldHtml(pluginId, field)).join('');
   body.innerHTML = `<div class="plugin-settings-fields">${fieldsHtml}</div>`;
   
-  // Event Listener für Fields
-  attachSettingsFieldListeners(pluginId, config.fields);
+  attachSettingsFieldListeners(pluginId, config.fields, bodyId);
 }
 
 function createSettingsFieldHtml(pluginId, field) {
@@ -312,15 +674,11 @@ function createSettingsFieldHtml(pluginId, field) {
       return `
         <div class="setting-row">
           <label>${esc(field.label)}</label>
-          <input type="${field.type}" 
-                 class="setting-input" 
-                 data-key="${esc(field.key)}"
-                 placeholder="${esc(field.placeholder || '')}"
-                 value="${esc(savedValue)}">
+          <input type="${field.type}" class="setting-input" data-key="${esc(field.key)}"
+                 placeholder="${esc(field.placeholder || '')}" value="${esc(savedValue)}">
         </div>
       `;
     }
-    
     case 'toggle': {
       const checked = api.getLocalSetting(field.key, field.default || false);
       return `
@@ -330,7 +688,6 @@ function createSettingsFieldHtml(pluginId, field) {
         </div>
       `;
     }
-    
     case 'select': {
       const savedValue = api.getLocalSetting(field.key, field.default || '');
       const options = (field.options || []).map(opt => 
@@ -343,7 +700,6 @@ function createSettingsFieldHtml(pluginId, field) {
         </div>
       `;
     }
-    
     case 'button': {
       return `
         <div class="setting-row">
@@ -352,7 +708,6 @@ function createSettingsFieldHtml(pluginId, field) {
         </div>
       `;
     }
-    
     case 'info': {
       return `
         <div class="setting-row">
@@ -361,14 +716,12 @@ function createSettingsFieldHtml(pluginId, field) {
         </div>
       `;
     }
-    
-    default:
-      return '';
+    default: return '';
   }
 }
 
-function attachSettingsFieldListeners(pluginId, fields) {
-  const body = document.getElementById('plugin-modal-body');
+function attachSettingsFieldListeners(pluginId, fields, bodyId) {
+  const body = document.getElementById(bodyId);
   if (!body) return;
   
   const api = createPluginAPI(pluginId);
@@ -383,7 +736,6 @@ function attachSettingsFieldListeners(pluginId, fields) {
         });
       }
     }
-    
     if (field.type === 'toggle') {
       const checkbox = body.querySelector(`input[data-key="${field.key}"]`);
       if (checkbox) {
@@ -393,7 +745,6 @@ function attachSettingsFieldListeners(pluginId, fields) {
         });
       }
     }
-    
     if (field.type === 'select') {
       const select = body.querySelector(`select[data-key="${field.key}"]`);
       if (select) {
@@ -403,12 +754,9 @@ function attachSettingsFieldListeners(pluginId, fields) {
         });
       }
     }
-    
-    if (field.type === 'button') {
+    if (field.type === 'button' && field.onClick) {
       const btn = body.querySelector(`button[data-action="${field.key || 'button'}"]`);
-      if (btn && field.onClick) {
-        btn.addEventListener('click', () => field.onClick());
-      }
+      if (btn) btn.addEventListener('click', () => field.onClick());
     }
   }
 }
@@ -431,9 +779,6 @@ export async function renderPluginList() {
     const plugins = await invoke('list_plugins');
     pluginCount = plugins.length;
     
-    if (pluginsTab) {
-      pluginsTab.style.display = pluginCount > 0 ? '' : 'none';
-    }
     
     if (!container) return;
     
@@ -453,7 +798,6 @@ export async function renderPluginList() {
     container.innerHTML = '';
     
     for (const plugin of plugins) {
-      const hasSettings = pluginSettingsConfigs.has(plugin.id);
       const card = document.createElement('div');
       card.className = `plugin-card ${plugin.enabled ? 'enabled' : ''} ${plugin.has_error ? 'error' : ''}`;
       
@@ -487,17 +831,16 @@ export async function renderPluginList() {
         ${plugin.has_error ? `<div class="plugin-error">${esc(plugin.error_message)}</div>` : ''}
       `;
       
-      // Settings Button Handler
+      // Settings Button
       card.querySelector('.plugin-settings')?.addEventListener('click', () => {
-        openPluginSettingsModal(plugin.id, plugin.name);
+        openPluginSettings(plugin.id, plugin.name);
       });
       
-      // Toggle Handler
+      // Toggle
       const toggle = card.querySelector('input[type="checkbox"]');
       toggle?.addEventListener('change', async () => {
         try {
           await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled: toggle.checked });
-          
           if (toggle.checked) {
             await loadPlugin(plugin.id, plugin.name);
             showNotification(`${plugin.name} aktiviert`);
@@ -505,22 +848,17 @@ export async function renderPluginList() {
             await unloadPlugin(plugin.id);
             showNotification(`${plugin.name} deaktiviert`);
           }
-          
           card.classList.toggle('enabled', toggle.checked);
-          
-          // Settings button aktivieren/deaktivieren
-          const settingsBtn = card.querySelector('.plugin-settings');
-          if (settingsBtn) settingsBtn.disabled = !toggle.checked;
+          card.querySelector('.plugin-settings').disabled = !toggle.checked;
         } catch (e) {
           toggle.checked = !toggle.checked;
           showNotification('Fehler: ' + e);
         }
       });
       
-      // Delete Handler
+      // Delete
       card.querySelector('.plugin-delete')?.addEventListener('click', async () => {
         if (!confirm(`"${plugin.name}" wirklich löschen?`)) return;
-        
         try {
           await unloadPlugin(plugin.id);
           await invoke('uninstall_plugin', { pluginId: plugin.id });
@@ -557,9 +895,7 @@ export function setupPluginListeners() {
       try {
         await invoke('open_plugins_folder');
         showNotification('Plugin-Ordner geöffnet');
-      } catch (e) {
-        showNotification('Fehler: ' + e);
-      }
+      } catch (e) { showNotification('Fehler: ' + e); }
     }
   });
   
@@ -569,22 +905,18 @@ export function setupPluginListeners() {
       showNotification('Dialog nicht verfügbar');
       return;
     }
-    
     try {
       const path = await window.__TAURI__.dialog.open({
         multiple: false,
         filters: [{ name: 'Plugin', extensions: ['zip'] }]
       });
-      
       if (path) {
         const invoke = getTauriInvoke();
         await invoke('install_plugin_from_zip', { zipPath: path });
         showNotification('Plugin installiert!');
         await renderPluginList();
       }
-    } catch (e) {
-      showNotification('Import fehlgeschlagen: ' + e);
-    }
+    } catch (e) { showNotification('Import fehlgeschlagen: ' + e); }
   });
   
   // Refresh
@@ -593,19 +925,17 @@ export function setupPluginListeners() {
     showNotification('Liste aktualisiert');
   });
   
-  // Modal Close Button
-  document.querySelector('#plugin-settings-modal .modal-close')?.addEventListener('click', () => {
-    closePluginSettingsModal();
+  // Modal Close
+  document.querySelector('#plugin-settings-modal .modal-close')?.addEventListener('click', closePluginSettings);
+  document.getElementById('plugin-settings-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'plugin-settings-modal') closePluginSettings();
   });
   
-  // Modal Backdrop Click
-  document.getElementById('plugin-settings-modal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'plugin-settings-modal') {
-      closePluginSettingsModal();
-    }
-  });
+  // Panel Close
+  document.getElementById('btn-close-plugin-panel')?.addEventListener('click', closePluginSettings);
 }
 
 export function getPluginCount() {
   return pluginCount;
 }
+

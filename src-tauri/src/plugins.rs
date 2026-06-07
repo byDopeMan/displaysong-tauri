@@ -6,7 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
-use log::{info, error};
+use log::info;
 
 /// Plugin Manifest (manifest.json)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,7 +80,8 @@ pub fn get_plugins_dir(app_data_dir: &PathBuf) -> PathBuf {
 
 /// Hole den Plugin-Data Ordner (für ein spezifisches Plugin)
 pub fn get_plugin_data_dir(app_data_dir: &PathBuf, plugin_id: &str) -> PathBuf {
-    app_data_dir.join("plugin-data").join(plugin_id)
+    // Daten werden im Plugin-Ordner unter /data/ gespeichert
+    app_data_dir.join("plugins").join(plugin_id).join("data")
 }
 
 /// Hole den Plugin-Settings Pfad
@@ -121,12 +122,9 @@ pub fn discover_plugins(app_data_dir: &PathBuf) -> Vec<PluginInfo> {
     let plugins_dir = get_plugins_dir(app_data_dir);
     let settings = load_settings(app_data_dir);
     
-    // Erstelle Ordner falls nicht vorhanden
+    // NICHT automatisch erstellen - User muss Ordner manuell anlegen
     if !plugins_dir.exists() {
-        if let Err(e) = fs::create_dir_all(&plugins_dir) {
-            error!("Failed to create plugins dir: {}", e);
-            return Vec::new();
-        }
+        return Vec::new();
     }
     
     let mut plugins = Vec::new();

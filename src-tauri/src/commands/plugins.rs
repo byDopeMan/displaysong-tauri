@@ -9,6 +9,31 @@ use serde_json::Value;
 use crate::plugins::{self, PluginInfo};
 
 // ============================================================================
+// PLUGIN FOLDER CHECK
+// ============================================================================
+
+/// Check if plugins folder exists (for showing/hiding Plugins tab)
+/// Returns true if folder exists OR if we should create it
+#[tauri::command]
+pub async fn check_plugins_folder_exists(app: AppHandle) -> Result<bool, String> {
+    let app_data_dir = app.path_resolver()
+        .app_data_dir()
+        .ok_or("Could not get app data dir")?;
+    
+    let plugins_dir = plugins::get_plugins_dir(&app_data_dir);
+    
+    // Check if folder exists
+    if plugins_dir.exists() {
+        info!("Plugins folder exists: {}", plugins_dir.display());
+        return Ok(true);
+    }
+    
+    // Folder doesn't exist - don't show tab
+    info!("Plugins folder does not exist: {}", plugins_dir.display());
+    Ok(false)
+}
+
+// ============================================================================
 // PLUGIN MANAGEMENT
 // ============================================================================
 

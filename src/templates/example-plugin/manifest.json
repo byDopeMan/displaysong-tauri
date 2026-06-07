@@ -1,9 +1,0 @@
-{
-  "id": "example-plugin",
-  "name": "Example Plugin",
-  "version": "1.0.0",
-  "author": "DisplaySong",
-  "description": "Ein Beispiel-Plugin das zeigt wie Plugins funktionieren",
-  "main": "index.js",
-  "permissions": ["track", "ui", "settings"]
-}
