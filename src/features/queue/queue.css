@@ -31,6 +31,19 @@
   margin-bottom: 16px;
 }
 
+/* Right-hand controls: Auto-Play toggle + Queue leeren */
+.queue-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.queue-autoplay-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
 .queue-title {
   display: flex;
   align-items: center;

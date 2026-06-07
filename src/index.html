@@ -244,7 +244,14 @@
                 <span data-i18n="queue.title">Song Request Queue</span>
                 <span class="queue-count" id="queue-count">0</span>
               </h3>
-              <button id="btn-clear-queue" class="btn btn-danger btn-small" data-i18n="queue.clear">Queue leeren</button>
+              <div class="queue-header-actions">
+                <span class="queue-autoplay-label" data-i18n="queue.autoplay">Auto-Play</span>
+                <label class="toggle-switch" title="An: spielt die Queue automatisch der Reihe nach ab. Aus: deine normale Wiedergabe läuft weiter.">
+                  <input type="checkbox" class="js-queue-autoplay">
+                  <span class="toggle-slider"></span>
+                </label>
+                <button id="btn-clear-queue" class="btn btn-danger btn-small" data-i18n="queue.clear">Queue leeren</button>
+              </div>
             </div>
             <div id="queue-list"></div>
           </div>
@@ -262,7 +269,14 @@
               <span data-i18n="queue.title">Song Request Queue</span>
               <span class="queue-count-standalone" id="queue-count-standalone">0</span>
             </h2>
-            <button id="btn-clear-queue-standalone" class="btn btn-danger btn-small" data-i18n="queue.clear">Queue leeren</button>
+            <div class="queue-header-actions">
+              <span class="queue-autoplay-label" data-i18n="queue.autoplay">Auto-Play</span>
+              <label class="toggle-switch" title="An: spielt die Queue automatisch der Reihe nach ab. Aus: deine normale Wiedergabe läuft weiter.">
+                <input type="checkbox" class="js-queue-autoplay">
+                <span class="toggle-slider"></span>
+              </label>
+              <button id="btn-clear-queue-standalone" class="btn btn-danger btn-small" data-i18n="queue.clear">Queue leeren</button>
+            </div>
           </div>
           <div id="queue-list-standalone"></div>
         </div>
@@ -687,12 +701,6 @@
             <input type="checkbox" id="twitch-duplicate-check" class="setting-checkbox" checked>
           </div>
           <p class="setting-hint" data-i18n="settings.twitch.duplicateCheckHint">Verhindert, dass der gleiche Song mehrfach in der Queue ist</p>
-
-          <div class="setting-row">
-            <label for="queue-autoplay" data-i18n="settings.twitch.autoplayQueue">Queue automatisch abspielen</label>
-            <input type="checkbox" id="queue-autoplay" class="setting-checkbox">
-          </div>
-          <p class="setting-hint" data-i18n="settings.twitch.autoplayQueueHint">Spielt offene Song-Requests automatisch der Reihe nach ab, sobald nichts mehr läuft (benötigt Spotify-Verbindung).</p>
 
           <div class="setting-row setting-row-vertical">
             <div class="setting-row-top">

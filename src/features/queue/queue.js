@@ -47,15 +47,18 @@ export async function initQueue() {
  */
 function setupAutoPlay() {
   autoPlayQueue = localStorage.getItem('queue-autoplay') === 'true';
-  const checkbox = document.getElementById('queue-autoplay');
-  if (checkbox) {
-    checkbox.checked = autoPlayQueue;
-    checkbox.addEventListener('change', (e) => {
+  // The toggle lives in the queue header (player view + standalone queue view),
+  // so there can be two checkboxes — keep them in sync.
+  const toggles = document.querySelectorAll('.js-queue-autoplay');
+  toggles.forEach((cb) => {
+    cb.checked = autoPlayQueue;
+    cb.addEventListener('change', (e) => {
       autoPlayQueue = e.target.checked;
       localStorage.setItem('queue-autoplay', String(autoPlayQueue));
+      toggles.forEach((other) => { if (other !== e.target) other.checked = autoPlayQueue; });
       updateAutoAdvanceMonitor();
     });
-  }
+  });
   updateAutoAdvanceMonitor();
 }
 
