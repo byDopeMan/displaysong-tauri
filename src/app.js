@@ -240,16 +240,19 @@ async function init() {
     return;
   }
   
-  // Check for existing Spotify credentials (for users who set up Spotify)
-  if (savedProvider === PROVIDER.SPOTIFY) {
-    setLoadingStatus('Verbinde mit Spotify...');
-    const connected = await checkExistingCredentialsWithStatus(setLoadingStatus);
-    setSpotifyConnected(connected);
-  } else {
-    // Windows Audio mode - no credentials needed
+  // Restore the Spotify connection whenever credentials exist — song requests,
+  // queue track info and playback all need the Spotify API client, even when the
+  // now-playing source is Windows Audio. The provider only controls polling, not
+  // whether the Spotify client is initialized. (Previously Spotify was only
+  // connected in Spotify-provider mode, so in Windows Audio mode the queue showed
+  // "Lädt…" forever and song requests/playback silently failed.)
+  setLoadingStatus('Verbinde mit Spotify...');
+  const spotifyConnected = await checkExistingCredentialsWithStatus(setLoadingStatus);
+  setSpotifyConnected(spotifyConnected);
+  if (savedProvider === PROVIDER.WINDOWS_AUDIO) {
+    // Windows Audio is the now-playing source and works with or without Spotify;
+    // don't gate app startup on the Spotify connection.
     state.isAuthenticated = true;
-    // Update Spotify UI to show not connected
-    setSpotifyConnected(false);
   }
   
   // Start progress interpolation (uses central timer)
