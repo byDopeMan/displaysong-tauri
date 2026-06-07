@@ -829,7 +829,42 @@ async function loadRewards(selectedId) {
     if (current) select.value = current;
   } catch (e) {
     console.error('[Twitch] Load rewards error:', e);
-    showNotification('Belohnungen konnten nicht geladen werden: ' + e, { type: 'error' });
+    const msg = String(e).toLowerCase();
+    if (msg.includes('403') || msg.includes('affiliate') || msg.includes('partner') || msg.includes('forbidden')) {
+      showNotification(
+        'Channel Points benötigen Affiliate- oder Partner-Status. Du kannst den Ablauf unten mit „Test-Einlösung simulieren" testen.',
+        { type: 'warning', duration: 9000 }
+      );
+    } else {
+      showNotification('Belohnungen konnten nicht geladen werden: ' + e, { type: 'error' });
+    }
+  }
+}
+
+/**
+ * Simulate a channel-point redemption locally. Emits the exact `twitch-redemption`
+ * event a real redemption produces, so the full request pipeline runs unchanged —
+ * letting users test channel points without Affiliate/Partner status.
+ */
+async function simulateRedemption() {
+  const input = document.getElementById('twitch-test-link');
+  const link = input?.value?.trim();
+  if (!link) {
+    showNotification('Bitte einen Test-Link eingeben (Spotify, YouTube, …).', { type: 'warning' });
+    return;
+  }
+  if (!window.__TAURI__?.event) return;
+
+  try {
+    await window.__TAURI__.event.emit('twitch-redemption', {
+      user_id: 'test-user',
+      user_name: 'TestUser',
+      user_input: link,
+    });
+    showNotification('Test-Einlösung ausgelöst — siehe Queue.', { type: 'info' });
+  } catch (e) {
+    console.error('[Twitch] Test redemption error:', e);
+    showNotification('Test-Einlösung fehlgeschlagen: ' + e, { type: 'error' });
   }
 }
 
@@ -906,6 +941,7 @@ export function setupTwitchListeners() {
     document.getElementById('twitch-create-reward-form')?.classList.toggle('hidden');
   });
   document.getElementById('btn-twitch-save-reward')?.addEventListener('click', createReward);
+  document.getElementById('btn-twitch-test-redemption')?.addEventListener('click', simulateRedemption);
 
   // Local settings (stored in localStorage, not backend)
   document.getElementById('twitch-add-to-spotify')?.addEventListener('change', (e) => {

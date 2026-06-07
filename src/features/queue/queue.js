@@ -26,9 +26,38 @@ const ICONS = {
 export async function initQueue() {
   setupQueueEventListener();
   setupClearButtons();
+  setupQueueDelegation();
   await loadQueue();
   renderQueue();
   updateQueueVisibility();
+}
+
+/**
+ * Attach delegated click handlers to the queue containers.
+ *
+ * The list HTML is re-rendered on every update, so we listen on the (stable)
+ * container instead of the buttons. This replaces the old inline `onclick`
+ * handlers, which were brittle (broke on quotes in URIs and depended on
+ * globals) and are the reason the queue buttons did nothing when clicked.
+ */
+function setupQueueDelegation() {
+  ['queue-list', 'queue-list-standalone'].forEach((id) => {
+    const container = document.getElementById(id);
+    if (!container || containerListenersSetup.has(id)) return;
+    containerListenersSetup.add(id);
+
+    container.addEventListener('click', (e) => {
+      const item = e.target.closest('.queue-item');
+      if (!item) return;
+      const { id: requestId, uri } = item.dataset;
+
+      if (e.target.closest('.queue-btn-play')) {
+        playSong(requestId, uri);
+      } else if (e.target.closest('.queue-btn-remove')) {
+        removeSong(requestId);
+      }
+    });
+  });
 }
 
 /**
@@ -286,10 +315,10 @@ function renderQueue() {
           </div>
           
           <div class="queue-item-actions">
-            <button class="queue-btn queue-btn-play" title="Jetzt abspielen" onclick="window.__queuePlay__('${item.id}', '${item.spotify_uri}')">
+            <button class="queue-btn queue-btn-play" title="Jetzt abspielen">
               ${ICONS.play}
             </button>
-            <button class="queue-btn queue-btn-remove" title="Entfernen" onclick="window.__queueRemove__('${item.id}')">
+            <button class="queue-btn queue-btn-remove" title="Entfernen">
               ${ICONS.trash}
             </button>
           </div>
@@ -298,10 +327,6 @@ function renderQueue() {
     }).join('');
   });
 }
-
-// Global handlers for queue buttons (inline onclick)
-window.__queuePlay__ = playSong;
-window.__queueRemove__ = removeSong;
 
 /**
  * Called when player tab visibility changes

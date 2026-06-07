@@ -601,6 +601,34 @@
               </div>
               <button id="btn-twitch-save-reward" class="btn btn-primary btn-small" data-i18n="settings.twitch.rewardCreateBtn">Belohnung erstellen</button>
             </div>
+
+            <!-- Test ohne Affiliate/Partner -->
+            <div class="subsection-divider"></div>
+            <div class="setting-notice info">
+              <div class="notice-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+              </div>
+              <div class="notice-content">
+                <strong>Ohne Affiliate/Partner testen</strong>
+                <p>Die Channel-Points-API von Twitch benötigt Affiliate- oder Partner-Status. Du kannst den kompletten Ablauf (Link → Spotify → Queue) hier simulieren, ohne eine echte Belohnung.</p>
+              </div>
+            </div>
+            <div class="setting-row setting-row-vertical">
+              <div class="setting-row-top">
+                <label for="twitch-test-link" data-i18n="settings.twitch.testLink">Test-Link</label>
+                <input type="text" id="twitch-test-link" class="setting-input" placeholder="https://open.spotify.com/track/...">
+              </div>
+            </div>
+            <button id="btn-twitch-test-redemption" class="btn btn-secondary btn-small">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span data-i18n="settings.twitch.testRedemption">Test-Einlösung simulieren</span>
+            </button>
           </div>
 
           <!-- Chat-Command-Einstellungen (nur im Command-Modus sichtbar) -->
