@@ -1,27 +1,49 @@
 # 🎵 DisplaySong
 
-**Spotify Now Playing Widget für OBS** - Eine elegante Desktop-App, die den aktuell spielenden Spotify-Track als Widget anzeigt.
+**Universal Now Playing Widget für OBS** - Eine elegante Desktop-App, die den aktuell spielenden Track als Widget anzeigt. Funktioniert mit **allen Musik-Playern**!
 
-![Version](https://img.shields.io/badge/version-2.2.0-green)
+![Version](https://img.shields.io/badge/version-3.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Tauri-orange)
 
 ---
 
+## 🆕 Was ist neu in v3.0?
+
+- 🎧 **Universelle Musik-Erkennung** - Erkennt automatisch Musik von Spotify, YouTube, VLC, Browser, und mehr!
+- 🚀 **Kein Spotify-Zwang** - Die App funktioniert sofort ohne Spotify-API Setup
+- 🔗 **Multi-Platform Song Requests** - YouTube, Apple Music, SoundCloud Links werden automatisch zu Spotify konvertiert
+- 📊 **Lokale Track-Historie** - SQLite-basierte Verlaufsspeicherung
+- 🎛️ **Provider-Auswahl** - Wähle zwischen Windows Audio (Universal) und Spotify API
+
+---
+
 ## ✨ Features
 
-- 🎨 **4 Widget-Designs** - Compact Bar, Album Focus, und 2 vollständig anpassbare Custom-Widgets
-- 🎯 **OBS-ready** - Transparenter Hintergrund für nahtlose Stream-Integration
-- 🔄 **Echtzeit-Updates** - Song, Artist, Album, Cover und Fortschritt werden live aktualisiert
-- 🌈 **Dynamische Farben** - Widget-Akzentfarbe passt sich automatisch dem Album-Cover an
-- 🎨 **Custom Akzentfarbe** - Wähle deine eigene Farbe oder nutze Presets
-- ✨ **Smooth Transitions** - Elegante Animationen beim Song-Wechsel
-- 📜 **Song-Verlauf** - Konfigurierbar 10-100 Songs mit Spotify-Embed Ansicht
-- 💾 **Kein Server nötig** - Läuft komplett lokal auf deinem PC
-- 🔒 **Sicher** - Credentials werden im System-Keyring gespeichert
-- ⚡ **Lazy Loading** - Widgets werden erst bei Bedarf erstellt, minimaler RAM-Verbrauch
-- 🔄 **Auto-Updater** - Prüft automatisch auf neue Versionen
-- 📝 **Logging** - Automatische Logs für Debugging
+### 🎵 Musik-Erkennung
+- **Windows Audio (Standard)** - Erkennt Musik von JEDEM Player automatisch
+  - Spotify, YouTube Music, Apple Music, Deezer, TIDAL
+  - VLC, foobar2000, MusicBee, Winamp
+  - Browser (Chrome, Firefox, Edge)
+- **Spotify API (Optional)** - Für erweiterte Features wie Queue-Control
+
+### 🎨 Widgets
+- **4 Widget-Designs** - Compact Bar, Album Focus, und 2 Custom-Widgets
+- **OBS-ready** - Transparenter Hintergrund für nahtlose Stream-Integration
+- **Dynamische Farben** - Akzentfarbe passt sich dem Album-Cover an
+- **Auto-Hide** - Widget ausblenden wenn nichts läuft
+- **Smooth Transitions** - Elegante Animationen beim Song-Wechsel
+
+### 📺 Twitch Integration
+- **Song Requests** - Viewer können Songs über Chat anfordern
+- **Multi-Platform Links** - YouTube, SoundCloud, Apple Music → Spotify
+- **Queue Management** - Verwaltung der Song Request Queue
+- **Customizable Messages** - Passe Chat-Nachrichten an
+
+### 🔌 Plugin System
+- **Python Plugins** - Erweitere die App mit eigenen Plugins
+- **Beispiel-Plugins** - Lyrics Overlay, Hotkeys, Discord Bot
+- **Plugin API** - HTTP Requests, Datenspeicherung, Event System
 
 ---
 
@@ -29,109 +51,101 @@
 
 ### Voraussetzungen
 
-- Spotify Premium Account (für API-Zugriff)
 - Windows 10/11
+- **Optional:** Spotify Premium (nur für erweiterte Spotify-Features)
 
 ### Download
 
 Lade die neueste Version von der [Releases](../../releases) Seite herunter:
-- **Windows:** `DisplaySong_x.x.x_x64-setup.exe` oder `.msi`
-
-### Spotify App erstellen
-
-1. Gehe zum [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Klicke **"Create App"**
-3. Name: `DisplaySong` (oder beliebig)
-4. Redirect URI: `http://127.0.0.1:8888/callback`
-5. Wähle "Web API" bei den APIs
-6. Kopiere **Client ID** und **Client Secret**
+- **Windows:** `DisplaySong_3.0.0_x64-setup.exe`
 
 ---
 
-## 🚀 Benutzung
+## 🚀 Schnellstart
 
-### Erste Einrichtung
+### Windows Audio (Empfohlen)
 
 1. Starte DisplaySong
-2. Gib deine **Client ID** und **Client Secret** ein
-3. Klicke "Speichern & Verbinden"
-4. Autorisiere die App im Browser
-5. Fertig! 🎉
+2. Wähle **"Windows Audio (Universal)"** → **"Sofort starten"**
+3. Fertig! 🎉 Die App erkennt automatisch alle Musik-Player
+
+### Spotify API (Optional)
+
+Nur nötig für: Song Requests zur Spotify Queue, Playlist-Sync
+
+1. Gehe zum [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Erstelle eine App mit Redirect URI: `http://127.0.0.1:8888/callback`
+3. In DisplaySong: **"Spotify API"** → **"Einrichten"**
+4. Gib Client ID & Secret ein → Verbinden
+
+---
+
+## 🎮 Benutzung
 
 ### Widgets anzeigen
 
 1. Gehe zum Tab **"Designs"**
 2. Klicke bei einem Widget auf **"Anzeigen"**
 3. Ziehe das Widget an die gewünschte Position
-4. Das Widget merkt sich die Position automatisch
+4. **Optional:** Aktiviere "Ausblenden wenn nichts läuft"
 
 ### Widgets in OBS einbinden
 
 1. Zeige ein Widget in DisplaySong an
 2. In OBS: **Quellen → + → Fensteraufnahme**
-3. Wähle das Widget-Fenster (z.B. "Compact Bar")
-4. **Wichtig:** Setze "Aufnahmemethode" auf **"Windows 10 (1903 und höher)"**
-5. Aktiviere **"Client-Bereich erfassen"** für bessere Ränder
+3. Wähle das Widget-Fenster (z.B. "Widget - Compact Bar")
+4. Setze "Aufnahmemethode" auf **"Windows 10 (1903 und höher)"**
+5. Aktiviere **"Client-Bereich erfassen"**
 
-### Custom Widgets bearbeiten
+### Twitch Song Requests
 
-1. Gehe zu **"Designs"**
-2. Klicke **"📁 Widget-Ordner öffnen"**
-3. Bearbeite `custom1.html` oder `custom2.html`
-4. Speichere und klicke **"🔄 Widgets neu laden"**
+1. Verbinde Twitch unter **Einstellungen → Verbindungen**
+2. Aktiviere **Song Requests** im Twitch-Bereich
+3. Viewer können nun `!sr <Song>` oder `!sr <Link>` verwenden
+4. Unterstützte Links: Spotify, YouTube, Apple Music, SoundCloud, Deezer
 
 ---
 
 ## ⚙️ Einstellungen
 
+### Musik-Quelle
 | Einstellung | Beschreibung |
 |-------------|--------------|
-| **Autostart** | App beim Windows-Start automatisch starten |
-| **Widget-Positionen merken** | Widgets öffnen an der letzten Position |
-| **Aktualisierungsrate** | Wie oft Spotify abgefragt wird (1-10 Sek.) |
-| **Verlauf Tab anzeigen** | Ein-/Ausblenden des Verlauf-Tabs |
-| **Anzahl Songs im Verlauf** | Anzahl der gespeicherten Songs (10-100) |
+| **Windows Audio** | Erkennt Musik von allen Playern automatisch |
+| **Spotify API** | Spotify-only, ermöglicht Queue-Control |
+
+### Widget-Optionen
+| Einstellung | Beschreibung |
+|-------------|--------------|
+| **Akzentfarbe** | Nutze Album-Farbe oder eigene Farbe |
+| **Ausblenden wenn nichts läuft** | Widget wird unsichtbar wenn keine Musik |
 | **Widget-Transparenz** | Deckkraft der Widgets (50-100%) |
-| **Akzentfarbe** | Preset oder eigene Farbe wählen |
-| **Player/Verlauf Tab** | Tabs können ein-/ausgeblendet werden |
+| **Positionen merken** | Widgets öffnen an der letzten Position |
+
+### Twitch
+| Einstellung | Beschreibung |
+|-------------|--------------|
+| **Command** | Standard: `!sr` |
+| **Cooldown** | Wartezeit zwischen Requests |
+| **Max. Song-Länge** | Maximale Dauer in Minuten |
+| **Nur Subscriber** | Nur Subs können requesten |
 
 ---
 
 ## 🎨 Custom Widget Entwicklung
 
-### Verfügbare CSS-Variablen
-
-```css
-:root {
-  --r: 29;   /* Rot-Wert der Album-Farbe (0-255) */
-  --g: 185;  /* Grün-Wert */
-  --b: 84;   /* Blau-Wert */
-  --accent-r: 29;  /* Akzentfarbe Rot */
-  --accent-g: 185; /* Akzentfarbe Grün */
-  --accent-b: 84;  /* Akzentfarbe Blau */
-  --transition-duration: 0.4s;
-}
-
-/* Verwendung: */
-.element {
-  color: rgb(var(--r), var(--g), var(--b));
-  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.2);
-}
-```
-
-### Track-Daten (JavaScript)
+### Track-Daten
 
 ```javascript
-// Track-Objekt:
 {
   track: "Song Name",
   artist: "Artist Name", 
   album: "Album Name",
-  albumCover: "https://...",
-  trackId: "spotify:track:...",
+  albumCover: "https://... oder data:image/...",
   isPlaying: true,
   progressMs: 45000,
   durationMs: 180000,
+  source: "Spotify", // oder "Chrome", "VLC", etc.
   color: { r: 29, g: 185, b: 84 }
 }
 ```
@@ -139,110 +153,55 @@ Lade die neueste Version von der [Releases](../../releases) Seite herunter:
 ### Events
 
 ```javascript
-// Song-Update empfangen
+// Song-Update
 window.__TAURI__.event.listen('track-update', (e) => {
   const track = e.payload;
-  // Widget aktualisieren...
 });
 
-// Akzentfarbe geändert
+// Akzentfarbe
 window.addEventListener('accent-color-change', (e) => {
   const { r, g, b } = e.detail;
-  // Farbe anwenden...
 });
 
-// Zurück auf Album-Farbe
-window.addEventListener('accent-color-reset', () => {
-  // currentTrack.color verwenden...
+// Auto-Hide
+window.addEventListener('autohide-change', (e) => {
+  const { enabled } = e.detail;
 });
-```
-
-### Minimales Widget-Template
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { background: transparent; font-family: system-ui; }
-    .widget {
-      background: rgba(0,0,0,0.8);
-      padding: 16px;
-      border-radius: 12px;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-  <div class="widget">
-    <div id="title">-</div>
-    <div id="artist">-</div>
-  </div>
-  
-  <script type="module">
-    const { listen } = window.__TAURI__.event;
-    const { invoke } = window.__TAURI__.tauri;
-    
-    function update(track) {
-      if (!track) return;
-      document.getElementById('title').textContent = track.track;
-      document.getElementById('artist').textContent = track.artist;
-    }
-    
-    listen('track-update', (e) => update(e.payload));
-    invoke('get_track').then(update);
-  </script>
-</body>
-</html>
 ```
 
 ---
 
 ## 📁 Dateipfade
 
-| Betriebssystem | Pfad |
-|----------------|------|
-| **Windows** | `%APPDATA%\com.displaysong.app\` |
-
-### Ordnerstruktur
-
 ```
-com.displaysong.app/
-├── widgets/           # Deine Custom Widgets
+%APPDATA%\com.displaysong.app\
+├── widgets/           # Custom Widgets
 │   ├── custom1.html
 │   └── custom2.html
-└── logs/              # Log-Dateien
-    └── displaysong_2026-01-24.log
+├── plugins/           # Python Plugins
+├── logs/              # Log-Dateien
+└── songrequests.db    # Track History + Queue
 ```
 
 ---
 
 ## 🔧 Troubleshooting
 
-### "Autorisierung fehlgeschlagen"
-- Prüfe die Redirect URI: `http://127.0.0.1:8888/callback`
-- Stelle sicher dass Port 8888 nicht blockiert ist
-
 ### Widget zeigt "Warte auf Musik..."
-- Ist Spotify geöffnet und spielt Musik?
-- Prüfe den Verbindungsstatus in DisplaySong (grüner Punkt)
+- Spielt Musik in irgendeinem Player?
+- Windows Audio erkennt nur aktiv spielende Musik
 
-### Custom Widget wird nicht aktualisiert
-- Klicke **"🔄 Widgets neu laden"** nach dem Speichern
-- Öffne das Widget und drücke F12 für die Konsole
+### Twitch/Browser wird erkannt statt Musik
+- v3.0 filtert automatisch Twitch-Streams und URLs
+- Stelle sicher du nutzt die neueste Version
 
-### App startet nicht
-1. Gehe zu **Einstellungen → Über → 📁 Logs öffnen**
-2. Prüfe die neueste Log-Datei
-3. Lösche notfalls den App-Ordner und starte neu
+### Song Requests funktionieren nicht
+- Ist Spotify verbunden? (für Queue-Funktion nötig)
+- Prüfe den Cooldown und die Einstellungen
 
-### Rate-Limit Fehler
-- Spotify erlaubt begrenzte API-Aufrufe
-- Erhöhe die Aktualisierungsrate auf 5+ Sekunden
-
-### Weiße Titlebar an Widgets
-- Dies sollte mit v2.2.0 behoben sein (gebündelte WebView2 Runtime)
-- Falls das Problem auftritt, erstelle ein Issue auf GitHub
+### Verlauf ist leer
+- Der Verlauf wird bei jedem App-Start geleert
+- Tracks werden während der Session gespeichert
 
 ---
 
@@ -257,88 +216,56 @@ com.displaysong.app/
 ### Setup
 
 ```bash
-# Repository klonen
 git clone https://github.com/byDopeMan/displaysong-tauri.git
 cd displaysong-tauri
-
-# Dependencies installieren
 npm install
-
-# Entwicklung starten (mit Fixed WebView2 Runtime)
-cd src-tauri
-.\dev-with-fixed-webview.bat
-
-# ODER manuell:
-$env:WEBVIEW2_BROWSER_EXECUTABLE_FOLDER=".\src-tauri\webview2-runtime\Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64"
 npm run tauri dev
-
-# Release bauen
-npm run tauri build
 ```
 
 ### Projektstruktur
 
 ```
-displaysong-tauri/
-├── src/                    # Frontend
-│   ├── index.html
-│   ├── app.js
-│   ├── core/               # Core Modules
-│   ├── features/           # Feature Modules
-│   ├── ui/                 # UI Components
-│   ├── utils/              # Utility Functions
-│   ├── styles/
-│   ├── widgets/            # Widget HTML-Dateien
-│   └── templates/          # Custom Widget Templates
-├── src-tauri/              # Backend (Rust)
-│   ├── src/
-│   │   ├── main.rs         # App Setup
-│   │   ├── commands/       # Tauri Commands
-│   │   │   ├── widgets.rs  # Widget Commands (Lazy Loading)
-│   │   │   ├── spotify.rs  # Spotify Commands
-│   │   │   └── settings.rs # Settings Commands
-│   │   ├── state.rs        # App State
-│   │   ├── polling.rs      # Spotify Polling
-│   │   ├── tray.rs         # System Tray
-│   │   ├── logging.rs      # Logging Setup
-│   │   ├── spotify.rs      # Spotify API Client
-│   │   ├── credentials.rs  # Keyring-Speicherung
-│   │   └── color.rs        # Farbextraktion + Cache
-│   ├── webview2-runtime/   # Fixed WebView2 Runtime
-│   └── tauri.conf.json
-└── package.json
+src/                    # Frontend (JavaScript)
+├── core/               # State, Events, Timer
+├── features/           # Provider, Auth, History, Twitch
+├── ui/                 # Navigation, Notifications
+├── widgets/            # Widget HTML-Dateien
+└── locales/            # i18n (de, en)
+
+src-tauri/              # Backend (Rust)
+├── commands/           # Tauri Commands
+│   ├── windows_media.rs    # Windows Audio API
+│   ├── spotify.rs          # Spotify API
+│   ├── twitch.rs           # Twitch Integration
+│   └── queue.rs            # SQLite Queue/History
+├── windows_media.rs    # Media Session Provider
+├── polling.rs          # Spotify Polling
+└── songlink.rs         # Link Conversion
 ```
 
 ---
 
 ## 📋 Changelog
 
+### v3.0.0 🎉
+- 🎧 **Universelle Musik-Erkennung** - Windows Media Session API
+- 🚀 **Kein Spotify-Zwang** - App funktioniert sofort
+- 🔗 **Multi-Platform Song Requests** - YouTube, SoundCloud, Apple Music
+- 📊 **Lokale Track-Historie** - SQLite Datenbank
+- 🎛️ **Provider-Auswahl** - Windows Audio oder Spotify
+- 👁️ **Auto-Hide** - Widget ausblenden wenn nichts läuft
+- 🔌 **Plugin System** - Python Plugins mit API
+- 🌐 **i18n** - Deutsch und Englisch
+
+### v2.3.0
+- YouTube, Apple Music, SoundCloud Song Requests
+- Plugin System mit Python Support
+- SQLite Persistenz für Queue
+
 ### v2.2.0
-- 🔧 **WebView2 Transparenz-Fix** - Behebt weiße Titlebar durch gebündelte WebView2 Runtime
-- ⚡ **Lazy Loading** - Widgets werden erst bei Bedarf erstellt (~200 MB RAM gespart)
-- 🎨 **Color Cache** - Album-Farben werden gecacht für bessere Performance
-- 🏗️ **Modularer Code** - Backend in separate Module aufgeteilt
-- 🔄 **Auto-Updater** - Prüft automatisch auf neue Versionen
-- ✨ **Smooth Animationen** - Elegante Übergänge beim Song-Wechsel
-- 🎵 **Spotify Embed** - Voll nutzbar im Verlauf
-
-### v2.1.1
-- 🚀 Lade-Bildschirm beim Start mit Status
-- 📥 Visuelle Animation beim Minimieren ins Tray
-- 📝 Automatisches Logging in AppData/logs
-
-### v2.1.0
-- 🎨 Custom Akzentfarbe mit Color Picker
-- 🎨 Akzentfarbe für Design 1 & 2 optional
-- 📜 Song-Verlauf mit Spotify Embed Ansicht
-- 📋 Song-Info kopieren Button
-- 🌫️ Widget-Transparenz einstellbar
-
-### v2.0.0
-- 🎉 Erste Tauri-Version
-- 4 Widget-Designs
-- Dynamische Farben
-- System Tray Integration
+- WebView2 Transparenz-Fix
+- Lazy Loading für Widgets
+- Color Cache
 
 ---
 
@@ -352,13 +279,8 @@ MIT License - Siehe [LICENSE](LICENSE)
 
 - [Tauri](https://tauri.app/) - Framework
 - [Spotify Web API](https://developer.spotify.com/) - Musik-Daten
-
----
-
-## 💬 Support
-
-- **Issues:** [GitHub Issues](../../issues)
-- **Discussions:** [GitHub Discussions](../../discussions)
+- [Songlink/Odesli](https://odesli.co/) - Link Conversion
+- [Windows Media Session API](https://docs.microsoft.com/en-us/windows/win32/api/mpris/) - Universal Music Detection
 
 ---
 

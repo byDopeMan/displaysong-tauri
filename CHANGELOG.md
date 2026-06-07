@@ -2,7 +2,57 @@
 
 Alle wichtigen Änderungen an DisplaySong.
 
-## [2.2.0] - 2026-01-23
+## [2.3.0] 
+
+### 🎵 Multi-Platform Song Requests
+- **YouTube Support** - Chat-User können jetzt YouTube Links posten
+- **Apple Music Support** - Links werden automatisch konvertiert
+- **SoundCloud Support** - Auch SoundCloud Links funktionieren
+- **Weitere Plattformen** - Deezer, Tidal, Amazon Music, Pandora
+- **Songlink/Odesli API** - Automatische Konvertierung zu Spotify
+- Neue Chat-Nachrichten: `notOnSpotify` wenn Song nicht auf Spotify ist
+
+### 🔌 Plugin System Erweiterung
+- **Python Support** - Plugins können jetzt Python Scripts ausführen
+  - Embedded Python Option im Installer (~40 MB)
+  - System Python wird automatisch erkannt
+  - Plugin API: `pythonRun()`, `pythonRunScript()`, `pythonInstall()`
+- **Erweitertes Event System** - Mehr Events für Plugins:
+  - Track Events: `TrackChange`, `TrackPlay`, `TrackPause`
+  - Queue Events: `QueueAdd`, `QueueRemove`, `QueuePlay`
+  - Twitch Events: `TwitchChat`, `TwitchRedemption`, `TwitchFollow`
+  - App Events: `AppReady`, `AppMinimize`, `AppClose`
+- **3 Beispiel-Plugins** im Installer:
+  - **Lyrics Plugin** - Zeigt Songtexte via lyrics.ovh API
+  - **Hotkeys Plugin** - Globale Tastenkürzel (benötigt Python)
+  - **Discord Bot Plugin** - Song Requests via Discord (benötigt Python)
+
+### 📦 Custom Installer
+- **Neuer NSIS Installer** - Modernes, kompaktes Design
+- **Komponenten-Auswahl**:
+  - DisplaySong (erforderlich)
+  - WebView2 Runtime (automatische Prüfung)
+  - Beispiel-Plugins
+  - Python Runtime (optional)
+- **Upgrade-Erkennung** - Erkennt bestehende Installation
+- **Auto-Close** - Schließt laufende App automatisch vor Update
+
+### 🗄️ Song Request Queue
+- **SQLite Persistenz** - Queue bleibt nach App-Neustart erhalten
+- Datenbank in AppData gespeichert
+
+### 🌍 i18n Verbesserungen
+- Übersetzungen für `title` und `placeholder` Attribute
+- Dynamische Status-Texte werden übersetzt
+- Verbesserte deutsche Übersetzungen
+
+### 🔧 Bugfixes
+- Auth Server startet nur wenn nicht authentifiziert
+- History Empty State SVG statt Emoji
+- CSS `.setting-hint` Positionierung korrigiert
+- Diverse Rust Warnings behoben
+
+## [2.2.0] 
 
 ### 🔧 Bugfix
 - **WebView2 Transparenz-Fix** - Behebt das weiße Titlebar-Problem durch gebündelte WebView2 Runtime (v143)
