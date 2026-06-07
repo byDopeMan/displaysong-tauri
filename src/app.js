@@ -1,5 +1,5 @@
 /**
- * DisplaySong v3.0.0 - Main Entry Point
+ * DisplaySong v4.0.0 - Main Entry Point
  * Universal Music Detection with optional Spotify Integration
  */
 
@@ -236,7 +236,7 @@ async function init() {
     // Show setup view for new users
     if (loadingView) loadingView.classList.add('hidden');
     showView('setup');
-    console.log('DisplaySong v3.0.0 - Setup required');
+    console.log('DisplaySong v4.0.0 - Setup required');
     return;
   }
   
@@ -318,7 +318,7 @@ async function init() {
   const { loadHistory } = await import('./features/history.js');
   await loadHistory();
   
-  console.log('DisplaySong v3.0.0 initialized!');
+  console.log('DisplaySong v4.0.0 initialized!');
   console.log('Provider:', savedProvider);
 }
 

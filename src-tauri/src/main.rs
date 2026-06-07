@@ -203,7 +203,7 @@ fn main() {
             if let Err(e) = logging::setup_logging(data_dir.clone()) {
                 eprintln!("Logging setup failed: {}", e);
             } else {
-                info!("=== DisplaySong v3.0.0 gestartet ===");
+                info!("=== DisplaySong v4.0.0 gestartet ===");
                 info!("Lazy Loading: Widgets werden bei Bedarf erstellt");
                 if let Some(ref dir) = data_dir {
                     info!("App-Daten: {}", dir.display());

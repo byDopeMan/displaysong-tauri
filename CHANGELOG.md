@@ -2,6 +2,33 @@
 
 Alle wichtigen Änderungen an DisplaySong.
 
+## [4.0.0]
+
+### 🎵 Universelle Musik-Erkennung & Provider
+- Erkennung aller Player über die Windows Media Session API; Spotify wird beim Start
+  immer verbunden (auch im Windows-Audio-Modus) – behebt „Lädt…", fehlende Wiedergabe
+  und Login-Verlust.
+- **Source-Priorität** greift jetzt: das Backend enumeriert alle Sessions und wählt
+  nach der eingestellten Reihenfolge.
+- **Twitch/Livestreams** werden nicht mehr als Song erkannt (Browser-Quelle ohne
+  endliche Dauer wird übersprungen).
+- **Progress-Bar synchron**: Position wird via `LastUpdatedTime` live hochgerechnet.
+
+### 📺 Twitch
+- **Channel Points**: Modus-Umschalter, Reward-Auswahl/-Erstellung, „Test-Einlösung
+  simulieren" (testbar ohne Affiliate/Partner), Scope-Check/Re-Auth.
+- **Master-Schalter** „Song Requests" deaktiviert die Funktion jetzt wirklich.
+- Request-Historie ↔ Spotify-Playlist umschaltbar (war im Points-Modus abgeschnitten).
+
+### 🎶 Queue
+- Queue-Buttons (Play/Entfernen/Leeren) wieder klickbar (Overlay-Bug behoben).
+- **Auto-Play**: spielt die Request-Queue der Reihe nach, sobald der laufende Song endet.
+
+### 🛠️ App
+- **Single-Instance**: die App lässt sich nur einmal öffnen.
+- WebView2-Cache deaktiviert, damit Updates immer frisch laden.
+- Smooth Scroll-to-Top beim Tab-Wechsel; diverse Layout-Fixes.
+
 ## [2.3.0] 
 
 ### 🎵 Multi-Platform Song Requests

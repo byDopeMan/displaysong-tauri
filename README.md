@@ -2,7 +2,7 @@
 
 **Universal Now Playing Widget für OBS** - Eine elegante Desktop-App, die den aktuell spielenden Track als Widget anzeigt. Funktioniert mit **allen Musik-Playern**!
 
-![Version](https://img.shields.io/badge/version-3.0.0-green)
+![Version](https://img.shields.io/badge/version-4.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Tauri-orange)
 
@@ -57,7 +57,7 @@
 ### Download
 
 Lade die neueste Version von der [Releases](../../releases) Seite herunter:
-- **Windows:** `DisplaySong_3.0.0_x64-setup.exe`
+- **Windows:** `DisplaySong_4.0.0_x64-setup.exe`
 
 ---
 
