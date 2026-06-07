@@ -856,12 +856,14 @@ async function simulateRedemption() {
   if (!window.__TAURI__?.event) return;
 
   try {
+    // Unique user id per test so the per-user request cooldown never silently
+    // blocks repeated test redemptions (that was why a 2nd test "did nothing").
     await window.__TAURI__.event.emit('twitch-redemption', {
-      user_id: 'test-user',
+      user_id: `test-${Date.now()}`,
       user_name: 'TestUser',
       user_input: link,
     });
-    showNotification('Test-Einlösung ausgelöst — siehe Queue.', { type: 'info' });
+    showNotification('Test-Einlösung ausgelöst — siehe Queue. (Tipp: bei „nichts passiert" prüfe Duplikate-Schutz / ob der Song schon in der Queue ist.)', { type: 'info', duration: 7000 });
   } catch (e) {
     console.error('[Twitch] Test redemption error:', e);
     showNotification('Test-Einlösung fehlgeschlagen: ' + e, { type: 'error' });
