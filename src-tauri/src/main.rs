@@ -28,6 +28,19 @@ use commands::twitch::TwitchState;
 use commands::windows_media::WindowsMediaState;
 
 fn main() {
+    // Disable the WebView2 disk cache so frontend updates always load fresh.
+    // Without this, WebView2 can serve a stale cached index.html/CSS/JS across
+    // reloads and even app restarts, so UI changes (and app updates) don't appear.
+    // Honored by the WebView2 runtime when set before the webview is created.
+    #[cfg(windows)]
+    {
+        let existing = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_default();
+        if !existing.contains("disk-cache-size") {
+            let args = format!("{} --disk-cache-size=1", existing);
+            std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", args.trim());
+        }
+    }
+
     let state = AppState::new();
     let twitch_state = TwitchState::new();
     let windows_media_state = std::sync::Arc::new(WindowsMediaState::new());
