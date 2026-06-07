@@ -284,9 +284,20 @@ pub async fn get_track_info(
 ) -> Result<spotify::TrackInfo, String> {
     let mut spotify = state.spotify.lock().await;
     let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
-    
+
     client.refresh_if_needed().await?;
-    client.get_track_info(&track_id).await
+    match client.get_track_info(&track_id).await {
+        Ok(info) => Ok(info),
+        Err(e) if e.contains("401") || e.contains("expired") => {
+            // Token expired mid-flight — force a refresh and retry once.
+            client.force_refresh().await?;
+            if let Some((access, refresh)) = client.get_tokens() {
+                let _ = credentials::save_tokens(&access, &refresh);
+            }
+            client.get_track_info(&track_id).await
+        }
+        Err(e) => Err(e),
+    }
 }
 
 // ============================================================================

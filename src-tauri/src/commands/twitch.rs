@@ -435,6 +435,11 @@ pub async fn twitch_send_chat(
     message: String,
     twitch: State<'_, TwitchState>,
 ) -> Result<(), String> {
+    // Empty (or whitespace-only) messages are intentionally not sent — this lets
+    // users clear a chat-message template to disable that particular message.
+    if message.trim().is_empty() {
+        return Ok(());
+    }
     let client = twitch.client.read().await;
     let c = client.as_ref().ok_or("Nicht verbunden")?;
     c.send_chat_message(&message).await

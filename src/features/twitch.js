@@ -747,12 +747,15 @@ function saveMessagesToStorage() {
     const songNotFoundInput = document.getElementById('msg-song-not-found');
     const cooldownInput = document.getElementById('msg-cooldown');
     
+    // Save the actual field values — including empty strings. An empty message
+    // is intentional ("send nothing for this") and must not fall back to the
+    // default, otherwise clearing a field wouldn't disable that message.
     twitchMessages = {
       ...twitchMessages,
-      nowPlaying: nowPlayingInput?.value || twitchMessages.nowPlaying,
-      songAdded: songAddedInput?.value || twitchMessages.songAdded,
-      songNotFound: songNotFoundInput?.value || twitchMessages.songNotFound,
-      cooldown: cooldownInput?.value || twitchMessages.cooldown
+      nowPlaying: nowPlayingInput ? nowPlayingInput.value : twitchMessages.nowPlaying,
+      songAdded: songAddedInput ? songAddedInput.value : twitchMessages.songAdded,
+      songNotFound: songNotFoundInput ? songNotFoundInput.value : twitchMessages.songNotFound,
+      cooldown: cooldownInput ? cooldownInput.value : twitchMessages.cooldown
     };
     
     localStorage.setItem('twitch-messages', JSON.stringify(twitchMessages));

@@ -130,7 +130,11 @@ impl SpotifyClient {
     pub fn set_tokens(&mut self, access: &str, refresh: &str) {
         self.access_token = Some(access.to_string());
         self.refresh_token = Some(refresh.to_string());
-        self.token_expiry = Some(Instant::now() + Duration::from_secs(3600));
+        // Tokens loaded from storage have an UNKNOWN remaining lifetime (they may
+        // be hours old and already expired). Don't assume an hour — leave expiry
+        // None so refresh_if_needed() refreshes on first use. Assuming validity
+        // here caused expired tokens to be used → 401 "access token expired".
+        self.token_expiry = None;
     }
 
     pub async fn exchange_code(&mut self, code: &str) -> Result<(), String> {
