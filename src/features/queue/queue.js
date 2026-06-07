@@ -3,12 +3,18 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri.js';
+import { state } from '../../core/state.js';
 
 // State
 let queueItems = [];
 let trackInfoCache = new Map();
 let queueEventListenerSetup = false;
 let containerListenersSetup = new Set();
+
+// Auto-advance: play queued requests one after another when nothing is playing.
+let autoPlayQueue = false;
+let autoAdvanceTimer = null;
+let lastAutoPlayAt = 0;
 
 // SVG Icons
 const ICONS = {
@@ -27,9 +33,58 @@ export async function initQueue() {
   setupQueueEventListener();
   setupClearButtons();
   setupQueueDelegation();
+  setupAutoPlay();
   await loadQueue();
   renderQueue();
   updateQueueVisibility();
+}
+
+/**
+ * Auto-advance setup: load the persisted toggle, wire the checkbox and start
+ * the monitor. When enabled, the next queued request is played automatically
+ * once nothing is playing — so the request queue is what gets played, not the
+ * next song from the streamer's own playlist.
+ */
+function setupAutoPlay() {
+  autoPlayQueue = localStorage.getItem('queue-autoplay') === 'true';
+  const checkbox = document.getElementById('queue-autoplay');
+  if (checkbox) {
+    checkbox.checked = autoPlayQueue;
+    checkbox.addEventListener('change', (e) => {
+      autoPlayQueue = e.target.checked;
+      localStorage.setItem('queue-autoplay', String(autoPlayQueue));
+      updateAutoAdvanceMonitor();
+    });
+  }
+  updateAutoAdvanceMonitor();
+}
+
+function updateAutoAdvanceMonitor() {
+  if (autoPlayQueue && !autoAdvanceTimer) {
+    autoAdvanceTimer = setInterval(autoAdvanceTick, 4000);
+  } else if (!autoPlayQueue && autoAdvanceTimer) {
+    clearInterval(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+  }
+}
+
+/**
+ * Play the next queued request when playback is idle. Uses the app's unified
+ * current track (state.currentTrack, fed by whichever provider is active —
+ * Spotify counts as a Windows media source too), with a cooldown so the player
+ * has time to report the freshly started song before we consider advancing.
+ */
+function autoAdvanceTick() {
+  if (!autoPlayQueue || queueItems.length === 0) return;
+  if (Date.now() - lastAutoPlayAt < 8000) return; // settle time after starting a song
+
+  const cur = state.currentTrack;
+  if (cur && cur.isPlaying) return; // never interrupt something that's playing
+
+  const next = queueItems[0];
+  if (!next) return;
+  lastAutoPlayAt = Date.now();
+  playSong(next.id, next.spotify_uri);
 }
 
 /**
