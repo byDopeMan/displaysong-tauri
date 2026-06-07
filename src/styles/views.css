@@ -186,6 +186,10 @@
   z-index: 0;
   will-change: opacity;
   transform: translateZ(0);
+  /* Decorative blur background — must never intercept clicks. As a positioned
+     z-index:0 element it otherwise paints ABOVE the non-positioned queue block
+     and swallowed all clicks on play/remove/clear in the player view. */
+  pointer-events: none;
 }
 
 .cover-image {

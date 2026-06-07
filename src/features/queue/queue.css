@@ -12,6 +12,9 @@
 .player-queue-container {
   margin-top: 20px;
   padding-top: 16px;
+  /* Keep the queue (and its buttons) above the decorative cover background. */
+  position: relative;
+  z-index: 2;
 }
 
 .queue-divider {
