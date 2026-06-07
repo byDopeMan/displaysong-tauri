@@ -554,6 +554,24 @@ async function connectWithDeveloperCredentials(userEmail) {
 
     const invoke = getTauriInvoke();
     await invoke('save_credentials', { clientId, clientSecret });
+
+    // Fast path: if a stored token can still be refreshed we're already
+    // connected — skip the full OAuth flow (no browser, no auth server). This
+    // avoids re-running the fragile OAuth on every startup, which is what made
+    // the Spotify login occasionally get lost. Only when there's no valid token
+    // do we fall through to the interactive OAuth below.
+    try {
+      const alreadyConnected = await invoke('check_credentials');
+      if (alreadyConnected) {
+        state.isAuthenticated = true;
+        const { setSpotifyConnected } = await import('./provider-ui.js');
+        setSpotifyConnected(true);
+        return true;
+      }
+    } catch (e) {
+      // fall through to interactive OAuth
+    }
+
     await invoke('start_auth_server');
 
     const authUrl = await invoke('get_auth_url');
