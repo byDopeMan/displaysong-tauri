@@ -250,10 +250,20 @@ pub async fn add_to_queue(
     
     // Token refreshen falls nötig
     client.refresh_if_needed().await?;
-    
-    // Zur Queue hinzufügen
-    client.add_to_queue(&uri).await?;
-    
+
+    // Zur Queue hinzufügen (bei 401 Token erzwingen und einmal wiederholen)
+    if let Err(e) = client.add_to_queue(&uri).await {
+        if e.contains("401") || e.contains("expired") {
+            client.force_refresh().await?;
+            if let Some((access, refresh)) = client.get_tokens() {
+                let _ = credentials::save_tokens(&access, &refresh);
+            }
+            client.add_to_queue(&uri).await?;
+        } else {
+            return Err(e);
+        }
+    }
+
     info!("Zur Queue hinzugefügt: {}", uri);
     Ok(())
 }
@@ -268,10 +278,20 @@ pub async fn play_track(
     
     // Token refreshen falls nötig
     client.refresh_if_needed().await?;
-    
-    // Track abspielen
-    client.play_track(&uri).await?;
-    
+
+    // Track abspielen (bei 401 Token erzwingen und einmal wiederholen)
+    if let Err(e) = client.play_track(&uri).await {
+        if e.contains("401") || e.contains("expired") {
+            client.force_refresh().await?;
+            if let Some((access, refresh)) = client.get_tokens() {
+                let _ = credentials::save_tokens(&access, &refresh);
+            }
+            client.play_track(&uri).await?;
+        } else {
+            return Err(e);
+        }
+    }
+
     info!("Track abgespielt: {}", uri);
     Ok(())
 }

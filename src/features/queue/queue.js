@@ -100,7 +100,7 @@ function setupAutoPlay() {
  * next real song end. Pausing does not fire track-changed, so pausing no longer
  * triggers the queue.
  */
-function maybeAutoAdvance() {
+export function maybeAutoAdvance() {
   if (!autoPlayQueue || queueItems.length === 0) return;
   if (Date.now() - lastAutoPlayAt < 6000) return; // ignore our own song's start
   const next = queueItems[0];

@@ -6,7 +6,7 @@
 import { state, elements } from '../core/state.js';
 import { formatTime } from '../utils/format.js';
 import { t } from '../utils/i18n.js';
-import { getRequesterForTrack } from '../features/queue/queue.js';
+import { getRequesterForTrack, maybeAutoAdvance } from '../features/queue/queue.js';
 
 /**
  * Show "requested by X" in the player when the current track was a song request,
@@ -14,14 +14,15 @@ import { getRequesterForTrack } from '../features/queue/queue.js';
  */
 function updateRequester(track) {
   const el = document.getElementById('track-requester');
+  const nameEl = document.getElementById('track-requester-name');
   const req = track ? getRequesterForTrack(track) : null;
   const user = req?.user || null;
   if (el) {
     if (user) {
-      el.textContent = t('player.requestedBy', { user }, `Request von ${user}`);
+      if (nameEl) nameEl.textContent = user;
       el.classList.remove('hidden');
     } else {
-      el.textContent = '';
+      if (nameEl) nameEl.textContent = '';
       el.classList.add('hidden');
     }
   }
@@ -192,8 +193,16 @@ export function startProgressInterpolation() {
       if (elements.progressCurrent) {
         elements.progressCurrent.textContent = formatTime(interpolatedProgress);
       }
+
+      // Auto-Play: hand over to the queue ~1.5s before the song ends, so the
+      // next request starts immediately instead of after the playlist advances.
+      // maybeAutoAdvance() is a no-op unless Auto-Play is on and the queue has
+      // items, and it self-throttles via a cooldown.
+      if (interpolatedProgress >= state.currentTrack.durationMs - 1500) {
+        maybeAutoAdvance();
+      }
     }
-    
+
     animationFrameId = requestAnimationFrame(animate);
   }
   

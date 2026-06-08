@@ -242,14 +242,30 @@
     }
 
     .requester {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgb(var(--r), var(--g), var(--b));
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       margin-top: 12px;
+      padding: 4px 10px;
+      max-width: 100%;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(var(--r), var(--g), var(--b), 0.9);
+      border-radius: 10px;
+      transition: background var(--transition-duration) ease;
+    }
+
+    .requester svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    .requester .requester-name {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: color var(--transition-duration) ease;
     }
 
     .progress-wrap { margin-top: 16px; }
@@ -333,7 +349,10 @@
         <span id="time-total">0:00</span>
       </div>
     </div>
-    <div class="requester" id="requester" style="display:none"></div>
+    <div class="requester" id="requester" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span class="requester-name" id="requester-name"></span>
+    </div>
   </div>
 
   <script type="module">
@@ -378,9 +397,10 @@
 
       function renderRequester() {
         const el = $('requester');
+        const name = $('requester-name');
         if (!el) return;
         if (requesterEnabled && requesterUser) {
-          el.textContent = '🎵 ' + requesterUser;
+          if (name) name.textContent = requesterUser;
           el.style.display = '';
         } else {
           el.style.display = 'none';
