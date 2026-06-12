@@ -511,15 +511,19 @@
         const badge = $('badge');
         const progress = $('progress');
 
+        // Auto-hide ("Ausblenden wenn pausiert"): hide the widget when nothing
+        // is playing OR when playback is paused.
+        if (autoHideEnabled && (!track?.track || !track.isPlaying)) {
+          widget?.classList.add('hidden');
+          idle?.classList.add('hidden');
+          currentTrack = track?.track ? { ...track } : null;
+          stopProgressTimer();
+          return;
+        }
+
         if (!track?.track) {
-          if (autoHideEnabled) {
-            // Hide everything when auto-hide is enabled
-            widget?.classList.add('hidden');
-            idle?.classList.add('hidden');
-          } else {
-            widget?.classList.add('hidden');
-            idle?.classList.remove('hidden');
-          }
+          widget?.classList.add('hidden');
+          idle?.classList.remove('hidden');
           currentTrack = null;
           stopProgressTimer();
           return;

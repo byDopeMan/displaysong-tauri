@@ -93,20 +93,30 @@ function setupAutoPlay() {
 }
 
 /**
- * Play the next queued request — driven by track-changed (see the listener
- * below), so the queue takes over when the CURRENT song ENDS and the player
- * moves on to the streamer's own playlist. A cooldown swallows the track-change
- * that our own freshly started queue song produces, so we only advance on the
- * next real song end. Pausing does not fire track-changed, so pausing no longer
- * triggers the queue.
+ * Hand the next queued request over to Spotify's native queue shortly before the
+ * current song ends (triggered from the player's progress loop and as a fallback
+ * on track-changed). Using add_to_queue (instead of play_track) is important:
+ * it plays the request right after the current song AND keeps the streamer's
+ * playlist context, so music keeps going once the request queue is empty —
+ * play_track would replace the context with a single track and leave silence.
+ * A cooldown prevents queueing the same item repeatedly.
  */
-export function maybeAutoAdvance() {
+export async function maybeAutoAdvance() {
   if (!autoPlayQueue || queueItems.length === 0) return;
-  if (Date.now() - lastAutoPlayAt < 6000) return; // ignore our own song's start
+  if (Date.now() - lastAutoPlayAt < 6000) return; // one hand-over per song
   const next = queueItems[0];
   if (!next) return;
   lastAutoPlayAt = Date.now();
-  playSong(next.id, next.spotify_uri);
+
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  try {
+    await invoke('add_to_queue', { uri: next.spotify_uri });
+    await invoke('remove_song_request', { requestId: next.id });
+  } catch (e) {
+    console.error('[Queue] Auto-play queue error:', e);
+    lastAutoPlayAt = 0; // allow a retry on the next trigger
+  }
 }
 
 /**
