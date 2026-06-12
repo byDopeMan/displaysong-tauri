@@ -16,6 +16,7 @@ import { getTauriInvoke } from '../core/tauri.js';
 import { showNotification } from '../ui/notifications.js';
 import { queueItems, registerRequester } from './queue/queue.js';
 import { addToHistory } from './requestHistory.js';
+import { isUrl, isSpotifyInput, extractSpotifyTrackId, escapeHtml } from './twitch/parse.js';
 
 // State
 let isConnected = false;
@@ -247,49 +248,6 @@ async function handlePermitRequest(userId, userName) {
   } catch (e) {
     console.error('[Twitch] Permit error:', e);
   }
-}
-
-/**
- * Check if input looks like a URL
- */
-function isUrl(input) {
-  return input.startsWith('http://') || 
-         input.startsWith('https://') || 
-         input.startsWith('spotify:') ||
-         input.includes('.com/') ||
-         input.includes('.be/');
-}
-
-/**
- * Check if input is a Spotify link/URI
- */
-function isSpotifyInput(input) {
-  return input.startsWith('spotify:track:') ||
-         input.includes('spotify.com/track/') ||
-         input.includes('spotify.com/intl-');
-}
-
-/**
- * Extract Spotify track ID from various Spotify URL formats
- */
-function extractSpotifyTrackId(input) {
-  // spotify:track:ID format
-  if (input.startsWith('spotify:track:')) {
-    return input.replace('spotify:track:', '').split('?')[0];
-  }
-  
-  // https://open.spotify.com/track/ID or /intl-xx/track/ID
-  if (input.includes('spotify.com')) {
-    const match = input.match(/track\/([a-zA-Z0-9]{22})/);
-    if (match) return match[1];
-  }
-  
-  // Raw 22-character ID
-  if (input.length === 22 && /^[a-zA-Z0-9]+$/.test(input)) {
-    return input;
-  }
-  
-  return null;
 }
 
 /**
@@ -810,12 +768,6 @@ async function setTwitchMode(mode) {
   } catch (e) {
     console.error('[Twitch] Set mode error:', e);
   }
-}
-
-/** Escape user-provided text before inserting it into option markup. */
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 /**
