@@ -25,17 +25,17 @@ const WIDGET_CONFIGS: &[WidgetConfig] = &[
         title: "Widget - Compact Bar",
         url: "widgets/design1.html",
         width: 380.0,
-        height: 120.0,
+        height: 150.0,
         min_width: Some(280.0),
         min_height: Some(80.0),
-        resizable: true,
+        resizable: false,
     },
     WidgetConfig {
         label: "widget-2",
         title: "Widget - Album Focus",
         url: "widgets/design2.html",
-        width: 320.0,
-        height: 412.0,
+        width: 262.0,
+        height: 433.0,
         min_width: None,
         min_height: None,
         resizable: false,
@@ -228,20 +228,6 @@ pub async fn reset_widget_accent(label: String, app: AppHandle) -> Result<(), St
     if let Some(window) = app.get_window(&label) {
         let js = r#"window.dispatchEvent(new CustomEvent('accent-color-reset'));"#;
         window.eval(js).map_err(|e| e.to_string())?;
-    }
-    
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn set_widget_autohide(label: String, enabled: bool, app: AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_window(&label) {
-        let js = format!(
-            r#"window.autoHideEnabled = {}; window.dispatchEvent(new CustomEvent('autohide-change', {{ detail: {{ enabled: {} }} }}));"#,
-            enabled, enabled
-        );
-        window.eval(&js).map_err(|e| e.to_string())?;
-        info!("Widget {} autohide set to: {}", label, enabled);
     }
     
     Ok(())

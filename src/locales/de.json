@@ -106,8 +106,6 @@
       "msgSongNotFound": "Song nicht gefunden",
       "msgCooldown": "Cooldown aktiv",
       "placeholders": "Platzhalter",
-      "addToSpotify": "Direkt zu Spotify Queue",
-      "addToSpotifyHint": "Songs werden sofort zur Spotify Warteschlange hinzugefügt",
       "maxDuration": "Max. Song-Länge (Minuten)",
       "maxDurationHint": "0 = unbegrenzt",
       "duplicateCheck": "Duplikate prüfen",

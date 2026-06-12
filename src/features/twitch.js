@@ -36,7 +36,6 @@ let twitchMessages = {
 
 // Local settings (stored in localStorage)
 let localSettings = {
-  addToSpotify: true,
   maxDuration: 0,
   duplicateCheck: true
 };
@@ -114,11 +113,9 @@ function loadLocalSettings() {
     }
     
     // Apply to UI
-    const addToSpotifyCheck = document.getElementById('twitch-add-to-spotify');
     const maxDurationInput = document.getElementById('twitch-max-duration');
     const duplicateCheckInput = document.getElementById('twitch-duplicate-check');
-    
-    if (addToSpotifyCheck) addToSpotifyCheck.checked = localSettings.addToSpotify;
+
     if (maxDurationInput) maxDurationInput.value = localSettings.maxDuration;
     if (duplicateCheckInput) duplicateCheckInput.checked = localSettings.duplicateCheck;
   } catch (e) {
@@ -443,21 +440,11 @@ async function handleSongRequest(userId, userName, input, source) {
     }
 
     // =========================================================================
-    // STEP 5: Add to Spotify queue
+    // STEP 5: Add to internal display queue
     // =========================================================================
-    
-    if (localSettings.addToSpotify) {
-      try {
-        await invoke('add_to_queue', { uri: spotifyUri });
-      } catch (e) {
-        console.error('[Twitch] Spotify queue error:', e);
-        // Continue anyway - add to internal queue
-      }
-    }
-
-    // =========================================================================
-    // STEP 6: Add to internal display queue
-    // =========================================================================
+    // The song is NOT pushed to Spotify here. Auto-Play (queue header toggle)
+    // hands the next request to Spotifys native queue near the end of the
+    // current song, so the streamers playlist keeps playing in between.
     
     await invoke('add_song_request', {
       userId,
@@ -966,11 +953,6 @@ export function setupTwitchListeners() {
   document.getElementById('btn-twitch-test-redemption')?.addEventListener('click', simulateRedemption);
 
   // Local settings (stored in localStorage, not backend)
-  document.getElementById('twitch-add-to-spotify')?.addEventListener('change', (e) => {
-    localSettings.addToSpotify = e.target.checked;
-    saveLocalSettings();
-  });
-
   document.getElementById('twitch-max-duration')?.addEventListener('change', (e) => {
     localSettings.maxDuration = parseInt(e.target.value) || 0;
     saveLocalSettings();

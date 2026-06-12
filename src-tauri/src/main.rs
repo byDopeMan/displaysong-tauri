@@ -107,7 +107,6 @@ fn main() {
             commands::set_widget_opacity,
             commands::send_accent_to_widget,
             commands::reset_widget_accent,
-            commands::set_widget_autohide,
             // Custom Widgets
             commands::get_custom_widget_content,
             commands::load_custom_design,

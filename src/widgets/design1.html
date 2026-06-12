@@ -367,7 +367,8 @@
       let isTransitioning = false;
       let progressInterval = null;
       let isPageVisible = true;
-      let autoHideEnabled = window.autoHideEnabled || false;
+      let autoHideEnabled = false;
+      try { autoHideEnabled = localStorage.getItem('widget-autohide') === 'true'; } catch (e) {}
       let requesterUser = null;
       let requesterEnabled = false;
       try { requesterEnabled = localStorage.getItem('widget-show-requester') === 'true'; } catch (e) {}
@@ -424,17 +425,6 @@
         accentColor = null;
         if (currentTrack?.color) {
           setColor(currentTrack.color.r, currentTrack.color.g, currentTrack.color.b);
-        }
-      });
-
-      // Auto-hide Event Listener
-      window.addEventListener('autohide-change', (e) => {
-        autoHideEnabled = e.detail.enabled;
-        // Re-evaluate visibility
-        if (currentTrack) {
-          update(currentTrack);
-        } else {
-          update(null);
         }
       });
 
@@ -570,6 +560,12 @@
       await listen('requester-visibility-change', (e) => {
         requesterEnabled = !!e.payload?.enabled;
         renderRequester();
+      });
+
+      // Global auto-hide ("Ausblenden wenn pausiert"): re-evaluate visibility.
+      await listen('autohide-change', (e) => {
+        autoHideEnabled = !!e.payload?.enabled;
+        update(currentTrack || null);
       });
       renderRequester();
 

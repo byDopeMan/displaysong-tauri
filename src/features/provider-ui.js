@@ -200,16 +200,6 @@ function updateSpotifyDependentFeatures() {
     embedBtn.disabled = !isSpotifyConnected;
     embedBtn.title = isSpotifyConnected ? 'Spotify Embed' : 'Spotify nicht verbunden';
   }
-  
-  // "Add to Spotify Queue" option
-  const addToSpotifyRow = document.getElementById('twitch-add-to-spotify')?.closest('.setting-row');
-  const addToSpotifyHint = addToSpotifyRow?.nextElementSibling;
-  if (addToSpotifyRow) {
-    addToSpotifyRow.classList.toggle('hidden', !isSpotifyConnected);
-  }
-  if (addToSpotifyHint?.classList.contains('setting-hint')) {
-    addToSpotifyHint.classList.toggle('hidden', !isSpotifyConnected);
-  }
 }
 
 /**

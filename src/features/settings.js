@@ -23,7 +23,8 @@ export const DEFAULT_SETTINGS = {
   widgetOpacity: 100,
   historyDesign: 'simple',
   widgetAccentColors: {},
-  widgetAutoHide: {},  // Auto-hide widgets when nothing playing
+  autoHideWidgets: false,  // Global: hide widgets when paused / nothing playing
+  showRequesterWidgets: false,  // Global: show requester name in widgets
   pluginSettingsStyle: 'panel'
 };
 
@@ -129,18 +130,21 @@ export function applySettings() {
     checkbox.checked = settings.widgetAccentColors?.[widget] || false;
   });
   
-  document.querySelectorAll('.widget-autohide-check').forEach(checkbox => {
-    const widget = checkbox.dataset.widget;
-    checkbox.checked = settings.widgetAutoHide?.[widget] || false;
-  });
-
-  // Show-requester-in-widgets (global): mirror to localStorage (shared origin
-  // with the widgets) and broadcast so widgets pick up the initial state.
+  // Global widget toggles (requester + auto-hide): mirror to localStorage
+  // (shared origin with the widgets) and broadcast so widgets pick up the
+  // initial state on load.
   const showRequesterCheck = document.getElementById('show-requester-widgets');
   if (showRequesterCheck) {
     showRequesterCheck.checked = settings.showRequesterWidgets || false;
     localStorage.setItem('widget-show-requester', String(showRequesterCheck.checked));
     try { window.__TAURI__?.event?.emit('requester-visibility-change', { enabled: showRequesterCheck.checked }); } catch (e) {}
+  }
+
+  const autoHideCheck = document.getElementById('autohide-widgets');
+  if (autoHideCheck) {
+    autoHideCheck.checked = settings.autoHideWidgets || false;
+    localStorage.setItem('widget-autohide', String(autoHideCheck.checked));
+    try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHideCheck.checked }); } catch (e) {}
   }
 
   import('./history.js').then(({ historyDesign }) => {
@@ -350,26 +354,17 @@ export function setupSettingsListeners() {
     });
   });
   
-  // Widget Auto-Hide checkboxes
-  document.querySelectorAll('.widget-autohide-check').forEach(checkbox => {
-    checkbox.addEventListener('change', async () => {
-      const widget = checkbox.dataset.widget;
-      if (!settings.widgetAutoHide) settings.widgetAutoHide = {};
-      settings.widgetAutoHide[widget] = checkbox.checked;
+  // Widget: auto-hide globally (broadcast to all widget windows)
+  const autoHideWidgets = document.getElementById('autohide-widgets');
+  if (autoHideWidgets) {
+    autoHideWidgets.addEventListener('change', () => {
+      settings.autoHideWidgets = autoHideWidgets.checked;
+      localStorage.setItem('widget-autohide', String(autoHideWidgets.checked));
       saveSettings();
-      
-      // Send setting to widget
-      const invoke = getTauriInvoke();
-      if (invoke) {
-        try {
-          await invoke('set_widget_autohide', { label: widget, enabled: checkbox.checked });
-        } catch (e) {
-          console.error('Set widget autohide failed:', e);
-        }
-      }
+      try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHideWidgets.checked }); } catch (e) {}
     });
-  });
-  
+  }
+
   // Widget: show requester globally (broadcast to all widget windows)
   const showRequesterWidgets = document.getElementById('show-requester-widgets');
   if (showRequesterWidgets) {
