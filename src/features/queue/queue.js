@@ -316,26 +316,18 @@ function formatTimeAgo(timestamp) {
  * Update queue container visibility based on queue content
  */
 function updateQueueVisibility() {
+  // The standalone Queue tab itself is shown/hidden by updateTabVisibility()
+  // (tied to the Player tab setting). Here we only toggle the mini-queue that
+  // lives inside the Player tab: visible when the Player tab is on and the
+  // queue has items.
   const playerQueue = document.getElementById('player-queue-container');
-  const queueTab = document.getElementById('queue-tab');
-  
+  if (!playerQueue) return;
+
   const settings = JSON.parse(localStorage.getItem('displaysong-settings') || '{}');
   const playerTabEnabled = settings.showPlayerTab !== false;
   const hasItems = queueItems.length > 0;
-  
-  if (playerTabEnabled) {
-    if (playerQueue) {
-      if (hasItems) {
-        playerQueue.classList.remove('hidden');
-      } else {
-        playerQueue.classList.add('hidden');
-      }
-    }
-    if (queueTab) queueTab.style.display = 'none';
-  } else {
-    if (playerQueue) playerQueue.classList.add('hidden');
-    if (queueTab) queueTab.style.display = hasItems ? '' : 'none';
-  }
+
+  playerQueue.classList.toggle('hidden', !(playerTabEnabled && hasItems));
 }
 
 /**

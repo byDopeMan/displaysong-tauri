@@ -75,12 +75,22 @@ export function showView(viewName) {
 export function updateTabVisibility() {
   import('../features/settings.js').then(({ settings }) => {
     const playerTab = document.querySelector('[data-tab="player"]');
+    const queueTab = document.getElementById('queue-tab');
     const historyTab = document.querySelector('[data-tab="history"]');
-    
+
+    const playerEnabled = settings.showPlayerTab !== false;
+
     if (playerTab) {
-      playerTab.style.display = settings.showPlayerTab !== false ? '' : 'none';
+      playerTab.style.display = playerEnabled ? '' : 'none';
     }
-    
+
+    // The standalone Queue tab takes the Player tab's place when the Player tab
+    // is hidden (order: Queue, Verlauf, Designs, Einstellungen). With the Player
+    // tab visible, the queue lives inside it and this tab stays hidden.
+    if (queueTab) {
+      queueTab.style.display = playerEnabled ? 'none' : '';
+    }
+
     if (historyTab) {
       historyTab.style.display = settings.showHistoryTab !== false ? '' : 'none';
     }
