@@ -17,8 +17,38 @@ let pendingDurationMs = 0;  // duration reported by yt-dlp (fallback for the UI)
 let pendingTitle = '';      // title reported by yt-dlp
 let playToken = 0;          // guards against out-of-order async resolutions
 
+// Cache of resolved stream URLs so a prefetched song starts instantly instead of
+// waiting ~5s for yt-dlp at takeover time.
+const urlCache = new Map(); // videoId -> { url, duration, title, ts }
+const URL_TTL = 30 * 60 * 1000; // googlevideo URLs stay valid for a few hours
+
 /** Nothing to wire up front; the <audio> element is created on first play. */
 export function initYouTubePlayer() {}
+
+/** Resolve a video's audio stream (via cache when fresh). */
+async function resolveStream(videoId) {
+  const cached = urlCache.get(videoId);
+  if (cached && Date.now() - cached.ts < URL_TTL) return cached;
+  const invoke = getTauriInvoke();
+  if (!invoke) throw new Error('Tauri not available');
+  const info = await invoke('youtube_audio_url', { videoId });
+  const entry = {
+    url: info?.url || '',
+    duration: info?.duration || 0,
+    title: info?.title || '',
+    ts: Date.now(),
+  };
+  if (entry.url) urlCache.set(videoId, entry);
+  return entry;
+}
+
+/** Resolve + cache a video's stream ahead of time (called when it's next up). */
+export function prefetchYouTube(videoId) {
+  if (!videoId) return;
+  const cached = urlCache.get(videoId);
+  if (cached && Date.now() - cached.ts < URL_TTL) return;
+  resolveStream(videoId).catch(() => {}); // best-effort
+}
 
 function ensureAudio() {
   if (audio) return audio;
@@ -53,12 +83,9 @@ export async function playYouTube(videoId, cb) {
   const a = ensureAudio();
   a.volume = clampVol(currentVolume) / 100;
 
-  const invoke = getTauriInvoke();
-  if (!invoke) { callbacks.onError?.(0); return; }
-
   console.log('[YouTube] resolving audio stream for', videoId);
   try {
-    const info = await invoke('youtube_audio_url', { videoId });
+    const info = await resolveStream(videoId);
     if (token !== playToken) return; // a newer play superseded this one
     const url = info?.url;
     if (!url) { console.warn('[YouTube] no audio url'); callbacks.onError?.(0); return; }

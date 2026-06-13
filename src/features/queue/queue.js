@@ -5,7 +5,7 @@
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
 import { showNotification } from '../../ui/notifications.js';
-import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, getYouTubeProgressMs } from '../youtube-player.js';
+import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, getYouTubeProgressMs, setYouTubeVolume, prefetchYouTube } from '../youtube-player.js';
 
 // State
 let queueItems = [];
@@ -23,6 +23,30 @@ let lastAutoPlayAt = 0;
 let youtubePlaying = false;
 let currentYtTrack = null; // the now-playing track object for the active YouTube song
 let ytProgressTimer = null; // periodic now-playing emit while a YouTube song plays
+let ytVolumeTimer = null;   // live-syncs YouTube volume to the Spotify device volume
+
+// YouTube streams aren't loudness-normalized like Spotify, so at the same percent
+// they sound noticeably louder. Play YouTube at a fraction of the Spotify volume.
+const YT_VOLUME_FACTOR = 0.7;
+
+/** Live-sync the YouTube volume to the Spotify device volume while a YT song
+ *  plays, so changing Spotify's volume also changes the YouTube volume. */
+function startYtVolumeSync() {
+  stopYtVolumeSync();
+  ytVolumeTimer = setInterval(async () => {
+    if (!youtubePlaying) return;
+    const invoke = getTauriInvoke();
+    if (!invoke) return;
+    try {
+      const v = await invoke('spotify_get_volume');
+      if (typeof v === 'number' && v >= 0) setYouTubeVolume(Math.round(v * YT_VOLUME_FACTOR));
+    } catch (e) { /* keep last volume */ }
+  }, 2500);
+}
+
+function stopYtVolumeSync() {
+  if (ytVolumeTimer) { clearInterval(ytVolumeTimer); ytVolumeTimer = null; }
+}
 
 /** Periodically push the YouTube now-playing (with live position) to player +
  *  widgets. The Windows poll is suppressed during YouTube, so without this the
@@ -38,6 +62,7 @@ function startYtProgressTimer() {
 
 function stopYtProgressTimer() {
   if (ytProgressTimer) { clearInterval(ytProgressTimer); ytProgressTimer = null; }
+  stopYtVolumeSync(); // the two always run together during YouTube playback
 }
 
 const YT_URI_PREFIX = 'youtube:';
@@ -185,11 +210,11 @@ async function startYouTubeTakeover(item) {
 
   // Play at the same volume Spotify uses (so YouTube isn't a blast). Falls back
   // to a safe low default when Spotify has no active device.
-  let volume = 50;
+  let volume = Math.round(50 * YT_VOLUME_FACTOR);
   try {
     const v = await invoke('spotify_get_volume');
-    if (typeof v === 'number' && v >= 0) volume = v;
-    console.log('[Queue] Spotify volume for YouTube:', v);
+    if (typeof v === 'number' && v >= 0) volume = Math.round(v * YT_VOLUME_FACTOR);
+    console.log('[Queue] Spotify volume for YouTube:', v, '-> yt', volume);
   } catch (e) { console.warn('[Queue] spotify_get_volume failed:', e); }
 
   try {
@@ -219,6 +244,7 @@ async function startYouTubeTakeover(item) {
   // Show the song immediately (duration filled in once playback reports it).
   emitNowPlaying(currentYtTrack);
   startYtProgressTimer();
+  startYtVolumeSync();
 
   // Tint the widgets from the thumbnail (mqdefault is 16:9 with no black bars,
   // so the dominant color isn't just the letterbox black of hqdefault).
@@ -668,6 +694,13 @@ function updateQueueVisibility() {
  * Render queue UI
  */
 function renderQueue() {
+  // Resolve the next YouTube song's audio stream ahead of time so it starts
+  // (near-)instantly when its turn comes, instead of waiting ~5s for yt-dlp.
+  const next = queueItems[0];
+  if (next && isYouTubeUri(next.spotify_uri)) {
+    prefetchYouTube(youTubeVideoId(next.spotify_uri));
+  }
+
   const containers = [
     document.getElementById('queue-list'),
     document.getElementById('queue-list-standalone')
