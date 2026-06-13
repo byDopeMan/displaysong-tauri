@@ -202,6 +202,21 @@ async function startYouTubeTakeover(item) {
   // Show the song immediately (duration filled in once playback reports it).
   emitNowPlaying(currentYtTrack);
 
+  // Save the played YouTube song to the history (the Windows-Media poll is
+  // suppressed during YouTube playback, so it won't record it otherwise).
+  try {
+    await invoke('save_track_to_history', {
+      track: currentYtTrack.track,
+      artist: currentYtTrack.artist,
+      album: '',
+      albumCover: cover,
+      source: 'YouTube',
+      trackId: null,
+      durationMs: 0,
+    });
+    import('../history.js').then(({ refreshHistory }) => refreshHistory()).catch(() => {});
+  } catch (e) { /* history is best-effort */ }
+
   const requester = item.user_name || '';
   playYouTube(videoId, {
     volume,
