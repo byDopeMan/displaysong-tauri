@@ -349,12 +349,65 @@ pub struct ResolvedRequest {
     pub platform: String,
 }
 
+/// Best-effort YouTube metadata via the public oEmbed endpoint (no API key).
+/// Returns (title, author/channel). Used as a fallback when Odesli can't
+/// resolve the video.
+async fn youtube_oembed(video_id: &str) -> (Option<String>, Option<String>) {
+    let watch = format!("https://www.youtube.com/watch?v={}", video_id);
+    let client = reqwest::Client::new();
+    let resp = client.get("https://www.youtube.com/oembed")
+        .query(&[("format", "json"), ("url", watch.as_str())])
+        .timeout(std::time::Duration::from_secs(6))
+        .send()
+        .await;
+    if let Ok(r) = resp {
+        if r.status().is_success() {
+            if let Ok(v) = r.json::<serde_json::Value>().await {
+                let title = v.get("title").and_then(|x| x.as_str()).map(String::from);
+                let author = v.get("author_name").and_then(|x| x.as_str()).map(String::from);
+                return (title, author);
+            }
+        }
+    }
+    (None, None)
+}
+
+/// Build a YouTube-only result (no Spotify match) from a known video id.
+fn youtube_only_result(
+    video_id: &str,
+    platform: &str,
+    title: Option<String>,
+    artist: Option<String>,
+) -> ResolvedRequest {
+    ResolvedRequest {
+        spotify_uri: None,
+        track_id: None,
+        youtube_url: Some(format!("https://www.youtube.com/watch?v={}", video_id)),
+        youtube_video_id: Some(video_id.to_string()),
+        title,
+        artist,
+        thumbnail: Some(format!("https://i.ytimg.com/vi/{}/hqdefault.jpg", video_id)),
+        platform: platform.to_string(),
+    }
+}
+
 pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
     let platform = detect_platform(input);
     let platform_str = format!("{:?}", platform);
 
+    // For YouTube links, work from the bare video id: build a clean watch URL for
+    // Odesli (playlist/index params like &list=LL make Odesli return 400) and keep
+    // the id so we can still accept the song if Odesli can't resolve it.
+    let input_yt_id = if matches!(platform, StreamingPlatform::YouTube | StreamingPlatform::YouTubeMusic) {
+        extract_youtube_video_id(input)
+    } else {
+        None
+    };
+
     // Build the URL Odesli should look up.
-    let lookup_url = if is_spotify_input(input) {
+    let lookup_url = if let Some(ref vid) = input_yt_id {
+        format!("https://www.youtube.com/watch?v={}", vid)
+    } else if is_spotify_input(input) {
         match extract_spotify_track_id(input) {
             Some(id) => format!("https://open.spotify.com/track/{}", id),
             None => input.to_string(),
@@ -368,19 +421,38 @@ pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
     };
 
     let client = reqwest::Client::new();
-    let response = client.get(ODESLI_API)
+    let send_result = client.get(ODESLI_API)
         .query(&[("url", &lookup_url)])
         .timeout(std::time::Duration::from_secs(10))
         .send()
-        .await
-        .map_err(|e| format!("Odesli request failed: {}", e))?;
+        .await;
 
-    if !response.status().is_success() {
-        return Err(format!("Odesli API error: {}", response.status()));
-    }
+    // If Odesli is unreachable or unhappy but we know it's a YouTube video,
+    // accept it anyway (metadata via oEmbed, thumbnail from the video id).
+    let response = match send_result {
+        Ok(r) if r.status().is_success() => r,
+        other => {
+            if let Some(ref vid) = input_yt_id {
+                let (t, a) = youtube_oembed(vid).await;
+                return Ok(youtube_only_result(vid, &platform_str, t, a));
+            }
+            return Err(match other {
+                Ok(r) => format!("Odesli API error: {}", r.status()),
+                Err(e) => format!("Odesli request failed: {}", e),
+            });
+        }
+    };
 
-    let data: OdesliResponse = response.json().await
-        .map_err(|e| format!("Failed to parse Odesli response: {}", e))?;
+    let data: OdesliResponse = match response.json().await {
+        Ok(d) => d,
+        Err(e) => {
+            if let Some(ref vid) = input_yt_id {
+                let (t, a) = youtube_oembed(vid).await;
+                return Ok(youtube_only_result(vid, &platform_str, t, a));
+            }
+            return Err(format!("Failed to parse Odesli response: {}", e));
+        }
+    };
 
     let entities = data.entities_by_unique_id;
     let links = data.links_by_platform;
@@ -392,8 +464,10 @@ pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
 
     let track_id = spotify_link.and_then(|l| extract_spotify_track_id(&l.url));
     let spotify_uri = track_id.as_ref().map(|id| format!("spotify:track:{}", id));
-    let youtube_url = youtube_link.map(|l| l.url.clone());
-    let youtube_video_id = youtube_url.as_deref().and_then(extract_youtube_video_id);
+    let youtube_url = youtube_link.map(|l| l.url.clone())
+        .or_else(|| input_yt_id.as_ref().map(|v| format!("https://www.youtube.com/watch?v={}", v)));
+    let youtube_video_id = youtube_url.as_deref().and_then(extract_youtube_video_id)
+        .or_else(|| input_yt_id.clone());
 
     // Display metadata: prefer the Spotify entity, fall back to the YouTube one.
     let (mut title, mut artist, mut thumbnail) =
