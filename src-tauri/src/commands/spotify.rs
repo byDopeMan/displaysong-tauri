@@ -156,7 +156,7 @@ pub async fn disconnect_spotify(state: State<'_, Arc<AppState>>) -> Result<(), S
 
 #[tauri::command]
 pub async fn check_credentials(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, Arc<AppState>>
 ) -> Result<bool, String> {
     {
