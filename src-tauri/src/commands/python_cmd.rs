@@ -68,16 +68,41 @@ pub async fn python_package_installed(package: String) -> Result<bool, String> {
 }
 
 // yt-dlp snippet: resolve a video's direct best-audio stream URL (+ duration,
-// title). __VID__ is replaced with the validated video id. Printed as JSON.
+// title). __VID__ = validated video id; __FIRST__ = cached working cookie browser
+// (or empty). YouTube increasingly blocks anonymous requests ("Sign in to confirm
+// you're not a bot"), so we fall back to reading cookies from the user's logged-in
+// browser. The browser that works is reported back as "via" and cached so later
+// songs try it first. Prints one JSON line.
 const YT_DLP_CODE: &str = r#"import json,yt_dlp
-o={'format':'bestaudio/best','quiet':True,'no_warnings':True,'noplaylist':True,'skip_download':True}
-i=yt_dlp.YoutubeDL(o).extract_info('https://www.youtube.com/watch?v=__VID__',download=False)
-u=i.get('url')
-if not u:
- for f in (i.get('formats') or []):
-  if f.get('url') and f.get('acodec') not in (None,'none'): u=f['url']
-print(json.dumps({'url':u or '','duration':i.get('duration') or 0,'title':i.get('title') or ''}))
+URL='https://www.youtube.com/watch?v=__VID__'
+first='__FIRST__'
+base={'format':'bestaudio/best','quiet':True,'no_warnings':True,'noplaylist':True,'skip_download':True}
+browsers=['chrome','edge','firefox','brave','opera','vivaldi','chromium']
+order=([first] if first else [])+[b for b in browsers if b!=first]
+attempts=[] if first else [('',{}),('',{'extractor_args':{'youtube':{'player_client':['android']}}})]
+for b in order:
+    attempts.append((b,{'cookiesfrombrowser':(b,)}))
+info=None; via=''; err=''
+for v,extra in attempts:
+    o=dict(base); o.update(extra)
+    try:
+        info=yt_dlp.YoutubeDL(o).extract_info(URL,download=False); via=v; break
+    except Exception as e:
+        err=str(e); continue
+if info is None:
+    print(json.dumps({'url':'','duration':0,'title':'','via':'','error':err[-280:]}))
+else:
+    u=info.get('url')
+    if not u:
+        for f in (info.get('formats') or []):
+            if f.get('url') and f.get('acodec') not in (None,'none'): u=f['url']
+    print(json.dumps({'url':u or '','duration':info.get('duration') or 0,'title':info.get('title') or '','via':via}))
 "#;
+
+// Remembers which browser's cookies last worked, so subsequent lookups skip the
+// (slow) cookieless attempts and go straight to it.
+static YT_COOKIE_BROWSER: Lazy<std::sync::Mutex<Option<String>>> =
+    Lazy::new(|| std::sync::Mutex::new(None));
 
 /// Resolve the direct audio stream URL for a YouTube video via yt-dlp. This plays
 /// videos that block embedding (which the IFrame player can't), because we fetch
@@ -105,7 +130,10 @@ pub async fn youtube_audio_url(video_id: String) -> Result<serde_json::Value, St
         }
     }
 
-    let code = YT_DLP_CODE.replace("__VID__", &video_id);
+    let first = YT_COOKIE_BROWSER.lock().unwrap().clone().unwrap_or_default();
+    let code = YT_DLP_CODE
+        .replace("__VID__", &video_id)
+        .replace("__FIRST__", &first);
     let res = runner.run_code(&code).await;
     if !res.success {
         return Err(format!("yt-dlp Fehler: {}", res.stderr.trim()));
@@ -116,7 +144,15 @@ pub async fn youtube_audio_url(video_id: String) -> Result<serde_json::Value, St
         .map_err(|e| format!("yt-dlp Antwort ungültig: {} ({})", e, line))?;
 
     if v.get("url").and_then(|u| u.as_str()).unwrap_or("").is_empty() {
-        return Err("Keine Audio-URL gefunden".to_string());
+        let err = v.get("error").and_then(|e| e.as_str()).unwrap_or("Keine Audio-URL gefunden");
+        return Err(err.to_string());
+    }
+
+    // Remember the cookie browser that worked, so later lookups are fast.
+    if let Some(via) = v.get("via").and_then(|x| x.as_str()) {
+        if !via.is_empty() {
+            *YT_COOKIE_BROWSER.lock().unwrap() = Some(via.to_string());
+        }
     }
     Ok(v)
 }
