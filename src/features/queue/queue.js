@@ -244,6 +244,9 @@ async function startYouTubeTakeover(item) {
   const videoId = youTubeVideoId(item.spotify_uri);
   if (!videoId) return;
 
+  // Was a YouTube song already playing? (chaining YouTube -> YouTube means
+  // Spotify is already paused, so we must not pause it again.)
+  const alreadyExternal = youtubePlaying;
   youtubePlaying = true;
   console.log('[Queue] YouTube takeover start:', item.spotify_uri, 'videoId', videoId);
   const info = trackInfoCache.get(item.spotify_uri) || {};
@@ -259,8 +262,12 @@ async function startYouTubeTakeover(item) {
   } catch (e) { console.warn('[Queue] spotify_get_volume failed:', e); }
 
   try {
-    await invoke('set_external_playback', { active: true });
-    try { await invoke('spotify_pause'); console.log('[Queue] Spotify paused for YouTube'); } catch (e) { console.warn('[Queue] spotify_pause failed:', e); }
+    // Only pause Spotify on the FIRST takeover; when chaining YouTube -> YouTube
+    // it's already paused (pausing again returns a harmless 403).
+    if (!alreadyExternal) {
+      await invoke('set_external_playback', { active: true });
+      try { await invoke('spotify_pause'); console.log('[Queue] Spotify paused for YouTube'); } catch (e) { console.warn('[Queue] spotify_pause failed:', e); }
+    }
     await invoke('remove_song_request', { requestId: item.id });
     queueItems = queueItems.filter((q) => q.id !== item.id);
     renderQueue();
