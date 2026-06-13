@@ -55,6 +55,13 @@ pub async fn start_polling(app: AppHandle, state: Arc<AppState>) {
 }
 
 async fn poll_track(app: &AppHandle, state: &Arc<AppState>) -> Result<(), String> {
+    // While an external player (YouTube IFrame for a YouTube-only request) drives
+    // "now playing", don't query Spotify or emit track-update — the frontend is
+    // pushing the YouTube track to the widgets, and we must not overwrite it.
+    if state.external_playback.load(std::sync::atomic::Ordering::Relaxed) {
+        return Ok(());
+    }
+
     let mut spotify = state.spotify.lock().await;
     
     let client = spotify.as_mut()

@@ -3,6 +3,7 @@
 // ============================================================================
 
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::collections::HashMap;
 use tauri::async_runtime::Mutex;
 use tokio::sync::watch;
@@ -17,6 +18,10 @@ pub struct AppState {
     pub history_length: Mutex<usize>,
     pub song_request_queue: Mutex<Vec<SongRequest>>,
     pub request_cooldowns: Mutex<HashMap<String, std::time::Instant>>,
+    /// When true, an external player (the YouTube IFrame for a YouTube-only
+    /// request) is driving "now playing". The Spotify poll then stops emitting
+    /// track-update so the frontend can push the YouTube track to the widgets.
+    pub external_playback: AtomicBool,
 }
 
 pub const DEFAULT_HISTORY_SIZE: usize = 20;
@@ -55,6 +60,7 @@ impl AppState {
             history_length: Mutex::new(DEFAULT_HISTORY_SIZE),
             song_request_queue: Mutex::new(Vec::new()),
             request_cooldowns: Mutex::new(HashMap::new()),
+            external_playback: AtomicBool::new(false),
         })
     }
 }

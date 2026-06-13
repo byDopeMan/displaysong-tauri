@@ -346,6 +346,19 @@ pub async fn spotify_resume(
     Ok(())
 }
 
+/// Toggle "external playback" mode. While on, the Spotify poll stops emitting
+/// track-update so the frontend can drive the now-playing display for a
+/// YouTube-only request (played via a hidden YouTube IFrame).
+#[tauri::command]
+pub async fn set_external_playback(
+    active: bool,
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    state.external_playback.store(active, std::sync::atomic::Ordering::Relaxed);
+    info!("External playback set to: {}", active);
+    Ok(())
+}
+
 /// Get track info by Spotify URI or track ID
 #[tauri::command]
 pub async fn get_track_info(

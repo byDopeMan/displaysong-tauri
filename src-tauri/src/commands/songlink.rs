@@ -108,3 +108,10 @@ pub fn get_link_platform(url: String) -> String {
 pub async fn get_all_streaming_links(query: String) -> Result<songlink::AllPlatformLinks, String> {
     songlink::get_all_platform_links(&query).await
 }
+
+/// Resolve a request input into Spotify + YouTube versions plus display metadata
+/// (title/artist/thumbnail). Used to accept YouTube-only songs into the queue.
+#[tauri::command]
+pub async fn resolve_song_request(input: String) -> Result<songlink::ResolvedRequest, String> {
+    songlink::resolve_request(&input).await
+}

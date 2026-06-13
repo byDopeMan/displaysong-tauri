@@ -92,6 +92,7 @@ fn main() {
             commands::play_track,
             commands::spotify_pause,
             commands::spotify_resume,
+            commands::set_external_playback,
             commands::get_track_info,
             // Spotify Playlist Management
             commands::check_spotify_scopes,
@@ -189,6 +190,7 @@ fn main() {
             commands::is_streaming_link,
             commands::get_link_platform,
             commands::get_all_streaming_links,
+            commands::resolve_song_request,
             // Windows Media Session - Universal music detection
             commands::get_windows_media_track,
             commands::is_windows_media_available,
