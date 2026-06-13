@@ -5,7 +5,7 @@
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
 import { showNotification } from '../../ui/notifications.js';
-import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube } from '../youtube-player.js';
+import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, getYouTubeProgressMs } from '../youtube-player.js';
 
 // State
 let queueItems = [];
@@ -22,6 +22,23 @@ let lastAutoPlayAt = 0;
 // advancing, so the normal near-end auto-advance must stand down meanwhile.
 let youtubePlaying = false;
 let currentYtTrack = null; // the now-playing track object for the active YouTube song
+let ytProgressTimer = null; // periodic now-playing emit while a YouTube song plays
+
+/** Periodically push the YouTube now-playing (with live position) to player +
+ *  widgets. The Windows poll is suppressed during YouTube, so without this the
+ *  timeline wouldn't move and widgets opened mid-song would show nothing. */
+function startYtProgressTimer() {
+  stopYtProgressTimer();
+  ytProgressTimer = setInterval(() => {
+    if (!currentYtTrack) return;
+    currentYtTrack = { ...currentYtTrack, progressMs: getYouTubeProgressMs() };
+    emitNowPlaying(currentYtTrack);
+  }, 1000);
+}
+
+function stopYtProgressTimer() {
+  if (ytProgressTimer) { clearInterval(ytProgressTimer); ytProgressTimer = null; }
+}
 
 const YT_URI_PREFIX = 'youtube:';
 function isYouTubeUri(uri) { return typeof uri === 'string' && uri.startsWith(YT_URI_PREFIX); }
@@ -201,6 +218,7 @@ async function startYouTubeTakeover(item) {
   showYouTubeControls(true);
   // Show the song immediately (duration filled in once playback reports it).
   emitNowPlaying(currentYtTrack);
+  startYtProgressTimer();
 
   // Save the played YouTube song to the history (the Windows-Media poll is
   // suppressed during YouTube playback, so it won't record it otherwise).
@@ -302,14 +320,36 @@ async function onYouTubeEnded() {
   const next = queueItems[0];
   console.log('[Queue] YouTube ended. next:', next ? next.spotify_uri : '(none)', 'autoPlay', autoPlayQueue);
 
-  if (autoPlayQueue && next && isYouTubeUri(next.spotify_uri)) {
-    await startYouTubeTakeover(next); // keep Spotify paused, play the next YT
+  // Auto-play on with another request queued: play it back-to-back.
+  if (autoPlayQueue && next) {
+    if (isYouTubeUri(next.spotify_uri)) {
+      await startYouTubeTakeover(next); // keep Spotify paused, play the next YT
+      return;
+    }
+    // Next is a Spotify request: play it immediately (don't resume the streamer's
+    // paused track first — the request should come next).
+    youtubePlaying = false;
+    currentYtTrack = null;
+    showYouTubeControls(false);
+    stopYtProgressTimer();
+    lastAutoPlayAt = Date.now(); // don't let maybeAutoAdvance double-fire
+    if (invoke) {
+      try { await invoke('set_external_playback', { active: false }); } catch (e) {}
+      try {
+        await invoke('play_track', { uri: next.spotify_uri });
+        await invoke('remove_song_request', { requestId: next.id });
+      } catch (e) {
+        console.error('[Queue] Spotify request after YouTube failed:', e);
+      }
+    }
     return;
   }
 
+  // Nothing queued: hand playback back to the streamer's Spotify.
   youtubePlaying = false;
   currentYtTrack = null;
   showYouTubeControls(false);
+  stopYtProgressTimer();
   lastAutoPlayAt = 0;
   if (invoke) {
     try { await invoke('set_external_playback', { active: false }); } catch (e) {}
@@ -498,6 +538,7 @@ async function clearQueue() {
       youtubePlaying = false;
       currentYtTrack = null;
       showYouTubeControls(false);
+      stopYtProgressTimer();
       stopYouTube();
       try { await invoke('set_external_playback', { active: false }); } catch (e) {}
       try { await invoke('spotify_resume'); } catch (e) {}
@@ -530,6 +571,7 @@ async function playSong(requestId, spotifyUri) {
     youtubePlaying = false;
     currentYtTrack = null;
     showYouTubeControls(false);
+    stopYtProgressTimer();
     stopYouTube();
     try { await invoke('set_external_playback', { active: false }); } catch (e) {}
   }
