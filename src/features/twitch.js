@@ -14,7 +14,7 @@
 
 import { getTauriInvoke } from '../core/tauri.js';
 import { showNotification } from '../ui/notifications.js';
-import { queueItems, registerRequester } from './queue/queue.js';
+import { queueItems, registerRequester, cacheTrackInfo } from './queue/queue.js';
 import { addToHistory } from './requestHistory.js';
 import { isUrl, isSpotifyInput, extractSpotifyTrackId } from './twitch/parse.js';
 import {
@@ -335,6 +335,8 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
 
     let spotifyUri = null;
     let trackId = null;
+    let isYouTube = false;
+    let ytMeta = null; // { track, artist, albumCover } for YouTube-only requests
 
     // =========================================================================
     // STEP 1: Try to extract/convert to Spotify
@@ -356,29 +358,36 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
     }
     // Check if it's another streaming link (YouTube, Apple Music, etc.)
     else if (isUrl(trimmedInput)) {
-      console.log('[Twitch] Converting external link:', trimmedInput);
-      
+      console.log('[Twitch] Resolving external link:', trimmedInput);
+
       try {
-        // Get platform for user feedback
-        const platform = await invoke('get_link_platform', { url: trimmedInput });
-        
-        // Convert to Spotify via Odesli API
-        const result = await invoke('convert_link_to_spotify', { url: trimmedInput });
-        
-        if (result.success && result.spotify_uri) {
-          spotifyUri = result.spotify_uri;
-          trackId = result.track_id;
-          console.log(`[Twitch] Converted ${platform} to Spotify:`, spotifyUri);
+        // One Odesli lookup gives us both the Spotify and the YouTube version.
+        const res = await invoke('resolve_song_request', { input: trimmedInput });
+
+        if (res && res.spotify_uri && res.track_id) {
+          // Prefer Spotify when the song exists there.
+          spotifyUri = res.spotify_uri;
+          trackId = res.track_id;
+          console.log('[Twitch] Resolved to Spotify:', spotifyUri);
+        } else if (res && res.youtube_video_id) {
+          // YouTube-only: accept it as a YouTube queue item (plays via the
+          // hidden YouTube player, shown like a normal now-playing song).
+          isYouTube = true;
+          spotifyUri = `youtube:${res.youtube_video_id}`;
+          ytMeta = {
+            track: res.title || 'YouTube',
+            artist: res.artist || '',
+            albumCover: res.thumbnail || `https://i.ytimg.com/vi/${res.youtube_video_id}/hqdefault.jpg`,
+          };
+          console.log('[Twitch] Accepted YouTube-only request:', spotifyUri);
         } else {
-          // Conversion failed - song not on Spotify
-          const msg = twitchMessages.notOnSpotify
-            .replace('{user}', userName);
+          const msg = twitchMessages.notOnSpotify.replace('{user}', userName);
           await invoke('twitch_send_chat', { message: msg });
           await refundPoints();
           return;
         }
       } catch (e) {
-        console.error('[Twitch] Link conversion error:', e);
+        console.error('[Twitch] Link resolution error:', e);
         const msg = twitchMessages.songNotFound
           .replace('{user}', userName)
           .replace('{query}', trimmedInput);
@@ -387,9 +396,9 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
         return;
       }
     }
-    
-    // No valid input found
-    if (!spotifyUri || !trackId) {
+
+    // No valid input found (Spotify needs a track id; YouTube needs the pseudo-uri)
+    if (!spotifyUri || (!isYouTube && !trackId)) {
       const msg = twitchMessages.songNotFound
         .replace('{user}', userName)
         .replace('{query}', trimmedInput);
@@ -419,16 +428,24 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
     let trackName = 'Unbekannt';
     let artistName = 'Unbekannt';
     let durationMs = 0;
-    
-    try {
-      const trackInfo = await invoke('get_track_info', { trackId });
-      if (trackInfo) {
-        trackName = trackInfo.track || 'Unbekannt';
-        artistName = trackInfo.artist || 'Unbekannt';
-        durationMs = trackInfo.durationMs || 0;
+
+    if (isYouTube) {
+      // No Spotify metadata for YouTube-only songs; use the resolver's data.
+      // Duration is unknown until the YouTube player reports it (stays 0 here,
+      // so the max-duration check below is skipped for YouTube requests).
+      trackName = ytMeta.track || 'YouTube';
+      artistName = ytMeta.artist || '';
+    } else {
+      try {
+        const trackInfo = await invoke('get_track_info', { trackId });
+        if (trackInfo) {
+          trackName = trackInfo.track || 'Unbekannt';
+          artistName = trackInfo.artist || 'Unbekannt';
+          durationMs = trackInfo.durationMs || 0;
+        }
+      } catch (e) {
+        console.error('[Twitch] Track info error:', e);
       }
-    } catch (e) {
-      console.error('[Twitch] Track info error:', e);
     }
 
     // =========================================================================
@@ -460,6 +477,18 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
       spotifyUri,
       source
     });
+
+    // For YouTube-only items there is no Spotify lookup, so prime the queue's
+    // track-info cache directly (title/artist/thumbnail) for the display.
+    if (isYouTube) {
+      cacheTrackInfo(spotifyUri, {
+        track: trackName,
+        artist: artistName,
+        albumCover: ytMeta.albumCover,
+        durationMs: 0,
+        source: 'youtube',
+      });
+    }
 
     // Remember who requested this track so the player/widgets can show
     // "requested by X" while it plays (survives removal from the queue).

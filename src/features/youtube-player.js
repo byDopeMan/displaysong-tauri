@@ -1,287 +1,131 @@
 /**
- * YouTube Player for Song Requests (without Spotify connection)
- * Uses YouTube IFrame API for auto-play functionality
+ * Hidden YouTube audio player for YouTube-only song requests.
+ *
+ * Plays a YouTube video's AUDIO off-screen (no video UI). The song is presented
+ * like any other now-playing track (cover + timeline) by the queue/track-display
+ * code, which drives the player tab and the OBS widgets. This module only owns
+ * the IFrame lifecycle and reports playing/ended back via callbacks.
  */
-
-import { getTauriInvoke } from '../core/tauri.js';
-import { state } from '../core/state.js';
 
 let ytPlayer = null;
 let isPlayerReady = false;
-let currentRequest = null;
-let autoPlayEnabled = false;
-
-// Queue of songs to play
-let playQueue = [];
-
 let apiLoaded = false;
+let pendingVideoId = null;
+let callbacks = {};
+let announcedPlayingFor = null; // videoId we already reported onPlaying for
 
 /**
- * Initialize YouTube Player API (lazy - only when needed)
+ * Wire the global YouTube IFrame API ready callback. Safe to call once at startup;
+ * the API script itself is only injected on first playback (loadYouTubeAPI).
  */
 export function initYouTubePlayer() {
-  // Setup skip button
-  const skipBtn = document.getElementById('btn-skip-youtube');
-  if (skipBtn) {
-    skipBtn.addEventListener('click', skipCurrentSong);
-  }
-  
-  // YouTube API callback (will be called when API loads)
   window.onYouTubeIframeAPIReady = () => {
-    console.log('[YouTube] API ready');
     createPlayer();
   };
 }
 
-/**
- * Load YouTube API (called only when first song request comes in)
- */
 function loadYouTubeAPI() {
-  if (apiLoaded || window.YT) return;
-  
-  console.log('[YouTube] Loading API...');
+  if (apiLoaded || window.YT) {
+    // API already present but player not built yet (e.g. re-entry) -> build it.
+    if (window.YT && window.YT.Player && !ytPlayer) createPlayer();
+    return;
+  }
   apiLoaded = true;
-  
   const tag = document.createElement('script');
   tag.src = 'https://www.youtube.com/iframe_api';
-  const firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  const first = document.getElementsByTagName('script')[0];
+  first.parentNode.insertBefore(tag, first);
 }
 
-/**
- * Create YouTube player instance
- */
 function createPlayer() {
-  const container = document.getElementById('youtube-player');
-  if (!container) return;
-  
+  const mount = document.getElementById('youtube-player');
+  if (!mount || ytPlayer) return;
+
   ytPlayer = new YT.Player('youtube-player', {
-    height: '100%',
-    width: '100%',
+    height: '180',
+    width: '320',
     playerVars: {
       autoplay: 1,
-      controls: 1,
+      controls: 0,
+      disablekb: 1,
       modestbranding: 1,
       rel: 0,
-      fs: 0
+      fs: 0,
     },
     events: {
-      onReady: onPlayerReady,
-      onStateChange: onPlayerStateChange,
-      onError: onPlayerError
-    }
+      onReady: () => {
+        isPlayerReady = true;
+        if (pendingVideoId) {
+          const v = pendingVideoId;
+          pendingVideoId = null;
+          loadVideo(v);
+        }
+      },
+      onStateChange: onStateChange,
+      onError: onError,
+    },
   });
 }
 
-/**
- * Player ready callback
- */
-function onPlayerReady(event) {
-  console.log('[YouTube] Player ready');
-  isPlayerReady = true;
-  
-  // If there are queued songs, play the first one
-  if (playQueue.length > 0) {
-    playNextFromQueue();
+function onStateChange(event) {
+  // 1 = PLAYING, 0 = ENDED
+  if (event.data === 1) {
+    const id = currentVideoId();
+    if (id && announcedPlayingFor !== id) {
+      announcedPlayingFor = id;
+      const durationMs = Math.round((safeCall(() => ytPlayer.getDuration()) || 0) * 1000);
+      callbacks.onPlaying?.(durationMs);
+    }
+  } else if (event.data === 0) {
+    callbacks.onEnded?.();
+  }
+}
+
+function onError() {
+  // Unplayable/embedding-disabled video: treat like "ended" so the queue advances.
+  console.warn('[YouTube] Player error, advancing.');
+  callbacks.onEnded?.();
+}
+
+function currentVideoId() {
+  return safeCall(() => {
+    const data = ytPlayer.getVideoData?.();
+    return data?.video_id || null;
+  }) || null;
+}
+
+function safeCall(fn) {
+  try { return fn(); } catch (e) { return null; }
+}
+
+function loadVideo(videoId) {
+  announcedPlayingFor = null;
+  if (ytPlayer && isPlayerReady) {
+    ytPlayer.loadVideoById(videoId);
+  } else {
+    pendingVideoId = videoId;
   }
 }
 
 /**
- * Player state change callback
+ * Start playing a YouTube video's audio.
+ * @param {string} videoId
+ * @param {{onPlaying?:(durationMs:number)=>void, onEnded?:()=>void}} cb
  */
-function onPlayerStateChange(event) {
-  // YT.PlayerState.ENDED = 0
-  if (event.data === 0) {
-    console.log('[YouTube] Song ended');
-    playNextFromQueue();
-  }
-}
-
-/**
- * Player error callback
- */
-function onPlayerError(event) {
-  console.error('[YouTube] Player error:', event.data);
-  // Try next song on error
-  playNextFromQueue();
-}
-
-/**
- * Add a song request to the YouTube play queue
- */
-export async function addToYouTubeQueue(request) {
-  console.log('[YouTube] Adding to queue:', request);
-  
-  // Load YouTube API on first use
+export function playYouTube(videoId, cb) {
+  callbacks = cb || {};
   loadYouTubeAPI();
-  
-  // Get YouTube link from Songlink API
-  const invoke = getTauriInvoke();
-  if (!invoke) return false;
-  
-  try {
-    let youtubeUrl = null;
-    
-    // If we have a Spotify track ID, convert to YouTube
-    if (request.trackId) {
-      const links = await invoke('get_all_streaming_links', { query: request.trackId });
-      youtubeUrl = links?.youtube;
-    }
-    
-    if (!youtubeUrl) {
-      console.log('[YouTube] No YouTube link found for:', request.track);
-      return false;
-    }
-    
-    // Extract video ID from YouTube URL
-    const videoId = extractYouTubeVideoId(youtubeUrl);
-    if (!videoId) {
-      console.error('[YouTube] Could not extract video ID from:', youtubeUrl);
-      return false;
-    }
-    
-    // Add to queue
-    playQueue.push({
-      videoId,
-      title: `${request.artist} - ${request.track}`,
-      requester: request.requester || 'Unknown',
-      request
-    });
-    
-    console.log('[YouTube] Added to queue, total:', playQueue.length);
-    
-    // If player is ready and nothing is playing, start playback
-    if (isPlayerReady && !currentRequest) {
-      playNextFromQueue();
-    }
-    
-    return true;
-  } catch (e) {
-    console.error('[YouTube] Failed to add to queue:', e);
-    return false;
-  }
+  loadVideo(videoId);
 }
 
-/**
- * Play next song from queue
- */
-function playNextFromQueue() {
-  if (playQueue.length === 0) {
-    console.log('[YouTube] Queue empty, hiding player');
-    hidePlayer();
-    currentRequest = null;
-    return;
-  }
-  
-  const next = playQueue.shift();
-  currentRequest = next;
-  
-  console.log('[YouTube] Playing:', next.title);
-  
-  // Update UI
-  showPlayer();
-  updatePlayerInfo(next.title, next.requester);
-  
-  // Play video
-  if (ytPlayer && isPlayerReady) {
-    ytPlayer.loadVideoById(next.videoId);
-  }
+/** Stop playback (used on skip / clear). Does not fire onEnded. */
+export function stopYouTube() {
+  callbacks = {};
+  announcedPlayingFor = null;
+  safeCall(() => ytPlayer?.stopVideo?.());
 }
 
-/**
- * Skip current song
- */
-export function skipCurrentSong() {
-  console.log('[YouTube] Skipping current song');
-  if (ytPlayer && isPlayerReady) {
-    ytPlayer.stopVideo();
-  }
-  playNextFromQueue();
-}
-
-/**
- * Show YouTube player container
- */
-function showPlayer() {
-  const container = document.getElementById('youtube-player-container');
-  if (container) {
-    container.classList.remove('hidden');
-  }
-}
-
-/**
- * Hide YouTube player container
- */
-function hidePlayer() {
-  const container = document.getElementById('youtube-player-container');
-  if (container) {
-    container.classList.add('hidden');
-  }
-}
-
-/**
- * Update player info display
- */
-function updatePlayerInfo(title, requester) {
-  const titleEl = document.getElementById('youtube-player-title');
-  const requesterEl = document.getElementById('youtube-player-requester');
-  
-  if (titleEl) titleEl.textContent = title;
-  if (requesterEl) requesterEl.textContent = `Requested by ${requester}`;
-}
-
-/**
- * Extract YouTube video ID from URL
- */
-function extractYouTubeVideoId(url) {
-  if (!url) return null;
-  
-  // youtube.com/watch?v=ID
-  let match = url.match(/[?&]v=([^&]+)/);
-  if (match) return match[1];
-  
-  // youtu.be/ID
-  match = url.match(/youtu\.be\/([^?&]+)/);
-  if (match) return match[1];
-  
-  // youtube.com/embed/ID
-  match = url.match(/embed\/([^?&]+)/);
-  if (match) return match[1];
-  
-  return null;
-}
-
-/**
- * Check if YouTube auto-play should be used
- * (when Spotify is not connected)
- */
-export function shouldUseYouTubeAutoPlay() {
-  return autoPlayEnabled && !state.isSpotifyConnected;
-}
-
-/**
- * Enable/disable YouTube auto-play
- */
-export function setYouTubeAutoPlay(enabled) {
-  autoPlayEnabled = enabled;
-  console.log('[YouTube] Auto-play:', enabled ? 'enabled' : 'disabled');
-}
-
-/**
- * Get current queue length
- */
-export function getQueueLength() {
-  return playQueue.length;
-}
-
-/**
- * Clear the YouTube queue
- */
-export function clearQueue() {
-  playQueue = [];
-  if (ytPlayer && isPlayerReady) {
-    ytPlayer.stopVideo();
-  }
-  hidePlayer();
-  currentRequest = null;
+/** Current playback position in ms (for progress sync). */
+export function getYouTubeProgressMs() {
+  return Math.round((safeCall(() => ytPlayer?.getCurrentTime?.()) || 0) * 1000);
 }

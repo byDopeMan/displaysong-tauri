@@ -220,23 +220,6 @@
             </div>
           </div>
           
-          <!-- YouTube Player für Song Requests (ohne Spotify) -->
-          <div id="youtube-player-container" class="youtube-player-container hidden">
-            <div class="youtube-player-header">
-              <span class="youtube-player-label">Song Request</span>
-              <button id="btn-skip-youtube" class="btn-icon-sm" title="Überspringen">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M5 18l10-6L5 6v12zm9-12v12h2V6h-2z"/>
-                </svg>
-              </button>
-            </div>
-            <div id="youtube-player"></div>
-            <div class="youtube-player-info">
-              <span id="youtube-player-title">-</span>
-              <span id="youtube-player-requester">-</span>
-            </div>
-          </div>
-          
           <!-- Queue UNTER Player -->
           <div id="player-queue-container" class="player-queue-container hidden">
             <div class="queue-divider"></div>
@@ -1285,6 +1268,16 @@
     </div>
   </div>
 
+
+  <!-- Hidden YouTube audio host. Plays the audio of YouTube-only song requests
+       off-screen; the song itself is shown like any other now-playing track
+       (cover + timeline) via the normal player/widgets, so no video UI is shown.
+       Kept at top level (outside the tab views) so switching tabs does not
+       display:none it and stop the audio. -->
+  <div id="yt-audio-host" aria-hidden="true"
+       style="position:absolute; left:-9999px; top:0; width:320px; height:180px; opacity:0; pointer-events:none; z-index:-1;">
+    <div id="youtube-player"></div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>

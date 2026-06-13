@@ -4,6 +4,7 @@
 
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
+import { playYouTube, stopYouTube } from '../youtube-player.js';
 
 // State
 let queueItems = [];
@@ -14,6 +15,27 @@ let containerListenersSetup = new Set();
 // Auto-advance: play queued requests one after another (track-changed driven).
 let autoPlayQueue = false;
 let lastAutoPlayAt = 0;
+
+// While a YouTube-only request plays (hidden IFrame), Spotify is paused and the
+// frontend drives the now-playing display. The YouTube player's onEnded handles
+// advancing, so the normal near-end auto-advance must stand down meanwhile.
+let youtubePlaying = false;
+
+const YT_URI_PREFIX = 'youtube:';
+function isYouTubeUri(uri) { return typeof uri === 'string' && uri.startsWith(YT_URI_PREFIX); }
+function youTubeVideoId(uri) { return isYouTubeUri(uri) ? uri.slice(YT_URI_PREFIX.length) : null; }
+
+/** Whether a YouTube-only request is currently playing. */
+export function isYouTubePlaying() { return youtubePlaying; }
+
+/** Prime the track-info cache (used by the request flow for YouTube items). */
+export function cacheTrackInfo(uri, info) { trackInfoCache.set(uri, info); }
+
+/** Push a now-playing track to the player tab + widgets (same event the backend
+ *  poll uses). Used to show a YouTube request like a normal Spotify song. */
+function emitNowPlaying(track) {
+  try { window.__TAURI__?.event?.emit('track-update', track); } catch (e) { /* widgets optional */ }
+}
 
 // Requester memory: who requested a track. Survives the song's removal from the
 // queue, so "requested by X" can still be shown while it plays. Keyed by Spotify
@@ -103,6 +125,7 @@ function setupAutoPlay() {
  */
 export async function maybeAutoAdvance() {
   if (!autoPlayQueue || queueItems.length === 0) return;
+  if (youtubePlaying) return; // the YouTube player drives its own advance
   if (Date.now() - lastAutoPlayAt < 6000) return; // one hand-over per song
   const next = queueItems[0];
   if (!next) return;
@@ -111,11 +134,93 @@ export async function maybeAutoAdvance() {
   const invoke = getTauriInvoke();
   if (!invoke) return;
   try {
-    await invoke('add_to_queue', { uri: next.spotify_uri });
-    await invoke('remove_song_request', { requestId: next.id });
+    if (isYouTubeUri(next.spotify_uri)) {
+      await startYouTubeTakeover(next);
+    } else {
+      await invoke('add_to_queue', { uri: next.spotify_uri });
+      await invoke('remove_song_request', { requestId: next.id });
+    }
   } catch (e) {
     console.error('[Queue] Auto-play queue error:', e);
     lastAutoPlayAt = 0; // allow a retry on the next trigger
+  }
+}
+
+/**
+ * Play a YouTube-only request: pause Spotify, play the audio via the hidden
+ * IFrame, and show it like a normal now-playing song (cover + timeline) on the
+ * player tab and widgets. When it ends, hand back to Spotify (or chain to the
+ * next YouTube request).
+ */
+async function startYouTubeTakeover(item) {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  const videoId = youTubeVideoId(item.spotify_uri);
+  if (!videoId) return;
+
+  youtubePlaying = true;
+  const info = trackInfoCache.get(item.spotify_uri) || {};
+  const cover = info.albumCover || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+  try {
+    await invoke('set_external_playback', { active: true });
+    try { await invoke('spotify_pause'); } catch (e) { /* maybe nothing playing */ }
+    await invoke('remove_song_request', { requestId: item.id });
+    queueItems = queueItems.filter((q) => q.id !== item.id);
+    renderQueue();
+    updateQueueVisibility();
+  } catch (e) {
+    console.error('[Queue] YouTube takeover setup error:', e);
+  }
+
+  // Show the song immediately (duration filled in once playback reports it).
+  emitNowPlaying({
+    track: info.track || 'YouTube',
+    artist: info.artist || '',
+    album: '',
+    albumCover: cover,
+    isPlaying: true,
+    durationMs: info.durationMs || 0,
+    progressMs: 0,
+    source: 'youtube',
+    trackId: null,
+    color: null,
+  });
+
+  playYouTube(videoId, {
+    onPlaying: (durationMs) => {
+      emitNowPlaying({
+        track: info.track || 'YouTube',
+        artist: info.artist || '',
+        album: '',
+        albumCover: cover,
+        isPlaying: true,
+        durationMs: durationMs || info.durationMs || 0,
+        progressMs: 0,
+        source: 'youtube',
+        trackId: null,
+        color: null,
+      });
+    },
+    onEnded: () => { onYouTubeEnded(); },
+  });
+}
+
+/** Called when a YouTube request finishes (or errors): chain or hand back. */
+async function onYouTubeEnded() {
+  const invoke = getTauriInvoke();
+  const next = queueItems[0];
+
+  if (autoPlayQueue && next && isYouTubeUri(next.spotify_uri)) {
+    await startYouTubeTakeover(next); // keep Spotify paused, play the next YT
+    return;
+  }
+
+  youtubePlaying = false;
+  lastAutoPlayAt = 0;
+  if (invoke) {
+    try { await invoke('set_external_playback', { active: false }); } catch (e) {}
+    try { await invoke('spotify_resume'); } catch (e) {}
   }
 }
 
@@ -223,8 +328,29 @@ async function fetchTrackInfo(spotifyUri) {
   const invoke = getTauriInvoke();
   if (!invoke) return null;
 
+  // YouTube-only items: metadata is primed when the request is added. If it's
+  // missing (e.g. queue restored from DB after a restart), re-resolve it from
+  // the video id instead of asking Spotify.
+  if (isYouTubeUri(spotifyUri)) {
+    if (!trackInfoCache.has(spotifyUri)) {
+      const videoId = youTubeVideoId(spotifyUri);
+      try {
+        const res = await invoke('resolve_song_request', { input: `https://www.youtube.com/watch?v=${videoId}` });
+        trackInfoCache.set(spotifyUri, {
+          track: res?.title || 'YouTube',
+          artist: res?.artist || '',
+          albumCover: res?.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          durationMs: 0,
+          source: 'youtube',
+        });
+        renderQueue();
+      } catch (e) { /* keep showing the raw item */ }
+    }
+    return trackInfoCache.get(spotifyUri) || null;
+  }
+
   const trackId = spotifyUri.replace('spotify:track:', '');
-  
+
   try {
     const info = await invoke('get_track_info', { trackId });
     if (info) {
@@ -265,6 +391,13 @@ async function clearQueue() {
   try {
     await invoke('clear_song_request_queue');
     queueItems = [];
+    // Stop a running YouTube request and hand playback back to Spotify.
+    if (youtubePlaying) {
+      youtubePlaying = false;
+      stopYouTube();
+      try { await invoke('set_external_playback', { active: false }); } catch (e) {}
+      try { await invoke('spotify_resume'); } catch (e) {}
+    }
     renderQueue();
     updateQueueVisibility();
   } catch (e) {
@@ -278,6 +411,14 @@ async function clearQueue() {
 async function playSong(requestId, spotifyUri) {
   const invoke = getTauriInvoke();
   if (!invoke) return;
+
+  // YouTube-only item: play it via the hidden YouTube player (pauses Spotify,
+  // shows it like a now-playing song) instead of Spotify's play_track.
+  if (isYouTubeUri(spotifyUri)) {
+    const item = queueItems.find((q) => q.id === requestId) || { id: requestId, spotify_uri: spotifyUri };
+    await startYouTubeTakeover(item);
+    return;
+  }
 
   try {
     await invoke('play_track', { uri: spotifyUri });
