@@ -1,119 +1,115 @@
 /**
  * Hidden YouTube audio player for YouTube-only song requests.
  *
- * The YouTube IFrame is hosted by a tiny local server (http://127.0.0.1:8890)
- * rather than directly in the Tauri webview, because YouTube rejects embeds from
- * the webview's custom-protocol origin (error 150 for nearly every video). We
- * load that page in a hidden iframe and control it via postMessage; it reports
- * player events back the same way. Audio only — the song is shown like a normal
- * now-playing track by the queue/track-display code.
+ * Plays the video's direct audio stream (resolved by yt-dlp in the backend) in a
+ * plain <audio> element — NOT a YouTube embed. This is the only way to play
+ * videos whose owners disabled embedding (which return error 150 in any embedded
+ * player). It also gives a real timeline, volume and pause control. The song is
+ * shown like a normal now-playing track by the queue/track-display code.
  */
 
-const YT_ORIGIN = 'http://127.0.0.1:8890';
+import { getTauriInvoke } from '../core/tauri.js';
 
-let frame = null;
-let frameReady = false;
-let pendingPlay = null;
+let audio = null;
 let callbacks = {};
-let currentVolume = 50; // 0-100; kept low by default so YouTube is never a blast
-let lastState = -1;     // last YouTube player state (2 = paused)
+let currentVolume = 50;     // 0-100; kept low by default so it's never a blast
+let pendingDurationMs = 0;  // duration reported by yt-dlp (fallback for the UI)
+let pendingTitle = '';      // title reported by yt-dlp
+let playToken = 0;          // guards against out-of-order async resolutions
 
-/** Wire the message listener once at startup. The iframe is created on first play. */
-export function initYouTubePlayer() {
-  window.addEventListener('message', onMessage);
-}
+/** Nothing to wire up front; the <audio> element is created on first play. */
+export function initYouTubePlayer() {}
 
-function ensureFrame() {
-  if (frame) return;
-  const mount = document.getElementById('youtube-player');
-  if (!mount) return;
-  frame = document.createElement('iframe');
-  frame.id = 'yt-frame';
-  frame.allow = 'autoplay; encrypted-media';
-  frame.setAttribute('style', 'width:100%;height:100%;border:none;');
-  frame.src = `${YT_ORIGIN}/`;
-  mount.appendChild(frame);
-}
-
-function post(msg) {
-  try {
-    frame?.contentWindow?.postMessage({ target: 'yt', ...msg }, YT_ORIGIN);
-  } catch (e) { /* frame not ready */ }
-}
-
-function onMessage(ev) {
-  const d = ev.data || {};
-  if (d.source !== 'yt') return;
-  switch (d.type) {
-    case 'ready':
-      frameReady = true;
-      console.log('[YouTube] player ready');
-      if (pendingPlay) {
-        const p = pendingPlay;
-        pendingPlay = null;
-        doPlay(p.videoId, p.volume);
-      }
-      break;
-    case 'state':
-      lastState = d.state;
-      console.log('[YouTube] state change:', d.state); // -1 unstarted,0 ended,1 playing,2 paused,3 buffering,5 cued
-      break;
-    case 'playing':
-      callbacks.onPlaying?.(d.durationMs);
-      break;
-    case 'ended':
-      callbacks.onEnded?.();
-      break;
-    case 'error':
-      // 2 invalid id, 5 HTML5 error, 100 removed/private, 101/150 embedding disabled.
-      console.warn('[YouTube] player error code:', d.code, '- advancing.');
-      if (callbacks.onError) callbacks.onError(d.code);
-      else callbacks.onEnded?.();
-      break;
-  }
-}
-
-function doPlay(videoId, volume) {
-  console.log('[YouTube] play ->', videoId, 'volume', volume);
-  post({ type: 'play', videoId, volume });
+function ensureAudio() {
+  if (audio) return audio;
+  audio = new Audio();
+  audio.preload = 'auto';
+  audio.addEventListener('playing', () => {
+    const durMs = (audio.duration && isFinite(audio.duration))
+      ? Math.round(audio.duration * 1000)
+      : pendingDurationMs;
+    callbacks.onPlaying?.(durMs, pendingTitle);
+  });
+  audio.addEventListener('ended', () => { callbacks.onEnded?.(); });
+  audio.addEventListener('error', () => {
+    const code = audio.error?.code || 0;
+    console.warn('[YouTube] audio element error code:', code);
+    if (callbacks.onError) callbacks.onError(code);
+    else callbacks.onEnded?.();
+  });
+  return audio;
 }
 
 /**
  * Start playing a YouTube video's audio.
  * @param {string} videoId
- * @param {{onPlaying?:(durationMs:number)=>void, onEnded?:()=>void, onError?:(code:number)=>void, volume?:number}} cb
+ * @param {{onPlaying?:(durationMs:number,title?:string)=>void, onEnded?:()=>void, onError?:(code:number)=>void, volume?:number}} cb
  */
-export function playYouTube(videoId, cb) {
+export async function playYouTube(videoId, cb) {
   callbacks = cb || {};
   if (typeof cb?.volume === 'number') currentVolume = cb.volume;
-  ensureFrame();
-  if (frameReady) doPlay(videoId, currentVolume);
-  else pendingPlay = { videoId, volume: currentVolume };
+  const token = ++playToken;
+
+  const a = ensureAudio();
+  a.volume = clampVol(currentVolume) / 100;
+
+  const invoke = getTauriInvoke();
+  if (!invoke) { callbacks.onError?.(0); return; }
+
+  console.log('[YouTube] resolving audio stream for', videoId);
+  try {
+    const info = await invoke('youtube_audio_url', { videoId });
+    if (token !== playToken) return; // a newer play superseded this one
+    const url = info?.url;
+    if (!url) { console.warn('[YouTube] no audio url'); callbacks.onError?.(0); return; }
+
+    pendingDurationMs = info.duration ? Math.round(info.duration * 1000) : 0;
+    pendingTitle = info.title || '';
+    console.log('[YouTube] playing audio stream, duration', info.duration, 'title', pendingTitle);
+
+    a.src = url;
+    a.volume = clampVol(currentVolume) / 100;
+    try {
+      await a.play();
+    } catch (e) {
+      console.warn('[YouTube] audio play() rejected:', e);
+      callbacks.onError?.(0);
+    }
+  } catch (e) {
+    if (token !== playToken) return;
+    console.warn('[YouTube] audio stream resolution failed:', e);
+    callbacks.onError?.(0);
+  }
 }
 
 /** Stop playback (used on skip / clear). Does not fire onEnded. */
 export function stopYouTube() {
   callbacks = {};
-  post({ type: 'stop' });
+  playToken++; // cancel any pending resolution
+  if (audio) {
+    try { audio.pause(); audio.removeAttribute('src'); audio.load(); } catch (e) {}
+  }
 }
 
-/** Pause the current YouTube audio. */
+/** Pause the current audio. */
 export function pauseYouTube() {
-  post({ type: 'pause' });
+  try { audio?.pause(); } catch (e) {}
 }
 
-/** Resume the current YouTube audio. */
+/** Resume the current audio. */
 export function resumeYouTube() {
-  post({ type: 'resume' });
+  try { audio?.play()?.catch(() => {}); } catch (e) {}
 }
 
-/** Whether the YouTube player is currently paused (state 2). */
-export function isYouTubePaused() {
-  return lastState === 2;
-}
-
-/** Set the YouTube playback volume (0-100). */
+/** Set the playback volume (0-100). */
 export function setYouTubeVolume(volume) {
-  currentVolume = Math.max(0, Math.min(100, Math.round(volume)));
-  post({ type: 'volume', value: currentVolume });
+  currentVolume = clampVol(Math.round(volume));
+  if (audio) audio.volume = currentVolume / 100;
 }
+
+/** Current playback position in ms. */
+export function getYouTubeProgressMs() {
+  return Math.round((audio?.currentTime || 0) * 1000);
+}
+
+function clampVol(v) { return Math.max(0, Math.min(100, v)); }

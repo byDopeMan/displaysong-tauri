@@ -220,9 +220,17 @@ async function startYouTubeTakeover(item) {
   const requester = item.user_name || '';
   playYouTube(videoId, {
     volume,
-    onPlaying: (durationMs) => {
+    onPlaying: (durationMs, title) => {
       if (!currentYtTrack) return;
-      currentYtTrack = { ...currentYtTrack, durationMs: durationMs || currentYtTrack.durationMs || 0, isPlaying: true };
+      const patch = {
+        durationMs: durationMs || currentYtTrack.durationMs || 0,
+        isPlaying: true,
+      };
+      // Fill in a real title from yt-dlp if we only had a placeholder.
+      if (title && (!currentYtTrack.track || currentYtTrack.track === 'YouTube')) {
+        patch.track = title;
+      }
+      currentYtTrack = { ...currentYtTrack, ...patch };
       emitNowPlaying(currentYtTrack);
     },
     onError: (code) => {

@@ -194,6 +194,7 @@ fn main() {
             commands::python_run_script,
             commands::python_pip_install,
             commands::python_package_installed,
+            commands::youtube_audio_url,
             // Songlink - Convert streaming links to Spotify
             commands::convert_link_to_spotify,
             commands::is_streaming_link,

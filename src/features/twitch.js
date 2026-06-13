@@ -371,18 +371,8 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
           trackId = res.track_id;
           console.log('[Twitch] Resolved to Spotify:', spotifyUri);
         } else if (res && res.youtube_video_id) {
-          // YouTube-only. Reject up front if the owner disabled embedding — it
-          // can't play in any embedded player, so don't pollute the queue.
-          if (res.embeddable === false) {
-            console.log('[Twitch] YouTube video not embeddable, rejecting:', res.youtube_video_id);
-            await invoke('twitch_send_chat', {
-              message: `@${userName} Dieses YouTube-Video erlaubt kein Einbetten und kann nicht abgespielt werden – bitte ein anderes.`,
-            });
-            await refundPoints();
-            return;
-          }
-          // Accept it as a YouTube queue item (plays via the hidden YouTube
-          // player, shown like a normal now-playing song).
+          // YouTube-only. We play the audio stream via yt-dlp (not an embed), so
+          // even embedding-disabled videos work — accept it.
           isYouTube = true;
           spotifyUri = `youtube:${res.youtube_video_id}`;
           ytMeta = {
