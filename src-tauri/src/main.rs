@@ -90,6 +90,8 @@ fn main() {
             // Playback Control
             commands::add_to_queue,
             commands::play_track,
+            commands::spotify_pause,
+            commands::spotify_resume,
             commands::get_track_info,
             // Spotify Playlist Management
             commands::check_spotify_scopes,

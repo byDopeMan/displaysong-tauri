@@ -361,6 +361,59 @@ impl SpotifyClient {
         Ok(())
     }
 
+    /// Wiedergabe pausieren (z.B. um einen YouTube-only Request dazwischen zu spielen)
+    pub async fn pause(&self) -> Result<(), String> {
+        let token = self.access_token.as_ref()
+            .ok_or("Not authenticated")?;
+
+        let response = self.http
+            .put(format!("{}/me/player/pause", API_BASE))
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|e| format!("Pause request failed: {}", e))?;
+
+        let status = response.status();
+
+        // 404 = kein aktives Gerät / nichts spielt -> als ok behandeln
+        if status.as_u16() == 404 {
+            return Ok(());
+        }
+
+        if !status.is_success() {
+            let error = response.text().await.unwrap_or_default();
+            return Err(format!("Pause failed: {} - {}", status, error));
+        }
+
+        Ok(())
+    }
+
+    /// Wiedergabe fortsetzen (kein Body -> Spotify spielt den aktuellen Kontext weiter)
+    pub async fn resume(&self) -> Result<(), String> {
+        let token = self.access_token.as_ref()
+            .ok_or("Not authenticated")?;
+
+        let response = self.http
+            .put(format!("{}/me/player/play", API_BASE))
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|e| format!("Resume request failed: {}", e))?;
+
+        let status = response.status();
+
+        if status.as_u16() == 404 {
+            return Err("Kein aktives Gerät gefunden. Starte Spotify und spiele etwas ab.".to_string());
+        }
+
+        if !status.is_success() {
+            let error = response.text().await.unwrap_or_default();
+            return Err(format!("Resume failed: {} - {}", status, error));
+        }
+
+        Ok(())
+    }
+
     /// Get track info by ID
     pub async fn get_track_info(&self, track_id: &str) -> Result<TrackInfo, String> {
         let token = self.access_token.as_ref()

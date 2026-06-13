@@ -296,6 +296,56 @@ pub async fn play_track(
     Ok(())
 }
 
+#[tauri::command]
+pub async fn spotify_pause(
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+
+    client.refresh_if_needed().await?;
+
+    if let Err(e) = client.pause().await {
+        if e.contains("401") || e.contains("expired") {
+            client.force_refresh().await?;
+            if let Some((access, refresh)) = client.get_tokens() {
+                let _ = credentials::save_tokens(&access, &refresh);
+            }
+            client.pause().await?;
+        } else {
+            return Err(e);
+        }
+    }
+
+    info!("Spotify pausiert");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn spotify_resume(
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+
+    client.refresh_if_needed().await?;
+
+    if let Err(e) = client.resume().await {
+        if e.contains("401") || e.contains("expired") {
+            client.force_refresh().await?;
+            if let Some((access, refresh)) = client.get_tokens() {
+                let _ = credentials::save_tokens(&access, &refresh);
+            }
+            client.resume().await?;
+        } else {
+            return Err(e);
+        }
+    }
+
+    info!("Spotify fortgesetzt");
+    Ok(())
+}
+
 /// Get track info by Spotify URI or track ID
 #[tauri::command]
 pub async fn get_track_info(
