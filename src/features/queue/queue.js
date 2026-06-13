@@ -161,6 +161,7 @@ async function startYouTubeTakeover(item) {
   if (!videoId) return;
 
   youtubePlaying = true;
+  console.log('[Queue] YouTube takeover start:', item.spotify_uri, 'videoId', videoId);
   const info = trackInfoCache.get(item.spotify_uri) || {};
   const cover = info.albumCover || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
@@ -170,11 +171,12 @@ async function startYouTubeTakeover(item) {
   try {
     const v = await invoke('spotify_get_volume');
     if (typeof v === 'number' && v >= 0) volume = v;
-  } catch (e) { /* keep default */ }
+    console.log('[Queue] Spotify volume for YouTube:', v);
+  } catch (e) { console.warn('[Queue] spotify_get_volume failed:', e); }
 
   try {
     await invoke('set_external_playback', { active: true });
-    try { await invoke('spotify_pause'); } catch (e) { /* maybe nothing playing */ }
+    try { await invoke('spotify_pause'); console.log('[Queue] Spotify paused for YouTube'); } catch (e) { console.warn('[Queue] spotify_pause failed:', e); }
     await invoke('remove_song_request', { requestId: item.id });
     queueItems = queueItems.filter((q) => q.id !== item.id);
     renderQueue();
@@ -248,6 +250,7 @@ export function skipYouTube() {
 async function onYouTubeEnded() {
   const invoke = getTauriInvoke();
   const next = queueItems[0];
+  console.log('[Queue] YouTube ended. next:', next ? next.spotify_uri : '(none)', 'autoPlay', autoPlayQueue);
 
   if (autoPlayQueue && next && isYouTubeUri(next.spotify_uri)) {
     await startYouTubeTakeover(next); // keep Spotify paused, play the next YT

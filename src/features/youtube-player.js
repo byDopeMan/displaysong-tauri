@@ -61,6 +61,7 @@ function createPlayer() {
     events: {
       onReady: () => {
         isPlayerReady = true;
+        console.log('[YouTube] player ready');
         applyVolume(); // set the (low) volume before the first video can play
         if (pendingVideoId) {
           const v = pendingVideoId;
@@ -75,6 +76,7 @@ function createPlayer() {
 }
 
 function onStateChange(event) {
+  console.log('[YouTube] state change:', event.data); // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
   // 1 = PLAYING, 0 = ENDED
   if (event.data === 1) {
     applyVolume(); // enforce the configured volume (never the default 100)
@@ -89,9 +91,9 @@ function onStateChange(event) {
   }
 }
 
-function onError() {
-  // Unplayable/embedding-disabled video: treat like "ended" so the queue advances.
-  console.warn('[YouTube] Player error, advancing.');
+function onError(event) {
+  // 2 invalid id, 5 HTML5 error, 100 removed/private, 101/150 embedding disabled.
+  console.warn('[YouTube] player error code:', event?.data, '- advancing.');
   callbacks.onEnded?.();
 }
 
@@ -123,6 +125,7 @@ function loadVideo(videoId) {
 export function playYouTube(videoId, cb) {
   callbacks = cb || {};
   if (typeof cb?.volume === 'number') currentVolume = cb.volume;
+  console.log('[YouTube] playYouTube:', videoId, 'volume', currentVolume, 'ready', isPlayerReady);
   loadYouTubeAPI();
   applyVolume();
   loadVideo(videoId);

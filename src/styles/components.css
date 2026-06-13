@@ -750,13 +750,22 @@
 #youtube-player { width: 100%; height: 100%; }
 #youtube-player iframe { width: 100%; height: 100%; border: none; }
 
-/* Controls shown in the player tab while a YouTube request plays. */
+/* Floating controls shown while a YouTube request plays (any tab). */
 .youtube-controls {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
 }
 
 .youtube-controls.hidden { display: none; }

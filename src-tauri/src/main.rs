@@ -35,10 +35,17 @@ fn main() {
     #[cfg(windows)]
     {
         let existing = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_default();
-        if !existing.contains("disk-cache-size") {
-            let args = format!("{} --disk-cache-size=1", existing);
-            std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", args.trim());
+        let mut args = existing.clone();
+        if !args.contains("disk-cache-size") {
+            args = format!("{} --disk-cache-size=1", args);
         }
+        // Allow the hidden YouTube player to start playback without a user gesture
+        // (auto-play hands songs over automatically, which Chromium would block by
+        // default with "autoplay-policy=user-gesture-required").
+        if !args.contains("autoplay-policy") {
+            args = format!("{} --autoplay-policy=no-user-gesture-required", args);
+        }
+        std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", args.trim());
     }
 
     // Enforce a single running instance: hold a localhost lock port for the
