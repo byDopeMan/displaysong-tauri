@@ -240,6 +240,13 @@ pub fn get_color_cache_size() -> Result<usize, String> {
     Ok(color::cache_size())
 }
 
+/// Extract the dominant color from an image URL. Used to tint the widgets for
+/// YouTube requests (their thumbnail), like Spotify covers are colored.
+#[tauri::command]
+pub async fn get_dominant_color(url: String) -> Result<crate::spotify::ColorInfo, String> {
+    crate::color::extract_from_url(&url).await
+}
+
 // ============================================================================
 // FRONTEND LOGGING
 // ============================================================================

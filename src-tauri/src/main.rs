@@ -136,6 +136,7 @@ fn main() {
             // Cache Management
             commands::clear_color_cache,
             commands::get_color_cache_size,
+            commands::get_dominant_color,
             // Frontend Logging
             commands::log_frontend,
             // Plugins

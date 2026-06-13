@@ -220,6 +220,17 @@ async function startYouTubeTakeover(item) {
   emitNowPlaying(currentYtTrack);
   startYtProgressTimer();
 
+  // Tint the widgets from the thumbnail (mqdefault is 16:9 with no black bars,
+  // so the dominant color isn't just the letterbox black of hqdefault).
+  invoke('get_dominant_color', { url: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` })
+    .then((c) => {
+      if (c && currentYtTrack && youtubePlaying) {
+        currentYtTrack = { ...currentYtTrack, color: c };
+        emitNowPlaying(currentYtTrack);
+      }
+    })
+    .catch(() => {});
+
   // Save the played YouTube song to the history (the Windows-Media poll is
   // suppressed during YouTube playback, so it won't record it otherwise).
   try {
@@ -367,7 +378,10 @@ async function onYouTubeEnded() {
     return;
   }
 
-  // Nothing queued: hand playback back to the streamer's Spotify.
+  // Nothing queued: hand playback back to the streamer's Spotify. YouTube took
+  // over near the end of the paused track, so skip its leftover and play the next
+  // playlist track fresh (instead of replaying the last second), then ensure it's
+  // actually playing.
   youtubePlaying = false;
   currentYtTrack = null;
   showYouTubeControls(false);
@@ -375,6 +389,7 @@ async function onYouTubeEnded() {
   lastAutoPlayAt = 0;
   if (invoke) {
     try { await invoke('set_external_playback', { active: false }); } catch (e) {}
+    try { await invoke('spotify_next'); } catch (e) {}
     try { await invoke('spotify_resume'); } catch (e) {}
   }
 }
