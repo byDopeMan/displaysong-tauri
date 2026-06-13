@@ -1,167 +1,119 @@
 /**
  * Hidden YouTube audio player for YouTube-only song requests.
  *
- * Plays a YouTube video's AUDIO off-screen (no video UI). The song is presented
- * like any other now-playing track (cover + timeline) by the queue/track-display
- * code, which drives the player tab and the OBS widgets. This module only owns
- * the IFrame lifecycle and reports playing/ended back via callbacks.
+ * The YouTube IFrame is hosted by a tiny local server (http://127.0.0.1:8890)
+ * rather than directly in the Tauri webview, because YouTube rejects embeds from
+ * the webview's custom-protocol origin (error 150 for nearly every video). We
+ * load that page in a hidden iframe and control it via postMessage; it reports
+ * player events back the same way. Audio only — the song is shown like a normal
+ * now-playing track by the queue/track-display code.
  */
 
-let ytPlayer = null;
-let isPlayerReady = false;
-let apiLoaded = false;
-let pendingVideoId = null;
+const YT_ORIGIN = 'http://127.0.0.1:8890';
+
+let frame = null;
+let frameReady = false;
+let pendingPlay = null;
 let callbacks = {};
-let announcedPlayingFor = null; // videoId we already reported onPlaying for
 let currentVolume = 50; // 0-100; kept low by default so YouTube is never a blast
+let lastState = -1;     // last YouTube player state (2 = paused)
 
-function applyVolume() {
-  // Persisted on the player across loadVideoById calls.
-  safeCall(() => ytPlayer?.setVolume?.(Math.max(0, Math.min(100, currentVolume))));
-}
-
-/**
- * Wire the global YouTube IFrame API ready callback. Safe to call once at startup;
- * the API script itself is only injected on first playback (loadYouTubeAPI).
- */
+/** Wire the message listener once at startup. The iframe is created on first play. */
 export function initYouTubePlayer() {
-  window.onYouTubeIframeAPIReady = () => {
-    createPlayer();
-  };
+  window.addEventListener('message', onMessage);
 }
 
-function loadYouTubeAPI() {
-  if (apiLoaded || window.YT) {
-    // API already present but player not built yet (e.g. re-entry) -> build it.
-    if (window.YT && window.YT.Player && !ytPlayer) createPlayer();
-    return;
-  }
-  apiLoaded = true;
-  const tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  const first = document.getElementsByTagName('script')[0];
-  first.parentNode.insertBefore(tag, first);
-}
-
-function createPlayer() {
+function ensureFrame() {
+  if (frame) return;
   const mount = document.getElementById('youtube-player');
-  if (!mount || ytPlayer) return;
-
-  ytPlayer = new YT.Player('youtube-player', {
-    height: '180',
-    width: '320',
-    playerVars: {
-      autoplay: 1,
-      controls: 0,
-      disablekb: 1,
-      modestbranding: 1,
-      rel: 0,
-      fs: 0,
-    },
-    events: {
-      onReady: () => {
-        isPlayerReady = true;
-        console.log('[YouTube] player ready');
-        applyVolume(); // set the (low) volume before the first video can play
-        if (pendingVideoId) {
-          const v = pendingVideoId;
-          pendingVideoId = null;
-          loadVideo(v);
-        }
-      },
-      onStateChange: onStateChange,
-      onError: onError,
-    },
-  });
+  if (!mount) return;
+  frame = document.createElement('iframe');
+  frame.id = 'yt-frame';
+  frame.allow = 'autoplay; encrypted-media';
+  frame.setAttribute('style', 'width:100%;height:100%;border:none;');
+  frame.src = `${YT_ORIGIN}/`;
+  mount.appendChild(frame);
 }
 
-function onStateChange(event) {
-  console.log('[YouTube] state change:', event.data); // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
-  // 1 = PLAYING, 0 = ENDED
-  if (event.data === 1) {
-    applyVolume(); // enforce the configured volume (never the default 100)
-    const id = currentVideoId();
-    if (id && announcedPlayingFor !== id) {
-      announcedPlayingFor = id;
-      const durationMs = Math.round((safeCall(() => ytPlayer.getDuration()) || 0) * 1000);
-      callbacks.onPlaying?.(durationMs);
-    }
-  } else if (event.data === 0) {
-    callbacks.onEnded?.();
+function post(msg) {
+  try {
+    frame?.contentWindow?.postMessage({ target: 'yt', ...msg }, YT_ORIGIN);
+  } catch (e) { /* frame not ready */ }
+}
+
+function onMessage(ev) {
+  const d = ev.data || {};
+  if (d.source !== 'yt') return;
+  switch (d.type) {
+    case 'ready':
+      frameReady = true;
+      console.log('[YouTube] player ready');
+      if (pendingPlay) {
+        const p = pendingPlay;
+        pendingPlay = null;
+        doPlay(p.videoId, p.volume);
+      }
+      break;
+    case 'state':
+      lastState = d.state;
+      console.log('[YouTube] state change:', d.state); // -1 unstarted,0 ended,1 playing,2 paused,3 buffering,5 cued
+      break;
+    case 'playing':
+      callbacks.onPlaying?.(d.durationMs);
+      break;
+    case 'ended':
+      callbacks.onEnded?.();
+      break;
+    case 'error':
+      // 2 invalid id, 5 HTML5 error, 100 removed/private, 101/150 embedding disabled.
+      console.warn('[YouTube] player error code:', d.code, '- advancing.');
+      if (callbacks.onError) callbacks.onError(d.code);
+      else callbacks.onEnded?.();
+      break;
   }
 }
 
-function onError(event) {
-  // 2 invalid id, 5 HTML5 error, 100 removed/private, 101/150 embedding disabled.
-  const code = event?.data;
-  console.warn('[YouTube] player error code:', code, '- advancing.');
-  if (callbacks.onError) callbacks.onError(code);
-  else callbacks.onEnded?.();
-}
-
-function currentVideoId() {
-  return safeCall(() => {
-    const data = ytPlayer.getVideoData?.();
-    return data?.video_id || null;
-  }) || null;
-}
-
-function safeCall(fn) {
-  try { return fn(); } catch (e) { return null; }
-}
-
-function loadVideo(videoId) {
-  announcedPlayingFor = null;
-  if (ytPlayer && isPlayerReady) {
-    ytPlayer.loadVideoById(videoId);
-  } else {
-    pendingVideoId = videoId;
-  }
+function doPlay(videoId, volume) {
+  console.log('[YouTube] play ->', videoId, 'volume', volume);
+  post({ type: 'play', videoId, volume });
 }
 
 /**
  * Start playing a YouTube video's audio.
  * @param {string} videoId
- * @param {{onPlaying?:(durationMs:number)=>void, onEnded?:()=>void, volume?:number}} cb
+ * @param {{onPlaying?:(durationMs:number)=>void, onEnded?:()=>void, onError?:(code:number)=>void, volume?:number}} cb
  */
 export function playYouTube(videoId, cb) {
   callbacks = cb || {};
   if (typeof cb?.volume === 'number') currentVolume = cb.volume;
-  console.log('[YouTube] playYouTube:', videoId, 'volume', currentVolume, 'ready', isPlayerReady);
-  loadYouTubeAPI();
-  applyVolume();
-  loadVideo(videoId);
+  ensureFrame();
+  if (frameReady) doPlay(videoId, currentVolume);
+  else pendingPlay = { videoId, volume: currentVolume };
 }
 
 /** Stop playback (used on skip / clear). Does not fire onEnded. */
 export function stopYouTube() {
   callbacks = {};
-  announcedPlayingFor = null;
-  safeCall(() => ytPlayer?.stopVideo?.());
+  post({ type: 'stop' });
 }
 
 /** Pause the current YouTube audio. */
 export function pauseYouTube() {
-  safeCall(() => ytPlayer?.pauseVideo?.());
+  post({ type: 'pause' });
 }
 
 /** Resume the current YouTube audio. */
 export function resumeYouTube() {
-  safeCall(() => ytPlayer?.playVideo?.());
+  post({ type: 'resume' });
 }
 
 /** Whether the YouTube player is currently paused (state 2). */
 export function isYouTubePaused() {
-  return safeCall(() => ytPlayer?.getPlayerState?.()) === 2;
+  return lastState === 2;
 }
 
-/** Set the YouTube playback volume (0-100). Persists across videos. */
+/** Set the YouTube playback volume (0-100). */
 export function setYouTubeVolume(volume) {
   currentVolume = Math.max(0, Math.min(100, Math.round(volume)));
-  applyVolume();
-}
-
-/** Current playback position in ms (for progress sync). */
-export function getYouTubeProgressMs() {
-  return Math.round((safeCall(() => ytPlayer?.getCurrentTime?.()) || 0) * 1000);
+  post({ type: 'volume', value: currentVolume });
 }

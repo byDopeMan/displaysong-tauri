@@ -5,7 +5,7 @@
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
 import { showNotification } from '../../ui/notifications.js';
-import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, isYouTubePaused } from '../youtube-player.js';
+import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube } from '../youtube-player.js';
 
 // State
 let queueItems = [];
@@ -255,12 +255,12 @@ function setupYouTubeControls() {
 /** Pause/resume the currently playing YouTube request. */
 export function toggleYouTubePause() {
   if (!youtubePlaying || !currentYtTrack) return;
-  if (isYouTubePaused()) {
-    resumeYouTube();
-    currentYtTrack = { ...currentYtTrack, isPlaying: true };
-  } else {
+  if (currentYtTrack.isPlaying) {
     pauseYouTube();
     currentYtTrack = { ...currentYtTrack, isPlaying: false };
+  } else {
+    resumeYouTube();
+    currentYtTrack = { ...currentYtTrack, isPlaying: true };
   }
   emitNowPlaying(currentYtTrack);
   syncYouTubePauseButton();
@@ -298,9 +298,9 @@ async function onYouTubeEnded() {
 function syncYouTubePauseButton() {
   const btn = document.getElementById('btn-youtube-pause');
   if (!btn) return;
-  const paused = isYouTubePaused();
-  btn.dataset.state = paused ? 'paused' : 'playing';
-  btn.title = paused ? 'Fortsetzen' : 'Pausieren';
+  const playing = currentYtTrack ? currentYtTrack.isPlaying : true;
+  btn.dataset.state = playing ? 'playing' : 'paused';
+  btn.title = playing ? 'Pausieren' : 'Fortsetzen';
 }
 
 /**
