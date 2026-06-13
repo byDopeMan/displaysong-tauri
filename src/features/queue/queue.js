@@ -26,8 +26,23 @@ let ytProgressTimer = null; // periodic now-playing emit while a YouTube song pl
 let ytVolumeTimer = null;   // live-syncs YouTube volume to the Spotify device volume
 
 // YouTube streams aren't loudness-normalized like Spotify, so at the same percent
-// they sound noticeably louder. Play YouTube at a fraction of the Spotify volume.
-const YT_VOLUME_FACTOR = 0.7;
+// they sound louder. YouTube plays at this fraction of the Spotify volume; the
+// user can lower it further via the dropdown in the YouTube controls.
+let ytVolumeFactor = parseFloat(localStorage.getItem('yt-volume-factor'));
+if (!(ytVolumeFactor > 0 && ytVolumeFactor <= 1)) ytVolumeFactor = 0.7;
+let lastSpotifyVolume = 50; // last known Spotify device volume (0-100)
+
+/** Apply the current Spotify volume * factor to the YouTube player. */
+function applyYtVolume() {
+  setYouTubeVolume(Math.round(lastSpotifyVolume * ytVolumeFactor));
+}
+
+/** Set the user's YouTube volume factor (0-1), persist it and apply immediately. */
+export function setYtVolumeFactor(factor) {
+  ytVolumeFactor = Math.max(0.05, Math.min(1, factor));
+  try { localStorage.setItem('yt-volume-factor', String(ytVolumeFactor)); } catch (e) {}
+  if (youtubePlaying) applyYtVolume();
+}
 
 /** Live-sync the YouTube volume to the Spotify device volume while a YT song
  *  plays, so changing Spotify's volume also changes the YouTube volume. */
@@ -39,7 +54,7 @@ function startYtVolumeSync() {
     if (!invoke) return;
     try {
       const v = await invoke('spotify_get_volume');
-      if (typeof v === 'number' && v >= 0) setYouTubeVolume(Math.round(v * YT_VOLUME_FACTOR));
+      if (typeof v === 'number' && v >= 0) { lastSpotifyVolume = v; applyYtVolume(); }
     } catch (e) { /* keep last volume */ }
   }, 2500);
 }
@@ -168,18 +183,27 @@ function setupAutoPlay() {
  * play_track would replace the context with a single track and leave silence.
  * A cooldown prevents queueing the same item repeatedly.
  */
-export async function maybeAutoAdvance() {
+export async function maybeAutoAdvance(remainingMs = 0) {
   if (!autoPlayQueue || queueItems.length === 0) return;
   if (youtubePlaying) return; // the YouTube player drives its own advance
   if (Date.now() - lastAutoPlayAt < 6000) return; // one hand-over per song
   const next = queueItems[0];
   if (!next) return;
+
+  // Timing of the hand-over depends on the next item:
+  // - Spotify: ~1.5s before the end, so add_to_queue plays it seamlessly after.
+  // - YouTube: only once the current song is basically over (the stream is
+  //   prefetched, so it starts instantly) — this avoids cutting the last second
+  //   of the Spotify song before pausing it for YouTube.
+  const isYt = isYouTubeUri(next.spotify_uri);
+  const threshold = isYt ? 250 : 1500;
+  if (remainingMs > threshold) return;
   lastAutoPlayAt = Date.now();
 
   const invoke = getTauriInvoke();
   if (!invoke) return;
   try {
-    if (isYouTubeUri(next.spotify_uri)) {
+    if (isYt) {
       await startYouTubeTakeover(next);
     } else {
       await invoke('add_to_queue', { uri: next.spotify_uri });
@@ -210,10 +234,10 @@ async function startYouTubeTakeover(item) {
 
   // Play at the same volume Spotify uses (so YouTube isn't a blast). Falls back
   // to a safe low default when Spotify has no active device.
-  let volume = Math.round(50 * YT_VOLUME_FACTOR);
+  let volume = Math.round(lastSpotifyVolume * ytVolumeFactor);
   try {
     const v = await invoke('spotify_get_volume');
-    if (typeof v === 'number' && v >= 0) volume = Math.round(v * YT_VOLUME_FACTOR);
+    if (typeof v === 'number' && v >= 0) { lastSpotifyVolume = v; volume = Math.round(v * ytVolumeFactor); }
     console.log('[Queue] Spotify volume for YouTube:', v, '-> yt', volume);
   } catch (e) { console.warn('[Queue] spotify_get_volume failed:', e); }
 
@@ -324,10 +348,17 @@ function showYouTubeControls(show) {
   if (show) syncYouTubePauseButton();
 }
 
-/** Wire the YouTube pause/skip buttons (shown only while a YouTube song plays). */
+/** Wire the YouTube pause/skip buttons + volume dropdown (shown while a YT plays). */
 function setupYouTubeControls() {
   document.getElementById('btn-youtube-pause')?.addEventListener('click', () => toggleYouTubePause());
   document.getElementById('btn-youtube-skip')?.addEventListener('click', () => skipYouTube());
+
+  const vol = document.getElementById('yt-volume-select');
+  if (vol) {
+    // Reflect the persisted factor (nearest 0.1 step).
+    vol.value = String(Math.round(ytVolumeFactor * 10) / 10);
+    vol.addEventListener('change', () => setYtVolumeFactor(parseFloat(vol.value)));
+  }
 }
 
 /** Pause/resume the currently playing YouTube request. */

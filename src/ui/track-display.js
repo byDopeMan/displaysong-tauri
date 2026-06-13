@@ -194,12 +194,13 @@ export function startProgressInterpolation() {
         elements.progressCurrent.textContent = formatTime(interpolatedProgress);
       }
 
-      // Auto-Play: hand over to the queue ~1.5s before the song ends, so the
-      // next request starts immediately instead of after the playlist advances.
-      // maybeAutoAdvance() is a no-op unless Auto-Play is on and the queue has
-      // items, and it self-throttles via a cooldown.
-      if (interpolatedProgress >= state.currentTrack.durationMs - 1500) {
-        maybeAutoAdvance();
+      // Auto-Play: hand over to the queue near the end of the song. maybeAutoAdvance
+      // decides exactly when based on the next item (Spotify: ~1.5s early for a
+      // seamless queue hand-off; YouTube: only once the song is basically over, so
+      // its last second isn't cut). No-op unless Auto-Play is on with items queued.
+      const remainingMs = state.currentTrack.durationMs - interpolatedProgress;
+      if (remainingMs <= 1800) {
+        maybeAutoAdvance(remainingMs);
       }
     }
 
