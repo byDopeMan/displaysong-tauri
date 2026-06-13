@@ -347,12 +347,22 @@ pub struct ResolvedRequest {
     pub artist: Option<String>,
     pub thumbnail: Option<String>,
     pub platform: String,
+    /// Whether the YouTube video can be played in an embedded player. Determined
+    /// via oEmbed (401 = embedding disabled by the owner). Only meaningful for
+    /// YouTube-only results; true/ignored when a Spotify version exists.
+    pub embeddable: bool,
 }
 
-/// Best-effort YouTube metadata via the public oEmbed endpoint (no API key).
-/// Returns (title, author/channel). Used as a fallback when Odesli can't
-/// resolve the video.
-async fn youtube_oembed(video_id: &str) -> (Option<String>, Option<String>) {
+/// Result of a YouTube oEmbed lookup: whether the video can be embedded, plus
+/// best-effort title/author. oEmbed returns 401 when the owner disabled
+/// embedding and 200 otherwise — a reliable pre-check before we try to play.
+struct YtOembed {
+    embeddable: bool,
+    title: Option<String>,
+    author: Option<String>,
+}
+
+async fn youtube_oembed(video_id: &str) -> YtOembed {
     let watch = format!("https://www.youtube.com/watch?v={}", video_id);
     let client = reqwest::Client::new();
     let resp = client.get("https://www.youtube.com/oembed")
@@ -360,16 +370,20 @@ async fn youtube_oembed(video_id: &str) -> (Option<String>, Option<String>) {
         .timeout(std::time::Duration::from_secs(6))
         .send()
         .await;
-    if let Ok(r) = resp {
-        if r.status().is_success() {
+    match resp {
+        Ok(r) if r.status().is_success() => {
             if let Ok(v) = r.json::<serde_json::Value>().await {
-                let title = v.get("title").and_then(|x| x.as_str()).map(String::from);
-                let author = v.get("author_name").and_then(|x| x.as_str()).map(String::from);
-                return (title, author);
+                return YtOembed {
+                    embeddable: true,
+                    title: v.get("title").and_then(|x| x.as_str()).map(String::from),
+                    author: v.get("author_name").and_then(|x| x.as_str()).map(String::from),
+                };
             }
+            YtOembed { embeddable: true, title: None, author: None }
         }
+        // 401 = embedding disabled; 404/other/network = treat as not playable.
+        _ => YtOembed { embeddable: false, title: None, author: None },
     }
-    (None, None)
 }
 
 /// Build a YouTube-only result (no Spotify match) from a known video id.
@@ -378,6 +392,7 @@ fn youtube_only_result(
     platform: &str,
     title: Option<String>,
     artist: Option<String>,
+    embeddable: bool,
 ) -> ResolvedRequest {
     ResolvedRequest {
         spotify_uri: None,
@@ -388,6 +403,7 @@ fn youtube_only_result(
         artist,
         thumbnail: Some(format!("https://i.ytimg.com/vi/{}/hqdefault.jpg", video_id)),
         platform: platform.to_string(),
+        embeddable,
     }
 }
 
@@ -433,8 +449,8 @@ pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
         Ok(r) if r.status().is_success() => r,
         other => {
             if let Some(ref vid) = input_yt_id {
-                let (t, a) = youtube_oembed(vid).await;
-                return Ok(youtube_only_result(vid, &platform_str, t, a));
+                let o = youtube_oembed(vid).await;
+                return Ok(youtube_only_result(vid, &platform_str, o.title, o.author, o.embeddable));
             }
             return Err(match other {
                 Ok(r) => format!("Odesli API error: {}", r.status()),
@@ -447,8 +463,8 @@ pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
         Ok(d) => d,
         Err(e) => {
             if let Some(ref vid) = input_yt_id {
-                let (t, a) = youtube_oembed(vid).await;
-                return Ok(youtube_only_result(vid, &platform_str, t, a));
+                let o = youtube_oembed(vid).await;
+                return Ok(youtube_only_result(vid, &platform_str, o.title, o.author, o.embeddable));
             }
             return Err(format!("Failed to parse Odesli response: {}", e));
         }
@@ -486,6 +502,19 @@ pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
         }
     }
 
+    // For a YouTube-only result (no Spotify version), check embeddability up front
+    // via oEmbed so non-embeddable videos are rejected at request time instead of
+    // failing only when playback starts. Also backfills missing title/artist.
+    let mut embeddable = true;
+    if spotify_uri.is_none() {
+        if let Some(vid) = &youtube_video_id {
+            let o = youtube_oembed(vid).await;
+            embeddable = o.embeddable;
+            if title.is_none() { title = o.title; }
+            if artist.is_none() { artist = o.author; }
+        }
+    }
+
     Ok(ResolvedRequest {
         spotify_uri,
         track_id,
@@ -495,6 +524,7 @@ pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
         artist,
         thumbnail,
         platform: platform_str,
+        embeddable,
     })
 }
 
