@@ -238,6 +238,16 @@
       opacity: 0;
     }
 
+    /* Marquee for long titles/artists (inner span scrolls within the clip box) */
+    .title .mq-text, .artist .mq-text { display: inline-block; will-change: transform; }
+    .title .mq-text.mq-run, .artist .mq-text.mq-run {
+      animation: mq-scroll 11s ease-in-out infinite alternate;
+    }
+    @keyframes mq-scroll {
+      0%, 12% { transform: translateX(0); }
+      88%, 100% { transform: translateX(var(--mq-shift, 0)); }
+    }
+
     .requester {
       display: flex;
       align-items: center;
@@ -434,6 +444,20 @@
         document.documentElement.style.setProperty('--b', b);
       }
 
+      // Set text in an inner span and scroll it (marquee) if it overflows.
+      function mqText(el, text) {
+        if (!el) return;
+        let span = el.querySelector('.mq-text');
+        if (!span) { el.textContent = ''; span = document.createElement('span'); span.className = 'mq-text'; el.appendChild(span); }
+        span.textContent = text;
+        span.classList.remove('mq-run');
+        span.style.removeProperty('--mq-shift');
+        requestAnimationFrame(() => {
+          const ov = span.scrollWidth - el.clientWidth;
+          if (ov > 4) { span.style.setProperty('--mq-shift', `-${ov + 12}px`); span.classList.add('mq-run'); }
+        });
+      }
+
       async function transitionToNewTrack(track) {
         if (isTransitioning) return;
         isTransitioning = true;
@@ -447,8 +471,8 @@
 
         if (currentTrack) {
           coverOld.style.backgroundImage = cover.style.backgroundImage;
-          titleOld.textContent = title.textContent;
-          artistOld.textContent = artist.textContent;
+          mqText(titleOld, title.textContent);
+          mqText(artistOld, artist.textContent);
 
           coverOld.classList.remove('old');
           coverOld.classList.add('new');
@@ -467,8 +491,8 @@
         }
 
         cover.style.backgroundImage = `url('${track.albumCover}')`;
-        title.textContent = track.track;
-        artist.textContent = track.artist;
+        mqText(title, track.track);
+        mqText(artist, track.artist);
 
         if (track.color && !useAccentColor) {
           setColor(track.color.r, track.color.g, track.color.b);

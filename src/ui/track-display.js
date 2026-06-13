@@ -29,6 +29,34 @@ function updateRequester(track) {
   try { window.__TAURI__?.event?.emit('requester-update', { user }); } catch (e) { /* widgets optional */ }
 }
 
+/**
+ * Set an element's text and, if it overflows, scroll it left-to-right (marquee).
+ * The text lives in an inner span so the host element clips it.
+ */
+export function setMarqueeText(el, text) {
+  if (!el) return;
+  el.classList.add('mq-host');
+  let span = el.querySelector('.mq-text');
+  if (!span) {
+    el.textContent = '';
+    span = document.createElement('span');
+    span.className = 'mq-text';
+    el.appendChild(span);
+  }
+  if (span.dataset.text === text) return; // unchanged
+  span.dataset.text = text;
+  span.textContent = text;
+  span.classList.remove('mq-run');
+  span.style.removeProperty('--mq-shift');
+  requestAnimationFrame(() => {
+    const overflow = span.scrollWidth - el.clientWidth;
+    if (overflow > 4) {
+      span.style.setProperty('--mq-shift', `-${overflow + 12}px`);
+      span.classList.add('mq-run');
+    }
+  });
+}
+
 let animationFrameId = null;
 let lastFrameTime = 0;
 
@@ -45,7 +73,7 @@ export function updateTrackDisplay(track, syncProgress = true) {
   if (!elements.trackTitle) return;
   
   if (!track || !track.track) {
-    elements.trackTitle.textContent = t('player.nothingPlaying', {}, 'Nichts läuft');
+    setMarqueeText(elements.trackTitle, t('player.nothingPlaying', {}, 'Nichts läuft'));
     elements.trackArtist.textContent = '—';
     if (elements.trackAlbum) elements.trackAlbum.textContent = '';
     if (elements.statusBadge) {
@@ -67,7 +95,7 @@ export function updateTrackDisplay(track, syncProgress = true) {
     state.currentTrack.track !== track.track || 
     state.currentTrack.artist !== track.artist;
 
-  elements.trackTitle.textContent = track.track;
+  setMarqueeText(elements.trackTitle, track.track);
   elements.trackArtist.textContent = track.artist;
   if (elements.trackAlbum) elements.trackAlbum.textContent = track.album;
 

@@ -813,6 +813,15 @@
 
 .yt-volume-select:hover { background: rgba(255, 255, 255, 0.14); }
 
+/* ===== MARQUEE (scroll long text) ===== */
+.mq-host { overflow: hidden; white-space: nowrap; }
+.mq-host .mq-text { display: inline-block; will-change: transform; }
+.mq-host .mq-text.mq-run { animation: mq-scroll 11s ease-in-out infinite alternate; }
+@keyframes mq-scroll {
+  0%, 12% { transform: translateX(0); }
+  88%, 100% { transform: translateX(var(--mq-shift, 0)); }
+}
+
 /* ===== RIGHT-CLICK CONTEXT MENU (history block/unblock) ===== */
 .context-menu {
   position: fixed;

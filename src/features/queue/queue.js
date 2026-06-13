@@ -25,6 +25,12 @@ let currentYtTrack = null; // the now-playing track object for the active YouTub
 let ytProgressTimer = null; // periodic now-playing emit while a YouTube song plays
 let ytVolumeTimer = null;   // live-syncs YouTube volume to the Spotify device volume
 
+// How long to let the current Spotify song keep playing after our progress
+// interpolation says it ended, before pausing it for a YouTube request. The
+// interpolation tends to run a touch ahead, so a small grace delay lets the song
+// finish cleanly (the YouTube stream is prefetched, so this adds no real gap).
+const YT_TAKEOVER_DELAY_MS = 1000;
+
 // YouTube streams aren't loudness-normalized like Spotify, so at the same percent
 // they sound louder. YouTube plays at this fraction of the Spotify volume; the
 // user can lower it further via the dropdown in the YouTube controls.
@@ -212,7 +218,8 @@ export async function maybeAutoAdvance(remainingMs = 0) {
   if (!invoke) return;
   try {
     if (isYt) {
-      await startYouTubeTakeover(next);
+      // Let the current Spotify song finish first (grace delay), then take over.
+      setTimeout(() => { startYouTubeTakeover(next); }, YT_TAKEOVER_DELAY_MS);
     } else {
       await invoke('add_to_queue', { uri: next.spotify_uri });
       await invoke('remove_song_request', { requestId: next.id });
