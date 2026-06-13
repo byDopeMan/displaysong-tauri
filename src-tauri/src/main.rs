@@ -205,6 +205,7 @@ fn main() {
             commands::resolve_song_request,
             // Windows Media Session - Universal music detection
             commands::get_windows_media_track,
+            commands::push_track_update,
             commands::is_windows_media_available,
             // Access Request Data (420 code persistence)
             commands::save_access_data,

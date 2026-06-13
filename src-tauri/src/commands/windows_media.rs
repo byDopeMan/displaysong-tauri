@@ -11,6 +11,16 @@ use crate::windows_media::{WindowsMediaProvider, MediaSessionTrack};
 use crate::color;
 // image crate used for color extraction from base64 images
 
+/// Broadcast a now-playing track to ALL windows (incl. widgets) via emit_all —
+/// the same path the Windows-media poll uses. The frontend's own event.emit does
+/// not reliably reach other windows, so YouTube now-playing is pushed through
+/// here while the poll is suppressed.
+#[tauri::command]
+pub fn push_track_update(track: serde_json::Value, app: AppHandle) -> Result<(), String> {
+    let _ = app.emit_all("track-update", &track);
+    Ok(())
+}
+
 /// Simple base64 decoder
 fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
     const DECODE_TABLE: [i8; 128] = [

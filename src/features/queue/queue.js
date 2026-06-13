@@ -41,6 +41,7 @@ function applyYtVolume() {
 export function setYtVolumeFactor(factor) {
   ytVolumeFactor = Math.max(0.05, Math.min(1, factor));
   try { localStorage.setItem('yt-volume-factor', String(ytVolumeFactor)); } catch (e) {}
+  console.log('[Queue] YT volume factor ->', ytVolumeFactor, 'playing:', youtubePlaying);
   if (youtubePlaying) applyYtVolume();
 }
 
@@ -93,7 +94,14 @@ export function cacheTrackInfo(uri, info) { trackInfoCache.set(uri, info); }
 /** Push a now-playing track to the player tab + widgets (same event the backend
  *  poll uses). Used to show a YouTube request like a normal Spotify song. */
 function emitNowPlaying(track) {
-  try { window.__TAURI__?.event?.emit('track-update', track); } catch (e) { /* widgets optional */ }
+  // Route through the backend (emit_all) so it reliably reaches ALL windows incl.
+  // widgets — a window's own event.emit does not reach other windows in Tauri v1.
+  const invoke = getTauriInvoke();
+  if (invoke) {
+    invoke('push_track_update', { track }).catch(() => {});
+  } else {
+    try { window.__TAURI__?.event?.emit('track-update', track); } catch (e) {}
+  }
 }
 
 // Requester memory: who requested a track. Survives the song's removal from the
@@ -196,7 +204,7 @@ export async function maybeAutoAdvance(remainingMs = 0) {
   //   prefetched, so it starts instantly) — this avoids cutting the last second
   //   of the Spotify song before pausing it for YouTube.
   const isYt = isYouTubeUri(next.spotify_uri);
-  const threshold = isYt ? 250 : 1500;
+  const threshold = isYt ? 0 : 1500;
   if (remainingMs > threshold) return;
   lastAutoPlayAt = Date.now();
 
