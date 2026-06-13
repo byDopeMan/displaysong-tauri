@@ -93,8 +93,10 @@ function onStateChange(event) {
 
 function onError(event) {
   // 2 invalid id, 5 HTML5 error, 100 removed/private, 101/150 embedding disabled.
-  console.warn('[YouTube] player error code:', event?.data, '- advancing.');
-  callbacks.onEnded?.();
+  const code = event?.data;
+  console.warn('[YouTube] player error code:', code, '- advancing.');
+  if (callbacks.onError) callbacks.onError(code);
+  else callbacks.onEnded?.();
 }
 
 function currentVideoId() {

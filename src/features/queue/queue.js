@@ -4,6 +4,7 @@
 
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
+import { showNotification } from '../../ui/notifications.js';
 import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, isYouTubePaused } from '../youtube-player.js';
 
 // State
@@ -201,6 +202,7 @@ async function startYouTubeTakeover(item) {
   // Show the song immediately (duration filled in once playback reports it).
   emitNowPlaying(currentYtTrack);
 
+  const requester = item.user_name || '';
   playYouTube(videoId, {
     volume,
     onPlaying: (durationMs) => {
@@ -208,8 +210,33 @@ async function startYouTubeTakeover(item) {
       currentYtTrack = { ...currentYtTrack, durationMs: durationMs || currentYtTrack.durationMs || 0, isPlaying: true };
       emitNowPlaying(currentYtTrack);
     },
+    onError: (code) => {
+      notifyYouTubeError(requester, code);
+      onYouTubeEnded();
+    },
     onEnded: () => { onYouTubeEnded(); },
   });
+}
+
+/** Tell the streamer (and the requester in chat) a YouTube request couldn't play. */
+function notifyYouTubeError(user, code) {
+  const embedBlocked = code === 101 || code === 150;
+  const reason = embedBlocked
+    ? 'erlaubt kein Einbetten und kann nicht abgespielt werden'
+    : 'konnte nicht abgespielt werden';
+  try {
+    showNotification(
+      embedBlocked
+        ? 'YouTube-Video erlaubt kein Einbetten – übersprungen.'
+        : 'YouTube-Video konnte nicht abgespielt werden – übersprungen.',
+      { type: 'warning' }
+    );
+  } catch (e) {}
+  const invoke = getTauriInvoke();
+  if (invoke && user) {
+    invoke('twitch_send_chat', { message: `@${user} Dein YouTube-Video ${reason} und wurde übersprungen.` })
+      .catch(() => {});
+  }
 }
 
 /** Show/hide the YouTube playback controls (pause/skip) in the player tab. */
