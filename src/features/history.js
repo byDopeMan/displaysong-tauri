@@ -7,6 +7,8 @@ import { getTauriInvoke } from '../core/tauri.js';
 import { escapeHtml } from '../utils/format.js';
 import { openExternal } from '../ui/navigation.js';
 import { settings } from './settings.js';
+import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist.js';
+import { showNotification } from '../ui/notifications.js';
 // Note: getHistorySourceFilter is imported dynamically to avoid circular dependency issues
 
 // History design is now always 'simple' with platform links menu
@@ -141,7 +143,7 @@ const PLATFORM_ICONS = {
  */
 function updateSimpleList(container, history) {
   container.innerHTML = history.map((track, index) => `
-    <div class="history-item">
+    <div class="history-item" data-track-id="${track.trackId || ''}" data-track="${escapeHtml(track.track)}" data-artist="${escapeHtml(track.artist)}">
       <span class="history-index">${index + 1}</span>
       <div class="history-cover" style="background-image: url('${track.albumCover || ''}')"></div>
       <div class="history-info">
@@ -184,6 +186,104 @@ function updateSimpleList(container, history) {
     if (!e.target.closest('.platform-radial')) {
       document.querySelectorAll('.platform-radial.expanded').forEach(r => r.classList.remove('expanded'));
     }
+  });
+
+  // Right-click a history entry -> block / unblock the song.
+  container.querySelectorAll('.history-item').forEach((item) => {
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showBlockMenu(e.clientX, e.clientY, {
+        id: item.dataset.trackId || null,
+        artist: item.dataset.artist || '',
+        title: item.dataset.track || '',
+      });
+    });
+  });
+}
+
+let blockMenuEl = null;
+function closeBlockMenu() {
+  if (blockMenuEl) { blockMenuEl.remove(); blockMenuEl = null; }
+  document.removeEventListener('click', closeBlockMenu);
+}
+
+/** Show the right-click block/unblock menu for a history entry. */
+function showBlockMenu(x, y, song) {
+  closeBlockMenu();
+  const blocked = isBlocked(song);
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+  const btn = document.createElement('button');
+  btn.className = 'context-menu-item';
+  btn.textContent = blocked ? 'Blockierung aufheben' : 'Song blockieren';
+  menu.appendChild(btn);
+  document.body.appendChild(menu);
+  blockMenuEl = menu;
+
+  // Keep it on screen.
+  const r = menu.getBoundingClientRect();
+  if (r.right > window.innerWidth) menu.style.left = `${window.innerWidth - r.width - 8}px`;
+  if (r.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - r.height - 8}px`;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (blocked) {
+      unblockSong(song);
+      showNotification('Song entsperrt');
+    } else {
+      blockSong(song);
+      showNotification('Song blockiert – kann nicht mehr angefragt werden');
+    }
+    closeBlockMenu();
+  });
+
+  // Close on the next outside click.
+  setTimeout(() => document.addEventListener('click', closeBlockMenu), 0);
+}
+
+/** Wire the "Blockiert" button to open the management modal. Call once at init. */
+export function setupBlocklistUI() {
+  const btn = document.getElementById('btn-open-blocklist');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      renderBlocklistModal();
+      document.getElementById('blocklist-modal')?.classList.remove('hidden');
+    });
+  }
+  // Keep the modal in sync if the list changes while it's open.
+  window.addEventListener('blocklist-change', () => {
+    const modal = document.getElementById('blocklist-modal');
+    if (modal && !modal.classList.contains('hidden')) renderBlocklistModal();
+  });
+}
+
+/** Render the blocklist management modal contents and wire its buttons. */
+export function renderBlocklistModal() {
+  const listEl = document.getElementById('blocklist-items');
+  if (!listEl) return;
+  const list = getBlocklist();
+  if (list.length === 0) {
+    listEl.innerHTML = `<p class="blocklist-empty">Keine blockierten Songs.</p>`;
+    return;
+  }
+  listEl.innerHTML = list.map((e, i) => `
+    <div class="blocklist-row">
+      <div class="blocklist-info">
+        <span class="blocklist-title">${escapeHtml(e.title || '—')}</span>
+        <span class="blocklist-artist">${escapeHtml(e.artist || '')}</span>
+      </div>
+      <button class="blocklist-remove" data-index="${i}" title="Entsperren">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  `).join('');
+  listEl.querySelectorAll('.blocklist-remove').forEach((b) => {
+    b.addEventListener('click', () => {
+      removeBlockAt(parseInt(b.dataset.index));
+      renderBlocklistModal();
+    });
   });
 }
 

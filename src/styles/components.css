@@ -799,6 +799,74 @@
   color: var(--text-dim, #888);
 }
 
+/* ===== RIGHT-CLICK CONTEXT MENU (history block/unblock) ===== */
+.context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(25, 25, 25, 0.98);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  min-width: 180px;
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.context-menu-item:hover { background: var(--accent); color: #fff; }
+
+/* ===== BLOCKLIST MODAL ===== */
+.blocklist-hint {
+  font-size: 12px;
+  color: var(--text-dim, #888);
+  margin-bottom: 12px;
+}
+
+.blocklist-items { display: flex; flex-direction: column; gap: 6px; }
+
+.blocklist-empty { font-size: 13px; color: var(--text-dim, #888); }
+
+.blocklist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.blocklist-info { display: flex; flex-direction: column; min-width: 0; }
+.blocklist-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blocklist-artist { font-size: 11px; color: var(--text-dim, #888); }
+
+.blocklist-remove {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.blocklist-remove:hover { background: var(--danger, #e74c3c); color: #fff; border-color: transparent; }
+
 /* ===== SETTING NOTICE (Info boxes in settings) ===== */
 .setting-notice {
   display: flex;

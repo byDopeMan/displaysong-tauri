@@ -211,7 +211,7 @@ async function startYouTubeTakeover(item) {
       album: '',
       albumCover: cover,
       source: 'YouTube',
-      trackId: null,
+      trackId: videoId,
       durationMs: 0,
     });
     import('../history.js').then(({ refreshHistory }) => refreshHistory()).catch(() => {});

@@ -17,6 +17,7 @@ import { showNotification } from '../ui/notifications.js';
 import { queueItems, registerRequester, cacheTrackInfo } from './queue/queue.js';
 import { addToHistory } from './requestHistory.js';
 import { isUrl, isSpotifyInput, extractSpotifyTrackId } from './twitch/parse.js';
+import { isBlocked } from './blocklist.js';
 import {
   applyTwitchMode,
   setTwitchMode,
@@ -456,6 +457,18 @@ async function handleSongRequest(userId, userName, input, source, redemption = n
       } catch (e) {
         console.error('[Twitch] Track info error:', e);
       }
+    }
+
+    // =========================================================================
+    // STEP 3.5: Reject blocked songs (by exact id or by artist+title)
+    // =========================================================================
+    const blockId = isYouTube ? spotifyUri.slice('youtube:'.length) : trackId;
+    if (isBlocked({ id: blockId, artist: artistName, title: trackName })) {
+      await invoke('twitch_send_chat', {
+        message: `@${userName} Dieser Song ist blockiert und kann nicht angefragt werden.`,
+      });
+      await refundPoints();
+      return;
     }
 
     // =========================================================================

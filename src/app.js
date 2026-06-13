@@ -315,6 +315,10 @@ async function init() {
   
   // Initialize YouTube Player (for auto-play without Spotify)
   initYouTubePlayer();
+
+  // Wire the history blocklist management button
+  const { setupBlocklistUI } = await import('./features/history.js');
+  setupBlocklistUI();
   
   // Initialize Request History (Spotify Playlist integration)
   await initRequestHistory();

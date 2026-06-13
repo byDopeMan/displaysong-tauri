@@ -276,7 +276,10 @@
             <h2 data-i18n="history.title">Song-Verlauf</h2>
             <p class="history-subtitle" data-i18n="history.subtitle">Zuletzt gespielte Songs</p>
           </div>
-
+          <button id="btn-open-blocklist" class="btn-icon-sm" title="Blockierte Songs verwalten">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+            <span>Blockiert</span>
+          </button>
         </div>
         
         <!-- Simple List with Platform Links -->
@@ -944,6 +947,19 @@
       </div>
       
       <!-- Changelog Modal -->
+      <div id="blocklist-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Blockierte Songs</h3>
+            <button class="modal-close" data-modal="blocklist-modal">×</button>
+          </div>
+          <div class="modal-body">
+            <p class="blocklist-hint">Rechtsklick auf einen Song im Verlauf, um ihn zu blockieren. Blockierte Songs können nicht mehr angefragt werden.</p>
+            <div id="blocklist-items" class="blocklist-items"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="changelog-modal" class="modal hidden">
         <div class="modal-content">
           <div class="modal-header">
