@@ -21,7 +21,7 @@ import { checkExistingCredentialsWithStatus } from './features/auth.js';
 import { checkForUpdates } from './features/updater.js';
 import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins.js';
 import { setupTwitchListeners, initTwitch } from './features/twitch.js';
-import { initQueue } from './features/queue/queue.js';
+import { initQueue, isYouTubePlaying } from './features/queue/queue.js';
 import { initYouTubePlayer } from './features/youtube-player.js';
 import { initRequestHistory } from './features/requestHistory.js';
 import { initSetupFlow, isSetupComplete } from './features/setup.js';
@@ -62,6 +62,11 @@ export async function startWindowsAudioPolling(invoke) {
   
   const pollTrack = async () => {
     try {
+      // While a YouTube-only request plays (hidden player), the queue drives the
+      // now-playing display itself — don't let Windows Media (which also detects
+      // the YouTube audio) overwrite it or stall the timeline.
+      if (isYouTubePlaying()) return;
+
       // Pass the user's source priority so the backend can pick the right
       // session when multiple players are active (e.g. Opera over Spotify).
       const track = await invoke('get_windows_media_track', { priority: getSourcePriority() });

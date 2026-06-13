@@ -13,6 +13,12 @@ let apiLoaded = false;
 let pendingVideoId = null;
 let callbacks = {};
 let announcedPlayingFor = null; // videoId we already reported onPlaying for
+let currentVolume = 50; // 0-100; kept low by default so YouTube is never a blast
+
+function applyVolume() {
+  // Persisted on the player across loadVideoById calls.
+  safeCall(() => ytPlayer?.setVolume?.(Math.max(0, Math.min(100, currentVolume))));
+}
 
 /**
  * Wire the global YouTube IFrame API ready callback. Safe to call once at startup;
@@ -55,6 +61,7 @@ function createPlayer() {
     events: {
       onReady: () => {
         isPlayerReady = true;
+        applyVolume(); // set the (low) volume before the first video can play
         if (pendingVideoId) {
           const v = pendingVideoId;
           pendingVideoId = null;
@@ -70,6 +77,7 @@ function createPlayer() {
 function onStateChange(event) {
   // 1 = PLAYING, 0 = ENDED
   if (event.data === 1) {
+    applyVolume(); // enforce the configured volume (never the default 100)
     const id = currentVideoId();
     if (id && announcedPlayingFor !== id) {
       announcedPlayingFor = id;
@@ -110,11 +118,13 @@ function loadVideo(videoId) {
 /**
  * Start playing a YouTube video's audio.
  * @param {string} videoId
- * @param {{onPlaying?:(durationMs:number)=>void, onEnded?:()=>void}} cb
+ * @param {{onPlaying?:(durationMs:number)=>void, onEnded?:()=>void, volume?:number}} cb
  */
 export function playYouTube(videoId, cb) {
   callbacks = cb || {};
+  if (typeof cb?.volume === 'number') currentVolume = cb.volume;
   loadYouTubeAPI();
+  applyVolume();
   loadVideo(videoId);
 }
 
@@ -123,6 +133,27 @@ export function stopYouTube() {
   callbacks = {};
   announcedPlayingFor = null;
   safeCall(() => ytPlayer?.stopVideo?.());
+}
+
+/** Pause the current YouTube audio. */
+export function pauseYouTube() {
+  safeCall(() => ytPlayer?.pauseVideo?.());
+}
+
+/** Resume the current YouTube audio. */
+export function resumeYouTube() {
+  safeCall(() => ytPlayer?.playVideo?.());
+}
+
+/** Whether the YouTube player is currently paused (state 2). */
+export function isYouTubePaused() {
+  return safeCall(() => ytPlayer?.getPlayerState?.()) === 2;
+}
+
+/** Set the YouTube playback volume (0-100). Persists across videos. */
+export function setYouTubeVolume(volume) {
+  currentVolume = Math.max(0, Math.min(100, Math.round(volume)));
+  applyVolume();
 }
 
 /** Current playback position in ms (for progress sync). */

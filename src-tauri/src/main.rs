@@ -92,6 +92,7 @@ fn main() {
             commands::play_track,
             commands::spotify_pause,
             commands::spotify_resume,
+            commands::spotify_get_volume,
             commands::set_external_playback,
             commands::get_track_info,
             // Spotify Playlist Management

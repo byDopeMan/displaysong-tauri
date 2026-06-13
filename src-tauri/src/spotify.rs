@@ -414,6 +414,36 @@ impl SpotifyClient {
         Ok(())
     }
 
+    /// Current playback volume (0-100) of the active Spotify device, if any.
+    /// Used to play YouTube requests at the same volume the streamer uses.
+    pub async fn get_volume(&self) -> Result<Option<u32>, String> {
+        let token = self.access_token.as_ref()
+            .ok_or("Not authenticated")?;
+
+        let response = self.http
+            .get(format!("{}/me/player", API_BASE))
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|e| format!("Player request failed: {}", e))?;
+
+        // 204 = no active device -> volume unknown
+        if response.status().as_u16() == 204 {
+            return Ok(None);
+        }
+        if !response.status().is_success() {
+            return Err(format!("Player query failed: {}", response.status()));
+        }
+
+        let v: serde_json::Value = response.json().await
+            .map_err(|e| format!("Parse error: {}", e))?;
+        let vol = v.get("device")
+            .and_then(|d| d.get("volume_percent"))
+            .and_then(|x| x.as_u64())
+            .map(|n| n as u32);
+        Ok(vol)
+    }
+
     /// Get track info by ID
     pub async fn get_track_info(&self, track_id: &str) -> Result<TrackInfo, String> {
         let token = self.access_token.as_ref()

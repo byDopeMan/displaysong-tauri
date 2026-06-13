@@ -346,6 +346,18 @@ pub async fn spotify_resume(
     Ok(())
 }
 
+/// Current Spotify playback volume (0-100), or null if no active device.
+/// Used so YouTube-only requests can play at the same volume as Spotify.
+#[tauri::command]
+pub async fn spotify_get_volume(
+    state: State<'_, Arc<AppState>>
+) -> Result<Option<u32>, String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    client.refresh_if_needed().await?;
+    client.get_volume().await
+}
+
 /// Toggle "external playback" mode. While on, the Spotify poll stops emitting
 /// track-update so the frontend can drive the now-playing display for a
 /// YouTube-only request (played via a hidden YouTube IFrame).

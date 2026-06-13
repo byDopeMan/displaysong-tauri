@@ -4,7 +4,7 @@
 
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
-import { playYouTube, stopYouTube } from '../youtube-player.js';
+import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, isYouTubePaused } from '../youtube-player.js';
 
 // State
 let queueItems = [];
@@ -20,6 +20,7 @@ let lastAutoPlayAt = 0;
 // frontend drives the now-playing display. The YouTube player's onEnded handles
 // advancing, so the normal near-end auto-advance must stand down meanwhile.
 let youtubePlaying = false;
+let currentYtTrack = null; // the now-playing track object for the active YouTube song
 
 const YT_URI_PREFIX = 'youtube:';
 function isYouTubeUri(uri) { return typeof uri === 'string' && uri.startsWith(YT_URI_PREFIX); }
@@ -86,6 +87,7 @@ export async function initQueue() {
   setupClearButtons();
   setupQueueDelegation();
   setupAutoPlay();
+  setupYouTubeControls();
   await loadQueue();
   renderQueue();
   updateQueueVisibility();
@@ -162,6 +164,14 @@ async function startYouTubeTakeover(item) {
   const info = trackInfoCache.get(item.spotify_uri) || {};
   const cover = info.albumCover || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
+  // Play at the same volume Spotify uses (so YouTube isn't a blast). Falls back
+  // to a safe low default when Spotify has no active device.
+  let volume = 50;
+  try {
+    const v = await invoke('spotify_get_volume');
+    if (typeof v === 'number' && v >= 0) volume = v;
+  } catch (e) { /* keep default */ }
+
   try {
     await invoke('set_external_playback', { active: true });
     try { await invoke('spotify_pause'); } catch (e) { /* maybe nothing playing */ }
@@ -173,8 +183,7 @@ async function startYouTubeTakeover(item) {
     console.error('[Queue] YouTube takeover setup error:', e);
   }
 
-  // Show the song immediately (duration filled in once playback reports it).
-  emitNowPlaying({
+  currentYtTrack = {
     track: info.track || 'YouTube',
     artist: info.artist || '',
     album: '',
@@ -185,25 +194,54 @@ async function startYouTubeTakeover(item) {
     source: 'youtube',
     trackId: null,
     color: null,
-  });
+  };
+  showYouTubeControls(true);
+  // Show the song immediately (duration filled in once playback reports it).
+  emitNowPlaying(currentYtTrack);
 
   playYouTube(videoId, {
+    volume,
     onPlaying: (durationMs) => {
-      emitNowPlaying({
-        track: info.track || 'YouTube',
-        artist: info.artist || '',
-        album: '',
-        albumCover: cover,
-        isPlaying: true,
-        durationMs: durationMs || info.durationMs || 0,
-        progressMs: 0,
-        source: 'youtube',
-        trackId: null,
-        color: null,
-      });
+      if (!currentYtTrack) return;
+      currentYtTrack = { ...currentYtTrack, durationMs: durationMs || currentYtTrack.durationMs || 0, isPlaying: true };
+      emitNowPlaying(currentYtTrack);
     },
     onEnded: () => { onYouTubeEnded(); },
   });
+}
+
+/** Show/hide the YouTube playback controls (pause/skip) in the player tab. */
+function showYouTubeControls(show) {
+  const el = document.getElementById('youtube-controls');
+  if (el) el.classList.toggle('hidden', !show);
+  if (show) syncYouTubePauseButton();
+}
+
+/** Wire the YouTube pause/skip buttons (shown only while a YouTube song plays). */
+function setupYouTubeControls() {
+  document.getElementById('btn-youtube-pause')?.addEventListener('click', () => toggleYouTubePause());
+  document.getElementById('btn-youtube-skip')?.addEventListener('click', () => skipYouTube());
+}
+
+/** Pause/resume the currently playing YouTube request. */
+export function toggleYouTubePause() {
+  if (!youtubePlaying || !currentYtTrack) return;
+  if (isYouTubePaused()) {
+    resumeYouTube();
+    currentYtTrack = { ...currentYtTrack, isPlaying: true };
+  } else {
+    pauseYouTube();
+    currentYtTrack = { ...currentYtTrack, isPlaying: false };
+  }
+  emitNowPlaying(currentYtTrack);
+  syncYouTubePauseButton();
+}
+
+/** Skip the currently playing YouTube request (advance the queue). */
+export function skipYouTube() {
+  if (!youtubePlaying) return;
+  stopYouTube();
+  onYouTubeEnded();
 }
 
 /** Called when a YouTube request finishes (or errors): chain or hand back. */
@@ -217,11 +255,22 @@ async function onYouTubeEnded() {
   }
 
   youtubePlaying = false;
+  currentYtTrack = null;
+  showYouTubeControls(false);
   lastAutoPlayAt = 0;
   if (invoke) {
     try { await invoke('set_external_playback', { active: false }); } catch (e) {}
     try { await invoke('spotify_resume'); } catch (e) {}
   }
+}
+
+/** Update the pause button's icon/label to match the current play state. */
+function syncYouTubePauseButton() {
+  const btn = document.getElementById('btn-youtube-pause');
+  if (!btn) return;
+  const paused = isYouTubePaused();
+  btn.dataset.state = paused ? 'paused' : 'playing';
+  btn.title = paused ? 'Fortsetzen' : 'Pausieren';
 }
 
 /**
@@ -394,6 +443,8 @@ async function clearQueue() {
     // Stop a running YouTube request and hand playback back to Spotify.
     if (youtubePlaying) {
       youtubePlaying = false;
+      currentYtTrack = null;
+      showYouTubeControls(false);
       stopYouTube();
       try { await invoke('set_external_playback', { active: false }); } catch (e) {}
       try { await invoke('spotify_resume'); } catch (e) {}
@@ -418,6 +469,16 @@ async function playSong(requestId, spotifyUri) {
     const item = queueItems.find((q) => q.id === requestId) || { id: requestId, spotify_uri: spotifyUri };
     await startYouTubeTakeover(item);
     return;
+  }
+
+  // Skipping to a Spotify song while a YouTube request is playing: stop the
+  // YouTube audio first so they don't overlap.
+  if (youtubePlaying) {
+    youtubePlaying = false;
+    currentYtTrack = null;
+    showYouTubeControls(false);
+    stopYouTube();
+    try { await invoke('set_external_playback', { active: false }); } catch (e) {}
   }
 
   try {
