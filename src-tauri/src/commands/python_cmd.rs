@@ -73,15 +73,20 @@ pub async fn python_package_installed(package: String) -> Result<bool, String> {
 // you're not a bot"), so we fall back to reading cookies from the user's logged-in
 // browser. The browser that works is reported back as "via" and cached so later
 // songs try it first. Prints one JSON line.
-const YT_DLP_CODE: &str = r#"import json,yt_dlp
+const YT_DLP_CODE: &str = r#"import json,os,yt_dlp
 URL='https://www.youtube.com/watch?v=__VID__'
 first='__FIRST__'
+ad=os.environ.get('APPDATA','')
+gx=os.path.join(ad,'Opera Software','Opera GX Stable')
+op=os.path.join(ad,'Opera Software','Opera Stable')
 base={'format':'bestaudio/best','quiet':True,'no_warnings':True,'noplaylist':True,'skip_download':True}
-browsers=['chrome','edge','firefox','brave','opera','vivaldi','chromium']
-order=([first] if first else [])+[b for b in browsers if b!=first]
-attempts=[] if first else [('',{}),('',{'extractor_args':{'youtube':{'player_client':['android']}}})]
-for b in order:
-    attempts.append((b,{'cookiesfrombrowser':(b,)}))
+methods={'operagx':{'cookiesfrombrowser':('opera',gx)},'opera':{'cookiesfrombrowser':('opera',op)},'chrome':{'cookiesfrombrowser':('chrome',)},'edge':{'cookiesfrombrowser':('edge',)},'firefox':{'cookiesfrombrowser':('firefox',)},'brave':{'cookiesfrombrowser':('brave',)},'vivaldi':{'cookiesfrombrowser':('vivaldi',)},'chromium':{'cookiesfrombrowser':('chromium',)}}
+dflt=['operagx','chrome','edge','firefox','brave','opera','vivaldi','chromium']
+if first and first in methods:
+    order=[first]+[m for m in dflt if m!=first]
+    attempts=[(m,methods[m]) for m in order]
+else:
+    attempts=[('',{}),('',{'extractor_args':{'youtube':{'player_client':['android']}}})]+[(m,methods[m]) for m in dflt]
 info=None; via=''; err=''
 for v,extra in attempts:
     o=dict(base); o.update(extra)
