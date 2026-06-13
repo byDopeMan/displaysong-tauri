@@ -6,7 +6,7 @@
     "build": "tauri build",
     "build:installer": "npm run build && npm run installer",
     "installer": "node scripts/build-installer.js",
-    "tauri": "cd /d \"E:\\CurrentSong[BrowserSource]\\Tauri\\src-tauri\" && dev-with-fixed-webview.bat",
+    "tauri": "tauri",
     "version": "node scripts/bump-version.js",
     "changelog": "node scripts/bump-version.js changelog",
     "zip": "node scripts/zip-release.js"

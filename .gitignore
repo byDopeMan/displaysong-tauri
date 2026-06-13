@@ -38,6 +38,10 @@ src-tauri/target/
 # =====================
 *.exe
 *.msi
+*.rar
+
+# Bundled fixed WebView2 runtime (no longer used; system WebView2 works)
+src-tauri/webview2-runtime/
 *.dmg
 *.app
 *.AppImage
