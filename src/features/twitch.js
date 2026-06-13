@@ -32,11 +32,19 @@ import {
   setupRequestSettingsListeners,
   loadLocalSettings,
 } from './twitch/song-request.js';
+import {
+  isTwitchConnected,
+  getTwitchUser,
+  isConnecting,
+  setConnected,
+  setUser,
+  setConnecting,
+} from './twitch/state.js';
+import { updateTwitchUI, updateChatPreview } from './twitch/ui.js';
 
-// Connection state
-let isConnected = false;
-let currentUser = null;
-let isConnecting = false;
+// Re-export connection state getters + UI so existing importers keep working.
+export { isTwitchConnected, getTwitchUser } from './twitch/state.js';
+export { updateTwitchUI } from './twitch/ui.js';
 
 /**
  * Initialize Twitch integration
@@ -53,10 +61,10 @@ export async function initTwitch() {
     
     if (hasCredentials) {
       const info = await invoke('twitch_get_connection');
-      isConnected = info.connected;
-      currentUser = info.user;
-      
-      if (isConnected) {
+      setConnected(info.connected);
+      setUser(info.user);
+
+      if (isTwitchConnected()) {
         startEventSub();
         checkTwitchScopes();
       }
@@ -116,28 +124,14 @@ async function startEventSub() {
 }
 
 /**
- * Check if connected to Twitch
- */
-export function isTwitchConnected() {
-  return isConnected;
-}
-
-/**
- * Get current Twitch user
- */
-export function getTwitchUser() {
-  return currentUser;
-}
-
-/**
  * Connect to Twitch - Shows OAuth modal while browser handles auth
  */
 export async function connectTwitch() {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
-  if (isConnecting) return;
-  isConnecting = true;
+  if (isConnecting()) return;
+  setConnecting(true);
 
   const statusText = document.getElementById('twitch-status-text');
   const btnConnect = document.getElementById('btn-twitch-connect');
@@ -159,11 +153,11 @@ export async function connectTwitch() {
     await invoke('twitch_connect');
 
     const info = await invoke('twitch_get_connection');
-    isConnected = info.connected;
-    currentUser = info.user;
+    setConnected(info.connected);
+    setUser(info.user);
 
-    if (isConnected) {
-      showNotification(`Mit Twitch verbunden als ${currentUser?.display_name || 'User'}`);
+    if (isTwitchConnected()) {
+      showNotification(`Mit Twitch verbunden als ${getTwitchUser()?.display_name || 'User'}`);
       closeOAuthModal();
       startEventSub();
     } else {
@@ -175,7 +169,7 @@ export async function connectTwitch() {
     showNotification(e.toString(), { type: 'error' });
     closeOAuthModal();
   } finally {
-    isConnecting = false;
+    setConnecting(false);
     if (btnConnect) {
       btnConnect.disabled = false;
       btnConnect.textContent = 'Verbinden';
@@ -190,7 +184,7 @@ export async function connectTwitch() {
 function closeOAuthModal() {
   const modal = document.getElementById('twitch-oauth-modal');
   if (modal) modal.classList.add('hidden');
-  isConnecting = false;
+  setConnecting(false);
 }
 
 /**
@@ -202,10 +196,10 @@ export async function disconnectTwitch() {
 
   try {
     await invoke('twitch_disconnect');
-    
-    isConnected = false;
-    currentUser = null;
-    
+
+    setConnected(false);
+    setUser(null);
+
     showNotification('Twitch getrennt');
     updateTwitchUI();
     
@@ -264,73 +258,6 @@ export async function updateTwitchSettings(settings) {
 }
 
 /**
- * Update Twitch UI elements
- */
-export function updateTwitchUI() {
-  const statusText = document.getElementById('twitch-status-text');
-  if (statusText) {
-    statusText.textContent = isConnected ? `Verbunden als ${currentUser?.display_name || 'User'}` : 'Nicht verbunden';
-    statusText.classList.toggle('connected', isConnected);
-  }
-
-  const btnConnect = document.getElementById('btn-twitch-connect');
-  const btnDisconnect = document.getElementById('btn-twitch-disconnect');
-  
-  if (btnConnect) btnConnect.classList.toggle('hidden', isConnected);
-  if (btnDisconnect) btnDisconnect.classList.toggle('hidden', !isConnected);
-
-  const settingsSection = document.getElementById('twitch-settings-section');
-  if (settingsSection) {
-    settingsSection.classList.toggle('hidden', !isConnected);
-  }
-
-  const channelDisplay = document.getElementById('twitch-channel-display');
-  if (channelDisplay && currentUser) {
-    channelDisplay.textContent = currentUser.login;
-  }
-
-  const userOption = document.getElementById('twitch-user-option');
-  if (userOption && currentUser) {
-    userOption.textContent = currentUser.display_name;
-  }
-
-  updateChatPreview();
-  updateDisconnectAllButton();
-}
-
-/**
- * Update the chat preview
- */
-function updateChatPreview() {
-  const senderName = document.getElementById('chat-sender-name');
-  const useBotSelect = document.getElementById('twitch-use-bot');
-  
-  if (senderName && useBotSelect) {
-    const useBot = useBotSelect.value === 'true';
-    const name = useBot ? 'DisplaySong' : (currentUser?.display_name || 'Du');
-    
-    senderName.textContent = name;
-    senderName.classList.remove('bot-name', 'user-name');
-    senderName.classList.add(useBot ? 'bot-name' : 'user-name');
-  }
-}
-
-/**
- * Update "Alle Verbindungen trennen" button
- */
-function updateDisconnectAllButton() {
-  const btn = document.getElementById('btn-disconnect-all');
-  if (!btn) return;
-
-  const spotifyConnected = true;
-  const twitchConnected = isConnected;
-  
-  const connectionCount = (spotifyConnected ? 1 : 0) + (twitchConnected ? 1 : 0);
-  btn.classList.toggle('hidden', connectionCount < 2);
-}
-
-
-/**
  * Setup Twitch event listeners
  */
 export function setupTwitchListeners() {
@@ -338,7 +265,7 @@ export function setupTwitchListeners() {
   document.getElementById('btn-twitch-disconnect')?.addEventListener('click', disconnectTwitch);
 
   document.getElementById('btn-disconnect-all')?.addEventListener('click', async () => {
-    if (isConnected) await disconnectTwitch();
+    if (isTwitchConnected()) await disconnectTwitch();
     document.getElementById('btn-disconnect')?.click();
   });
 
