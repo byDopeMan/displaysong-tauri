@@ -346,6 +346,18 @@ pub async fn spotify_resume(
     Ok(())
 }
 
+/// Skip to the next track on the active Spotify device (used to jump straight to
+/// a just-queued request while keeping the streamer's playlist context).
+#[tauri::command]
+pub async fn spotify_next(
+    state: State<'_, Arc<AppState>>
+) -> Result<(), String> {
+    let mut spotify = state.spotify.lock().await;
+    let client = spotify.as_mut().ok_or("Nicht mit Spotify verbunden")?;
+    client.refresh_if_needed().await?;
+    client.next().await
+}
+
 /// Current Spotify playback volume (0-100), or null if no active device.
 /// Used so YouTube-only requests can play at the same volume as Spotify.
 #[tauri::command]

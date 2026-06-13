@@ -314,6 +314,30 @@ export function skipYouTube() {
   onYouTubeEnded();
 }
 
+/**
+ * Play a Spotify request immediately WITHOUT destroying the streamer's playlist
+ * context: add it to Spotify's queue, then skip to it. After the request (and any
+ * further queued requests) the streamer's playlist continues natively. Falls back
+ * to play_track only if there's no active device/context to queue into.
+ */
+async function playSpotifyRequestNow(invoke, uri) {
+  let queued = false;
+  try {
+    await invoke('add_to_queue', { uri });
+    queued = true;
+  } catch (e) {
+    // No active device to queue into -> play it directly.
+    try { await invoke('play_track', { uri }); } catch (e2) { console.error('[Queue] play_track failed:', e2); }
+    return;
+  }
+  if (queued) {
+    // Give Spotify a moment to register the queued item before skipping to it.
+    await new Promise((r) => setTimeout(r, 600));
+    try { await invoke('spotify_next'); } catch (e) { console.warn('[Queue] spotify_next failed:', e); }
+    try { await invoke('spotify_resume'); } catch (e) {}
+  }
+}
+
 /** Called when a YouTube request finishes (or errors): chain or hand back. */
 async function onYouTubeEnded() {
   const invoke = getTauriInvoke();
@@ -326,8 +350,10 @@ async function onYouTubeEnded() {
       await startYouTubeTakeover(next); // keep Spotify paused, play the next YT
       return;
     }
-    // Next is a Spotify request: play it immediately (don't resume the streamer's
-    // paused track first — the request should come next).
+    // Next is a Spotify request: play it now but KEEP the streamer's context so
+    // the playlist resumes after the request queue empties. We add it to Spotify's
+    // queue and skip to it, instead of play_track (which would replace the context
+    // and leave silence once the queue runs out).
     youtubePlaying = false;
     currentYtTrack = null;
     showYouTubeControls(false);
@@ -335,12 +361,8 @@ async function onYouTubeEnded() {
     lastAutoPlayAt = Date.now(); // don't let maybeAutoAdvance double-fire
     if (invoke) {
       try { await invoke('set_external_playback', { active: false }); } catch (e) {}
-      try {
-        await invoke('play_track', { uri: next.spotify_uri });
-        await invoke('remove_song_request', { requestId: next.id });
-      } catch (e) {
-        console.error('[Queue] Spotify request after YouTube failed:', e);
-      }
+      await playSpotifyRequestNow(invoke, next.spotify_uri);
+      try { await invoke('remove_song_request', { requestId: next.id }); } catch (e) {}
     }
     return;
   }

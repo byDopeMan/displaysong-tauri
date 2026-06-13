@@ -414,6 +414,30 @@ impl SpotifyClient {
         Ok(())
     }
 
+    /// Skip to the next track in the active device's queue/context.
+    pub async fn next(&self) -> Result<(), String> {
+        let token = self.access_token.as_ref()
+            .ok_or("Not authenticated")?;
+
+        let response = self.http
+            .post(format!("{}/me/player/next", API_BASE))
+            .bearer_auth(token)
+            .header("Content-Length", "0")
+            .send()
+            .await
+            .map_err(|e| format!("Next request failed: {}", e))?;
+
+        let status = response.status();
+        if status.as_u16() == 404 {
+            return Err("Kein aktives Gerät gefunden.".to_string());
+        }
+        if !status.is_success() {
+            let error = response.text().await.unwrap_or_default();
+            return Err(format!("Next failed: {} - {}", status, error));
+        }
+        Ok(())
+    }
+
     /// Current playback volume (0-100) of the active Spotify device, if any.
     /// Used to play YouTube requests at the same volume the streamer uses.
     pub async fn get_volume(&self) -> Result<Option<u32>, String> {
