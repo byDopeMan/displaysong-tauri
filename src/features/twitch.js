@@ -26,6 +26,12 @@ import {
   setReward,
   createReward,
 } from './twitch/channel-points.js';
+import {
+  getTwitchMessages,
+  loadMessagesFromStorage,
+  saveMessagesToStorage,
+  resetMessagesToDefault,
+} from './twitch/messages.js';
 
 // State
 let isConnected = false;
@@ -33,16 +39,6 @@ let currentUser = null;
 let isConnecting = false;
 let eventSubListenersSetup = false;
 let lastProcessedRequest = null;
-let twitchMessages = {
-  nowPlaying: 'Jetzt laeuft: {artist} - {title}',
-  songAdded: '@{user} hat hinzugefuegt: {artist} - {title}',
-  songNotFound: '@{user} Song nicht gefunden. Nutze einen Spotify, YouTube oder Apple Music Link.',
-  cooldown: '@{user} Bitte warte noch {seconds}s',
-  tooLong: '@{user} Song ist zu lang (max. {max} Minuten)',
-  duplicate: '@{user} Song ist bereits in der Queue',
-  converting: '@{user} Konvertiere {platform} zu Spotify...',
-  notOnSpotify: '@{user} Song ist nicht auf Spotify verfuegbar'
-};
 
 // Local settings (stored in localStorage)
 let localSettings = {
@@ -225,6 +221,7 @@ async function handlePermitRequest(userId, userName) {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
+  const twitchMessages = getTwitchMessages();
   try {
     // Check cooldown first
     const onCooldown = await invoke('check_request_cooldown', { userId });
@@ -278,6 +275,8 @@ function songRequestsEnabled() {
 async function handleSongRequest(userId, userName, input, source, redemption = null) {
   const invoke = getTauriInvoke();
   if (!invoke) return;
+
+  const twitchMessages = getTwitchMessages();
 
   // Channel-point refund/fulfill helpers. Only act on real point redemptions
   // (source 'points' with a redemption id + reward id). For chat/command
@@ -756,84 +755,6 @@ function updateDisconnectAllButton() {
   btn.classList.toggle('hidden', connectionCount < 2);
 }
 
-/**
- * Load custom messages from localStorage
- */
-function loadMessagesFromStorage() {
-  try {
-    const stored = localStorage.getItem('twitch-messages');
-    if (stored) {
-      twitchMessages = { ...twitchMessages, ...JSON.parse(stored) };
-    }
-    
-    const nowPlayingInput = document.getElementById('msg-now-playing');
-    const songAddedInput = document.getElementById('msg-song-added');
-    const songNotFoundInput = document.getElementById('msg-song-not-found');
-    const cooldownInput = document.getElementById('msg-cooldown');
-    
-    if (nowPlayingInput) nowPlayingInput.value = twitchMessages.nowPlaying;
-    if (songAddedInput) songAddedInput.value = twitchMessages.songAdded;
-    if (songNotFoundInput) songNotFoundInput.value = twitchMessages.songNotFound;
-    if (cooldownInput) cooldownInput.value = twitchMessages.cooldown;
-  } catch (e) {
-    console.error('[Twitch] Load messages error:', e);
-  }
-}
-
-/**
- * Save custom messages to localStorage
- */
-function saveMessagesToStorage() {
-  try {
-    const nowPlayingInput = document.getElementById('msg-now-playing');
-    const songAddedInput = document.getElementById('msg-song-added');
-    const songNotFoundInput = document.getElementById('msg-song-not-found');
-    const cooldownInput = document.getElementById('msg-cooldown');
-    
-    // Save the actual field values — including empty strings. An empty message
-    // is intentional ("send nothing for this") and must not fall back to the
-    // default, otherwise clearing a field wouldn't disable that message.
-    twitchMessages = {
-      ...twitchMessages,
-      nowPlaying: nowPlayingInput ? nowPlayingInput.value : twitchMessages.nowPlaying,
-      songAdded: songAddedInput ? songAddedInput.value : twitchMessages.songAdded,
-      songNotFound: songNotFoundInput ? songNotFoundInput.value : twitchMessages.songNotFound,
-      cooldown: cooldownInput ? cooldownInput.value : twitchMessages.cooldown
-    };
-    
-    localStorage.setItem('twitch-messages', JSON.stringify(twitchMessages));
-    showNotification('Nachrichten gespeichert');
-  } catch (e) {
-    console.error('[Twitch] Save messages error:', e);
-  }
-}
-
-/**
- * Reset messages to default
- */
-function resetMessagesToDefault() {
-  twitchMessages = {
-    nowPlaying: 'Jetzt laeuft: {artist} - {title}',
-    songAdded: '@{user} hat hinzugefuegt: {artist} - {title}',
-    songNotFound: '@{user} Song nicht gefunden. Versuche: !sr Spotify-Link oder YouTube-Link',
-    cooldown: '@{user} Bitte warte noch {seconds}s',
-    tooLong: '@{user} Song ist zu lang (max. {max} Minuten)',
-    duplicate: '@{user} Song ist bereits in der Queue',
-    converting: '@{user} Konvertiere {platform} zu Spotify...',
-    notOnSpotify: '@{user} Song ist nicht auf Spotify verfuegbar'
-  };
-  
-  localStorage.removeItem('twitch-messages');
-  loadMessagesFromStorage();
-  showNotification('Nachrichten zurueckgesetzt');
-}
-
-/**
- * Get current messages
- */
-export function getTwitchMessages() {
-  return twitchMessages;
-}
 
 /**
  * Setup Twitch event listeners
