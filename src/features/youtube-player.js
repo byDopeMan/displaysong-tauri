@@ -130,9 +130,13 @@ export function resumeYouTube() {
 
 /** Set the playback volume (0-100). */
 export function setYouTubeVolume(volume) {
-  currentVolume = clampVol(Math.round(volume));
+  const v = clampVol(Math.round(volume));
+  const changed = v !== currentVolume;
+  currentVolume = v;
   if (audio) audio.volume = currentVolume / 100;
-  console.log('[YouTube] volume set to', currentVolume + '%', '- audio.volume =', audio ? audio.volume : 'no audio element');
+  if (changed) {
+    console.log('[YouTube] volume set to', currentVolume + '%', '- audio.volume =', audio ? audio.volume : 'no audio element');
+  }
 }
 
 /** Current playback position in ms. */

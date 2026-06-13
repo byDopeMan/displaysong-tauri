@@ -205,12 +205,14 @@ export async function maybeAutoAdvance(remainingMs = 0) {
   if (!next) return;
 
   // Timing of the hand-over depends on the next item:
-  // - Spotify: ~1.5s before the end, so add_to_queue plays it seamlessly after.
+  // - Spotify: queue it ~10s before the end, BEFORE Spotify's crossfade window
+  //   (up to 12s) kicks in. If we queue too late, Spotify has already started
+  //   crossfading into the next playlist track and the request is skipped/late.
   // - YouTube: only once the current song is basically over (the stream is
   //   prefetched, so it starts instantly) — this avoids cutting the last second
   //   of the Spotify song before pausing it for YouTube.
   const isYt = isYouTubeUri(next.spotify_uri);
-  const threshold = isYt ? 0 : 1500;
+  const threshold = isYt ? 0 : 10000;
   if (remainingMs > threshold) return;
   lastAutoPlayAt = Date.now();
 

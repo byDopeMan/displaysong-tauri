@@ -227,7 +227,7 @@ export function startProgressInterpolation() {
       // seamless queue hand-off; YouTube: only once the song is basically over, so
       // its last second isn't cut). No-op unless Auto-Play is on with items queued.
       const remainingMs = state.currentTrack.durationMs - interpolatedProgress;
-      if (remainingMs <= 1800) {
+      if (remainingMs <= 12000) {
         maybeAutoAdvance(remainingMs);
       }
     }
