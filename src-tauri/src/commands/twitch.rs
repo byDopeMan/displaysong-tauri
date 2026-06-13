@@ -1,6 +1,6 @@
 use tauri::{State, Manager, AppHandle};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, Notify};
 use log::{info, error, warn};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -23,6 +23,9 @@ pub struct TwitchState {
     pub sub_only: Arc<RwLock<bool>>,
     pub reward_id: Arc<RwLock<Option<String>>>,
     pub use_bot_account: Arc<RwLock<bool>>,
+    /// Signals the running EventSub task to tear down, so a reconnect (e.g. after
+    /// switching request mode) can re-subscribe with the correct subscriptions.
+    pub eventsub_shutdown: Arc<Notify>,
 }
 
 impl TwitchState {
@@ -36,6 +39,7 @@ impl TwitchState {
             sub_only: Arc::new(RwLock::new(false)),
             reward_id: Arc::new(RwLock::new(None)),
             use_bot_account: Arc::new(RwLock::new(true)),
+            eventsub_shutdown: Arc::new(Notify::new()),
         }
     }
 }
@@ -602,14 +606,23 @@ pub async fn twitch_connect_eventsub(
     use futures_util::{SinkExt, StreamExt};
     use tokio_tungstenite::{connect_async, tungstenite::Message};
     
-    // Check if already connected - prevent multiple connections!
+    // If an EventSub task is already running, tell it to stop and wait for it to
+    // tear down before starting a new one. This makes a mode/reward switch
+    // re-subscribe with the correct subscriptions (chat vs. redemptions) instead
+    // of silently keeping the old connection's subscriptions.
     {
-        let is_connected = *twitch.eventsub_connected.read().await;
-        if is_connected {
-            return Ok(());
+        let already = *twitch.eventsub_connected.read().await;
+        if already {
+            for _ in 0..40 {
+                twitch.eventsub_shutdown.notify_waiters();
+                if !*twitch.eventsub_connected.read().await {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
         }
     }
-    
+
     let (client_id, access_token, user_id) = {
         let client = twitch.client.read().await;
         let c = client.as_ref().ok_or("Nicht verbunden")?;
@@ -623,6 +636,7 @@ pub async fn twitch_connect_eventsub(
     let mode = twitch.mode.read().await.clone();
     
     let eventsub_connected = twitch.eventsub_connected.clone();
+    let shutdown = twitch.eventsub_shutdown.clone();
     let http = reqwest::Client::new();
     
     tokio::spawn(async move {
@@ -678,8 +692,10 @@ pub async fn twitch_connect_eventsub(
                 .await;
         }
         
-        // Subscribe to chat messages
-        {
+        // Subscribe to chat messages — only in command mode. In channel-points
+        // mode we deliberately do NOT subscribe to chat, so chat !sr commands do
+        // nothing and only redemptions create requests (and vice versa).
+        if mode == "commands" {
             let sub_body = serde_json::json!({
                 "type": "channel.chat.message",
                 "version": "1",
@@ -692,7 +708,7 @@ pub async fn twitch_connect_eventsub(
                     "session_id": session_id
                 }
             });
-            
+
             let _ = http.post(format!("{}/eventsub/subscriptions", API_BASE))
                 .header("Authorization", format!("Bearer {}", access_token))
                 .header("Client-Id", &client_id)
@@ -709,8 +725,18 @@ pub async fn twitch_connect_eventsub(
         
         info!("EventSub connected, listening for command: {}", command);
         
-        // Listen for events
-        while let Some(msg_result) = read.next().await {
+        // Listen for events until a shutdown is requested (e.g. on mode switch).
+        loop {
+            let msg_result = tokio::select! {
+                _ = shutdown.notified() => {
+                    info!("EventSub shutdown requested (reconnect)");
+                    break;
+                }
+                maybe = read.next() => match maybe {
+                    Some(m) => m,
+                    None => break,
+                },
+            };
             match msg_result {
                 Ok(Message::Text(text)) => {
                     if is_keepalive(&text) {

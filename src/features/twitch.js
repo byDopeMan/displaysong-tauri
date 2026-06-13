@@ -206,8 +206,11 @@ function setupEventSubListeners() {
   });
 
   window.__TAURI__.event.listen('twitch-redemption', async (event) => {
-    const { user_id, user_name, user_input } = event.payload;
-    await handleSongRequest(user_id, user_name, user_input, 'points');
+    const { id, user_id, user_name, user_input, reward_id } = event.payload;
+    // Real redemptions carry an id + reward_id we can use to refund (CANCEL) or
+    // fulfill the channel-point cost. Test redemptions have neither → no refund.
+    const redemption = (id && reward_id) ? { redemptionId: id, rewardId: reward_id } : null;
+    await handleSongRequest(user_id, user_name, user_input, 'points', redemption);
   });
 }
 
@@ -271,11 +274,44 @@ function songRequestsEnabled() {
   return localStorage.getItem('song-requests-enabled') !== 'false';
 }
 
-async function handleSongRequest(userId, userName, input, source) {
-  if (!songRequestsEnabled()) return;
-
+async function handleSongRequest(userId, userName, input, source, redemption = null) {
   const invoke = getTauriInvoke();
   if (!invoke) return;
+
+  // Channel-point refund/fulfill helpers. Only act on real point redemptions
+  // (source 'points' with a redemption id + reward id). For chat/command
+  // requests and test redemptions these are no-ops. Best-effort: updating a
+  // redemption only works for rewards this app created (Twitch restriction).
+  const refundPoints = async () => {
+    if (source !== 'points' || !redemption) return;
+    try {
+      await invoke('twitch_update_redemption', {
+        rewardId: redemption.rewardId,
+        redemptionId: redemption.redemptionId,
+        fulfill: false, // CANCELED -> points are refunded to the viewer
+      });
+    } catch (e) {
+      console.warn('[Twitch] Channel-point refund failed:', e);
+    }
+  };
+  const fulfillPoints = async () => {
+    if (source !== 'points' || !redemption) return;
+    try {
+      await invoke('twitch_update_redemption', {
+        rewardId: redemption.rewardId,
+        redemptionId: redemption.redemptionId,
+        fulfill: true,
+      });
+    } catch (e) {
+      console.warn('[Twitch] Channel-point fulfill failed:', e);
+    }
+  };
+
+  // Master toggle off => channel points are not active, refund the cost.
+  if (!songRequestsEnabled()) {
+    await refundPoints();
+    return;
+  }
 
   // Deduplicate
   const requestKey = `${userId}_${input}_${Math.floor(Date.now() / 2000)}`;
@@ -293,6 +329,7 @@ async function handleSongRequest(userId, userName, input, source) {
         .replace('{user}', userName)
         .replace('{seconds}', cooldownSeconds.toString());
       await invoke('twitch_send_chat', { message: msg });
+      await refundPoints();
       return;
     }
 
@@ -337,6 +374,7 @@ async function handleSongRequest(userId, userName, input, source) {
           const msg = twitchMessages.notOnSpotify
             .replace('{user}', userName);
           await invoke('twitch_send_chat', { message: msg });
+          await refundPoints();
           return;
         }
       } catch (e) {
@@ -345,6 +383,7 @@ async function handleSongRequest(userId, userName, input, source) {
           .replace('{user}', userName)
           .replace('{query}', trimmedInput);
         await invoke('twitch_send_chat', { message: msg });
+        await refundPoints();
         return;
       }
     }
@@ -355,6 +394,7 @@ async function handleSongRequest(userId, userName, input, source) {
         .replace('{user}', userName)
         .replace('{query}', trimmedInput);
       await invoke('twitch_send_chat', { message: msg });
+      await refundPoints();
       return;
     }
 
@@ -367,6 +407,7 @@ async function handleSongRequest(userId, userName, input, source) {
       if (isDuplicate) {
         const msg = twitchMessages.duplicate.replace('{user}', userName);
         await invoke('twitch_send_chat', { message: msg });
+        await refundPoints();
         return;
       }
     }
@@ -401,6 +442,7 @@ async function handleSongRequest(userId, userName, input, source) {
           .replace('{user}', userName)
           .replace('{max}', localSettings.maxDuration.toString());
         await invoke('twitch_send_chat', { message: msg });
+        await refundPoints();
         return;
       }
     }
@@ -444,11 +486,17 @@ async function handleSongRequest(userId, userName, input, source) {
       .replace('{user}', userName)
       .replace('{artist}', artistName)
       .replace('{title}', trackName);
-    
+
     await invoke('twitch_send_chat', { message: msg });
+
+    // Request accepted -> mark the redemption fulfilled so it leaves the
+    // broadcaster's channel-point queue.
+    await fulfillPoints();
 
   } catch (e) {
     console.error('[Twitch] Song request error:', e);
+    // Unexpected failure after the points were spent -> refund.
+    await refundPoints();
   }
 }
 
