@@ -5,6 +5,8 @@
     "dev": "tauri dev",
     "dev:vite": "vite",
     "build:vite": "vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "typecheck": "tsc --noEmit",
     "build": "tauri build",
     "build:installer": "npm run build && npm run installer",
     "installer": "node scripts/build-installer.js",
@@ -14,9 +16,14 @@
     "zip": "node scripts/zip-release.js"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^2.5.3",
     "@tauri-apps/cli": "1.6.2",
+    "@tsconfig/svelte": "^5.0.8",
     "archiver": "^7.0.1",
     "cross-env": "^10.1.0",
+    "svelte": "^4.2.20",
+    "svelte-check": "^3.8.6",
+    "typescript": "^5.9.3",
     "vite": "^4.0.0"
   }
 }
