@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use tauri::{State, AppHandle, Manager};
 use tokio::sync::Mutex;
-use log::debug;
+use log::{debug, info, warn};
 
 use crate::windows_media::{WindowsMediaProvider, MediaSessionTrack};
 use crate::color;
@@ -205,27 +205,42 @@ pub async fn is_windows_media_available() -> Result<bool, String> {
     }
 }
 
-/// Detect media-capable apps installed on this PC so the Source-Priority list is
-/// pre-populated on first run (before anything has played). Returns the default
-/// browser and Spotify when present, using names that match the frontend's
-/// source labels (e.g. "Chrome", "Spotify").
+/// Detect media-capable apps on this PC so the Source-Priority list is
+/// pre-populated before anything has played. Combines:
+///  - the default browser (from the registry),
+///  - Spotify if installed,
+///  - any app that currently has a media session (browser playing, VLC, other
+///    players), so live sources show up too.
+/// Names match the frontend's source labels where possible (e.g. "Chrome").
 #[tauri::command]
-pub fn detect_known_sources() -> Vec<String> {
+pub async fn detect_known_sources(
+    state: State<'_, Arc<WindowsMediaState>>,
+) -> Result<Vec<String>, String> {
+    let mut sources: Vec<String> = Vec::new();
+
     #[cfg(windows)]
     {
-        let mut sources = Vec::new();
         if let Some(browser) = default_browser_name() {
             sources.push(browser);
         }
         if spotify_installed() {
             sources.push("Spotify".to_string());
         }
-        sources
     }
-    #[cfg(not(windows))]
-    {
-        Vec::new()
+
+    // Apps currently exposing a media session (even paused).
+    for t in state.provider.get_all_tracks().await {
+        if !t.source.is_empty() {
+            sources.push(t.source);
+        }
     }
+
+    // Case-insensitive dedup, preserving first-seen order.
+    let mut seen = std::collections::HashSet::new();
+    sources.retain(|s| seen.insert(s.to_lowercase()));
+
+    info!("detect_known_sources -> {:?}", sources);
+    Ok(sources)
 }
 
 /// Run a console tool without flashing a window, returning its stdout.
@@ -244,17 +259,27 @@ fn run_hidden(cmd: &str, args: &[&str]) -> Option<String> {
 /// Read the user's default browser from the registry and map it to a label.
 #[cfg(windows)]
 fn default_browser_name() -> Option<String> {
-    let out = run_hidden("reg", &[
+    let out = match run_hidden("reg", &[
         "query",
         r"HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice",
         "/v",
         "ProgId",
-    ])?;
-    let prog_id = out
+    ]) {
+        Some(o) => o,
+        None => { warn!("[detect] reg query for default browser failed/empty"); return None; }
+    };
+
+    // The ProgId value can contain spaces (e.g. Opera GX -> "Opera GXStable"),
+    // so take everything after the REG_SZ type marker, not just the last token.
+    let prog_id = match out
         .lines()
-        .find(|l| l.contains("ProgId"))
-        .and_then(|l| l.split_whitespace().last())?
-        .to_lowercase();
+        .find(|l| l.contains("ProgId") && l.contains("REG_SZ"))
+        .and_then(|l| l.split("REG_SZ").nth(1))
+    {
+        Some(p) => p.trim().to_lowercase(),
+        None => { warn!("[detect] no ProgId line in reg output: {:?}", out); return None; }
+    };
+    info!("[detect] default browser ProgId: {}", prog_id);
 
     let name = if prog_id.contains("chrome") { "Chrome" }
         else if prog_id.contains("firefox") { "Firefox" }
@@ -262,7 +287,8 @@ fn default_browser_name() -> Option<String> {
         else if prog_id.contains("brave") { "Brave" }
         else if prog_id.contains("opera") { "Opera" }
         else if prog_id.contains("vivaldi") { "Vivaldi" }
-        else { return None; };
+        else if prog_id.contains("zen") { "Zen" }
+        else { warn!("[detect] unrecognized browser ProgId: {}", prog_id); return None; };
     Some(name.to_string())
 }
 
