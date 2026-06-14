@@ -11,7 +11,7 @@ import { setupEventListeners, setupDeepLinkHandler, setupTrackListener } from '.
 // UI
 import { showView, updateHistoryTabVisibility } from './ui/navigation.js';
 import { updateTrackDisplay, updateTrackMetadata, startProgressInterpolation, getInterpolatedProgress } from './ui/track-display.js';
-import { setupTitlebarControls } from './ui/titlebar.js';
+import Titlebar from './components/Titlebar.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings.js';
@@ -205,7 +205,9 @@ async function init() {
   updatePageTranslations();
   
   // Setup UI
-  setupTitlebarControls();
+  // Titlebar is a Svelte component — mount it as the first child of .app.
+  const appEl = document.querySelector('.app');
+  if (appEl) new Titlebar({ target: appEl, anchor: appEl.firstElementChild });
   setupEventListeners();
   setupSettingsListeners();
   setupAccessRequestListeners();
