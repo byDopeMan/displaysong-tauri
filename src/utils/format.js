@@ -21,6 +21,16 @@ export function escapeHtml(text) {
 }
 
 /**
+ * Escape a value for safe interpolation into HTML — including attribute values
+ * (also escapes quotes, which escapeHtml does not). Safe for text content too.
+ */
+export function escapeAttr(text) {
+  return String(text ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+/**
  * Convert hex color to RGB object
  */
 export function hexToRgb(hex) {

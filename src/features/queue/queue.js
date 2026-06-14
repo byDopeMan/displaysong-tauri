@@ -5,6 +5,7 @@
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
 import { showNotification } from '../../ui/notifications.js';
+import { escapeAttr } from '../../utils/format.js';
 import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, getYouTubeProgressMs, setYouTubeVolume, prefetchYouTube } from '../youtube-player.js';
 
 // State
@@ -793,32 +794,32 @@ function renderQueue() {
       const coverUrl = trackInfo?.albumCover || null;
       
       return `
-        <div class="queue-item" data-id="${item.id}" data-uri="${item.spotify_uri}">
+        <div class="queue-item" data-id="${escapeAttr(item.id)}" data-uri="${escapeAttr(item.spotify_uri)}">
           <div class="queue-item-position">${index + 1}</div>
-          
+
           <div class="queue-item-cover">
-            ${coverUrl 
-              ? `<img src="${coverUrl}" alt="Cover">` 
+            ${coverUrl
+              ? `<img src="${escapeAttr(coverUrl)}" alt="Cover">`
               : `<div class="queue-item-cover-placeholder">${ICONS.music}</div>`
             }
           </div>
-          
+
           <div class="queue-item-info">
             <div class="queue-item-track">
-              ${hasInfo 
-                ? `<span class="queue-item-title">${trackInfo.track}</span>` 
+              ${hasInfo
+                ? `<span class="queue-item-title">${escapeAttr(trackInfo.track)}</span>`
                 : `<span class="queue-item-title loading">Lädt...</span>`
               }
             </div>
             <div class="queue-item-meta">
-              ${hasInfo 
-                ? `<span class="queue-item-artist">${trackInfo.artist}</span>` 
-                : `<span class="queue-item-uri">${item.spotify_uri.substring(14, 30)}...</span>`
+              ${hasInfo
+                ? `<span class="queue-item-artist">${escapeAttr(trackInfo.artist)}</span>`
+                : `<span class="queue-item-uri">${escapeAttr(item.spotify_uri.substring(14, 30))}...</span>`
               }
             </div>
             <div class="queue-item-requester">
               <span class="queue-item-source" title="${item.source === 'points' ? 'Channel Points' : 'Chat Command'}">${sourceIcon}</span>
-              <span class="queue-item-user">${item.user_name}</span>
+              <span class="queue-item-user">${escapeAttr(item.user_name)}</span>
               <span class="queue-item-time">${formatTimeAgo(item.timestamp)}</span>
             </div>
           </div>

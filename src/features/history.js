@@ -4,7 +4,7 @@
 
 import { state } from '../core/state.js';
 import { getTauriInvoke } from '../core/tauri.js';
-import { escapeHtml } from '../utils/format.js';
+import { escapeHtml, escapeAttr } from '../utils/format.js';
 import { openExternal } from '../ui/navigation.js';
 import { settings } from './settings.js';
 import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist.js';
@@ -143,14 +143,14 @@ const PLATFORM_ICONS = {
  */
 function updateSimpleList(container, history) {
   container.innerHTML = history.map((track, index) => `
-    <div class="history-item" data-track-id="${track.trackId || ''}" data-track="${escapeHtml(track.track)}" data-artist="${escapeHtml(track.artist)}">
+    <div class="history-item" data-track-id="${escapeAttr(track.trackId || '')}" data-track="${escapeAttr(track.track)}" data-artist="${escapeAttr(track.artist)}">
       <span class="history-index">${index + 1}</span>
       <div class="history-cover" style="background-image: url('${track.albumCover || ''}')"></div>
       <div class="history-info">
         <div class="history-title">${escapeHtml(track.track)}</div>
         <div class="history-artist">${escapeHtml(track.artist)}</div>
       </div>
-      <div class="platform-radial" id="platform-radial-${index}" data-track-id="${track.trackId || ''}" data-track="${escapeHtml(track.track)}" data-artist="${escapeHtml(track.artist)}">
+      <div class="platform-radial" id="platform-radial-${index}" data-track-id="${escapeAttr(track.trackId || '')}" data-track="${escapeAttr(track.track)}" data-artist="${escapeAttr(track.artist)}">
         <button class="platform-radial-trigger" title="Öffnen auf...">
           ${PLATFORM_ICONS.link}
         </button>
@@ -327,8 +327,8 @@ async function loadPlatformLinks(radial, menu) {
       const url = p.url || getSearchUrl(p.key, searchQuery);
       const hasDirectLink = !!p.url;
       return `
-        <button class="platform-radial-item ${p.key}" 
-                data-url="${url}" 
+        <button class="platform-radial-item ${p.key}"
+                data-url="${escapeAttr(url)}"
                 title="${p.name}${hasDirectLink ? '' : ' (Suche)'}">
           ${PLATFORM_ICONS[p.key]}
         </button>
