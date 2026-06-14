@@ -19,7 +19,6 @@ mod python;
 mod events;
 mod songlink;
 mod windows_media;
-mod ytserver;
 
 use std::fs;
 use log::{info, error};
@@ -238,11 +237,6 @@ fn main() {
                 commands::python_cmd::init_python().await;
             });
 
-            // Local YouTube player server: hosts the YouTube IFrame from a real
-            // http://127.0.0.1 origin so embeds aren't rejected (error 150) like
-            // they are from the webview's custom-protocol origin.
-            ytserver::start(8890);
-            
             // Panic Handler - creates crash log with FULL log content
             let log_dir = data_dir.map(|d| d.join("logs"));
             std::panic::set_hook(Box::new(move |panic_info| {

@@ -1285,16 +1285,6 @@
   </div>
 
 
-  <!-- Hidden YouTube audio host. Plays the audio of YouTube-only song requests
-       off-screen; the song itself is shown like any other now-playing track
-       (cover + timeline) via the normal player/widgets, so no video UI is shown.
-       Kept at top level (outside the tab views) so switching tabs does not
-       display:none it and stop the audio. -->
-  <div id="yt-audio-host" aria-hidden="true"
-       style="position:absolute; left:-9999px; top:0; width:320px; height:180px; opacity:0; pointer-events:none; z-index:-1;">
-    <div id="youtube-player"></div>
-  </div>
-
   <!-- Floating controls for a playing YouTube request. Top level (not inside a
        tab view) so they're reachable no matter which tab is shown, including when
        the Player tab is disabled. -->
