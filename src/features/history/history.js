@@ -145,7 +145,7 @@ function updateSimpleList(container, history) {
   container.innerHTML = history.map((track, index) => `
     <div class="history-item" data-track-id="${escapeAttr(track.trackId || '')}" data-track="${escapeAttr(track.track)}" data-artist="${escapeAttr(track.artist)}">
       <span class="history-index">${index + 1}</span>
-      <div class="history-cover" style="background-image: url('${track.albumCover || ''}')"></div>
+      <div class="history-cover" style="background-image: url('${escapeAttr(track.albumCover || '')}')"></div>
       <div class="history-info">
         <div class="history-title">${escapeHtml(track.track)}</div>
         <div class="history-artist">${escapeHtml(track.artist)}</div>
@@ -181,12 +181,10 @@ function updateSimpleList(container, history) {
     });
   });
   
-  // Close radial when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.platform-radial')) {
-      document.querySelectorAll('.platform-radial.expanded').forEach(r => r.classList.remove('expanded'));
-    }
-  });
+  // Close radial when clicking outside. Bound once at module level — the list is
+  // re-rendered on every track change, so binding here per render would leak a
+  // new document listener each time.
+  ensureRadialOutsideClose();
 
   // Right-click a history entry -> block / unblock the song.
   container.querySelectorAll('.history-item').forEach((item) => {
@@ -198,6 +196,18 @@ function updateSimpleList(container, history) {
         title: item.dataset.track || '',
       });
     });
+  });
+}
+
+// Bind the radial outside-click handler exactly once (see updateSimpleList).
+let radialOutsideBound = false;
+function ensureRadialOutsideClose() {
+  if (radialOutsideBound) return;
+  radialOutsideBound = true;
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.platform-radial')) {
+      document.querySelectorAll('.platform-radial.expanded').forEach(r => r.classList.remove('expanded'));
+    }
   });
 }
 
