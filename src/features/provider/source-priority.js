@@ -5,6 +5,7 @@
 
 import { getString, setString } from '../../utils/storage.js';
 import { escapeAttr } from '../../utils/format.js';
+import { getTauriInvoke } from '../../core/tauri.js';
 
 // Known sources with their icons
 const SOURCE_ICONS = {
@@ -45,7 +46,11 @@ export function initSourcePriority() {
   
   // Load seen sources from storage
   loadSeenSources();
-  
+
+  // Pre-fill with apps found on the PC (default browser, Spotify) so the list
+  // isn't empty before anything has played. Best-effort, fire-and-forget.
+  seedKnownSources();
+
   // Initial visibility based on saved provider
   updatePriorityButtonVisibility();
   
@@ -119,13 +124,41 @@ function saveSeenSources() {
  */
 export function addSeenSource(source) {
   if (!source) return;
-  
+
   // Normalize source name
   const normalized = normalizeSourceName(source);
-  
+
   if (!seenSources.includes(normalized)) {
     seenSources.push(normalized);
     saveSeenSources();
+  }
+}
+
+/**
+ * Pre-fill the priority list with media apps detected on the PC (default browser,
+ * Spotify) so it isn't empty before anything has played. Best-effort; merges into
+ * the existing list without duplicates.
+ */
+async function seedKnownSources() {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  try {
+    const found = await invoke('detect_known_sources');
+    if (!Array.isArray(found)) return;
+    let added = false;
+    for (const s of found) {
+      const normalized = normalizeSourceName(s);
+      if (normalized && !seenSources.includes(normalized)) {
+        seenSources.push(normalized);
+        added = true;
+      }
+    }
+    if (added) {
+      saveSeenSources();
+      renderPriorityList();
+    }
+  } catch (e) {
+    // detection is best-effort
   }
 }
 

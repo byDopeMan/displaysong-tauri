@@ -198,9 +198,87 @@ pub async fn is_windows_media_available() -> Result<bool, String> {
     {
         Ok(true)
     }
-    
+
     #[cfg(not(windows))]
     {
         Ok(false)
     }
+}
+
+/// Detect media-capable apps installed on this PC so the Source-Priority list is
+/// pre-populated on first run (before anything has played). Returns the default
+/// browser and Spotify when present, using names that match the frontend's
+/// source labels (e.g. "Chrome", "Spotify").
+#[tauri::command]
+pub fn detect_known_sources() -> Vec<String> {
+    #[cfg(windows)]
+    {
+        let mut sources = Vec::new();
+        if let Some(browser) = default_browser_name() {
+            sources.push(browser);
+        }
+        if spotify_installed() {
+            sources.push("Spotify".to_string());
+        }
+        sources
+    }
+    #[cfg(not(windows))]
+    {
+        Vec::new()
+    }
+}
+
+/// Run a console tool without flashing a window, returning its stdout.
+#[cfg(windows)]
+fn run_hidden(cmd: &str, args: &[&str]) -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let output = std::process::Command::new(cmd)
+        .args(args)
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .ok()?;
+    Some(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+/// Read the user's default browser from the registry and map it to a label.
+#[cfg(windows)]
+fn default_browser_name() -> Option<String> {
+    let out = run_hidden("reg", &[
+        "query",
+        r"HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice",
+        "/v",
+        "ProgId",
+    ])?;
+    let prog_id = out
+        .lines()
+        .find(|l| l.contains("ProgId"))
+        .and_then(|l| l.split_whitespace().last())?
+        .to_lowercase();
+
+    let name = if prog_id.contains("chrome") { "Chrome" }
+        else if prog_id.contains("firefox") { "Firefox" }
+        else if prog_id.contains("msedge") || prog_id.contains("edge") { "Edge" }
+        else if prog_id.contains("brave") { "Brave" }
+        else if prog_id.contains("opera") { "Opera" }
+        else if prog_id.contains("vivaldi") { "Vivaldi" }
+        else { return None; };
+    Some(name.to_string())
+}
+
+/// Whether Spotify is installed (desktop or Microsoft Store build).
+#[cfg(windows)]
+fn spotify_installed() -> bool {
+    use std::path::Path;
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        if Path::new(&appdata).join("Spotify").join("Spotify.exe").exists() {
+            return true;
+        }
+    }
+    if let Ok(local) = std::env::var("LOCALAPPDATA") {
+        if Path::new(&local).join("Microsoft").join("WindowsApps").join("Spotify.exe").exists() {
+            return true;
+        }
+    }
+    false
 }

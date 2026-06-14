@@ -206,6 +206,7 @@ fn main() {
             commands::get_windows_media_track,
             commands::push_track_update,
             commands::is_windows_media_available,
+            commands::detect_known_sources,
             // Access Request Data (420 code persistence)
             commands::save_access_data,
             commands::load_access_data,
