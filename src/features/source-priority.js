@@ -4,6 +4,7 @@
  */
 
 import { getString, setString } from '../utils/storage.js';
+import { escapeAttr } from '../utils/format.js';
 
 // Known sources with their icons
 const SOURCE_ICONS = {
@@ -234,11 +235,11 @@ function renderPriorityList() {
   }
   
   list.innerHTML = seenSources.map((source, index) => `
-    <div class="priority-item" data-source="${source}" data-index="${index}">
+    <div class="priority-item" data-source="${escapeAttr(source)}" data-index="${index}">
       <span class="priority-rank">${index + 1}</span>
       <span class="priority-icon ${getSourceIconClass(source)}">${getSourceIcon(source)}</span>
-      <span class="priority-name">${source}</span>
-      <button class="priority-remove" data-source="${source}" title="Entfernen">
+      <span class="priority-name">${escapeAttr(source)}</span>
+      <button class="priority-remove" data-source="${escapeAttr(source)}" title="Entfernen">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
