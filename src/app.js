@@ -20,10 +20,10 @@ import { setupAccessRequestListeners, initAccessSystem } from './features/access
 import { checkExistingCredentialsWithStatus } from './features/provider/auth.js';
 import { checkForUpdates } from './features/updater.js';
 import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index.js';
-import { setupTwitchListeners, initTwitch } from './features/twitch.js';
-import { initQueue, isYouTubePlaying } from './features/queue/queue.js';
+import { setupTwitchListeners, initTwitch } from './features/twitch/index.js';
+import { initQueue, isYouTubePlaying } from './features/queue/index.js';
 import { initYouTubePlayer } from './features/queue/youtube-player.js';
-import { initRequestHistory } from './features/history/requestHistory.js';
+import { initRequestHistory } from './features/history/request-history.js';
 import { initSetupFlow, isSetupComplete } from './features/provider/setup.js';
 import { initProvider, loadSavedProvider, PROVIDER, startProviderPolling } from './features/provider/provider.js';
 import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui.js';

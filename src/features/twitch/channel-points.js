@@ -11,7 +11,7 @@ import { getTauriInvoke } from '../../core/tauri.js';
 import { showNotification } from '../../ui/notifications.js';
 import { escapeHtml } from './parse.js';
 import { isTwitchConnected } from './state.js';
-import { updateTwitchSettings } from '../twitch.js';
+import { updateTwitchSettings } from './index.js';
 
 /**
  * Toggle the request-mode UI (chat commands vs. channel points).

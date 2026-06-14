@@ -385,7 +385,7 @@ export function setupSettingsListeners() {
       updateGlobalBackground();
       
       // Update Queue rendering
-      const { onPlayerTabVisibilityChange } = await import('./queue/queue.js');
+      const { onPlayerTabVisibilityChange } = await import('./queue/index.js');
       onPlayerTabVisibilityChange();
       
       showNotification(settings.showPlayerTab ? 'Player Tab eingeblendet' : 'Player Tab ausgeblendet');
@@ -491,7 +491,7 @@ export function setupSettingsListeners() {
       updatePageTranslations();
       
       // Update Twitch UI after language change
-      const { updateTwitchUI } = await import('./twitch.js');
+      const { updateTwitchUI } = await import('./twitch/index.js');
       updateTwitchUI();
       
       showNotification('Sprache gewechselt');

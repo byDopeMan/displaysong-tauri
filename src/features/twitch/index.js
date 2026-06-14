@@ -12,8 +12,8 @@
  * - And more via Songlink/Odesli API
  */
 
-import { getTauriInvoke } from '../core/tauri.js';
-import { showNotification } from '../ui/notifications.js';
+import { getTauriInvoke } from '../../core/tauri.js';
+import { showNotification } from '../../ui/notifications.js';
 import {
   applyTwitchMode,
   setTwitchMode,
@@ -21,17 +21,17 @@ import {
   simulateRedemption,
   setReward,
   createReward,
-} from './twitch/channel-points.js';
+} from './channel-points.js';
 import {
   loadMessagesFromStorage,
   saveMessagesToStorage,
   resetMessagesToDefault,
-} from './twitch/messages.js';
+} from './messages.js';
 import {
   setupSongRequestListeners,
   setupRequestSettingsListeners,
   loadLocalSettings,
-} from './twitch/song-request.js';
+} from './song-request.js';
 import {
   isTwitchConnected,
   getTwitchUser,
@@ -39,12 +39,12 @@ import {
   setConnected,
   setUser,
   setConnecting,
-} from './twitch/state.js';
-import { updateTwitchUI, updateChatPreview } from './twitch/ui.js';
+} from './state.js';
+import { updateTwitchUI, updateChatPreview } from './ui.js';
 
 // Re-export connection state getters + UI so existing importers keep working.
-export { isTwitchConnected, getTwitchUser } from './twitch/state.js';
-export { updateTwitchUI } from './twitch/ui.js';
+export { isTwitchConnected, getTwitchUser } from './state.js';
+export { updateTwitchUI } from './ui.js';
 
 /**
  * Initialize Twitch integration
