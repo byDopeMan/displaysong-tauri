@@ -17,18 +17,18 @@ import Titlebar from './components/Titlebar.svelte';
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings.js';
 import { loadWidgetPositions, autoShowWidgets, syncActiveWidgets } from './features/widgets.js';
 import { setupAccessRequestListeners, initAccessSystem } from './features/access/index';
-import { checkExistingCredentialsWithStatus } from './features/provider/auth.js';
+import { checkExistingCredentialsWithStatus } from './features/provider/auth';
 import { checkForUpdates } from './features/updater.js';
 import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index';
 import { setupTwitchListeners, initTwitch } from './features/twitch/index';
 import { initQueue, isYouTubePlaying } from './features/queue/index';
 import { initYouTubePlayer } from './features/queue/youtube-player';
 import { initRequestHistory } from './features/history/request-history';
-import { initSetupFlow, isSetupComplete } from './features/provider/setup.js';
+import { initSetupFlow, isSetupComplete } from './features/provider/setup';
 import { initProvider, loadSavedProvider, PROVIDER, startProviderPolling } from './features/provider/provider';
-import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui.js';
+import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui';
 import { loadLanguage, updatePageTranslations, populateLanguageSelect } from './utils/i18n';
-import { initSourcePriority, addSeenSource, getSourcePriority } from './features/provider/source-priority.js';
+import { initSourcePriority, addSeenSource, getSourcePriority } from './features/provider/source-priority';
 
 /**
  * Windows Audio Polling

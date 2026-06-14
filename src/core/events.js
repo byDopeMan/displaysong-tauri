@@ -8,7 +8,7 @@ import { updateTrackDisplay } from '../ui/track-display.js';
 import { switchTab, showView } from '../ui/navigation.js';
 import { showNotification } from '../ui/notifications';
 import { toggleWidget, openConfigFolder, reloadWidgets } from '../features/widgets.js';
-import { disconnectSpotify } from '../features/provider/auth.js';
+import { disconnectSpotify } from '../features/provider/auth';
 import { refreshHistory } from '../features/history/history';
 
 /**
@@ -21,7 +21,7 @@ export function setupEventListeners() {
     });
   }
 
-  // NOTE: credentials-form handler is in provider/setup.js
+  // NOTE: credentials-form handler is in provider/setup
   // Do not add a duplicate handler here!
 
   document.querySelectorAll('.btn-show').forEach(btn => {
@@ -69,8 +69,8 @@ export async function setupDeepLinkHandler() {
   await listen('auth-success', async () => {
     state.isAuthenticated = true;
     showView('player');
-    const { updateSpotifyStatus } = await import('../features/provider/auth.js');
-    const { setSpotifyConnected } = await import('../features/provider/provider-ui.js');
+    const { updateSpotifyStatus } = await import('../features/provider/auth');
+    const { setSpotifyConnected } = await import('../features/provider/provider-ui');
     const { PROVIDER, loadSavedProvider } = await import('../features/provider/provider');
     
     updateSpotifyStatus(true);
