@@ -4,7 +4,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showView } from '../../ui/navigation.js';
+import { showView } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
 import { PROVIDER, loadSavedProvider, setProvider } from './provider';
 import { state } from '../../core/state';
@@ -96,7 +96,7 @@ function setupProviderSelect(): void {
           // Ignore if not running
         }
 
-        const { startWindowsAudioPolling } = await import('../../app.js');
+        const { startWindowsAudioPolling } = await import('../../app');
         setProvider(newProvider);
         updateProviderHint(newProvider, hint);
         updatePriorityButtonVisibility();
@@ -109,7 +109,7 @@ function setupProviderSelect(): void {
           return;
         }
 
-        const { stopWindowsAudioPolling } = await import('../../app.js');
+        const { stopWindowsAudioPolling } = await import('../../app');
         stopWindowsAudioPolling();
 
         setProvider(newProvider);

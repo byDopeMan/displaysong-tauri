@@ -4,10 +4,10 @@
 
 import { state, elements } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
-import { showView, openExternal } from '../../ui/navigation.js';
+import { showView, openExternal } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
 import { removeItem } from '../../utils/storage';
-import { updateWidgetList } from '../widgets.js';
+import { updateWidgetList } from '../widgets';
 import { t } from '../../utils/i18n';
 import { setSpotifyConnected } from './provider-ui';
 
@@ -62,7 +62,7 @@ export async function disconnectSpotify(): Promise<void> {
       }
 
       // Restart Windows Audio polling
-      const { startWindowsAudioPolling } = await import('../../app.js');
+      const { startWindowsAudioPolling } = await import('../../app');
       startWindowsAudioPolling(invoke);
 
       showNotification('Zu Windows Audio gewechselt');

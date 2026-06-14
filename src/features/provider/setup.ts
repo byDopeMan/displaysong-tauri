@@ -4,7 +4,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showView } from '../../ui/navigation.js';
+import { showView } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
 import { setProvider, PROVIDER } from './provider';
 import { state } from '../../core/state';
@@ -38,7 +38,7 @@ function setupProviderButtons(): void {
     document.getElementById('nav-tabs')?.classList.remove('hidden');
 
     // Start Windows Audio polling (dynamic import to avoid circular dependency)
-    const { startWindowsAudioPolling } = await import('../../app.js');
+    const { startWindowsAudioPolling } = await import('../../app');
     startWindowsAudioPolling(invoke);
 
     showNotification('Windows Audio aktiviert - Musik wird automatisch erkannt!');
@@ -97,7 +97,7 @@ function setupSpotifyForm(): void {
       showView('auth');
 
       // Open in default browser
-      const { openExternal } = await import('../../ui/navigation.js');
+      const { openExternal } = await import('../../ui/navigation');
       await openExternal(authUrl);
 
       // Reset button after a short delay

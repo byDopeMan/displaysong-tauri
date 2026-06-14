@@ -5,8 +5,8 @@
 import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { escapeHtml, escapeAttr } from '../../utils/format';
-import { openExternal } from '../../ui/navigation.js';
-import { settings } from '../settings.js';
+import { openExternal } from '../../ui/navigation';
+import { settings } from '../settings';
 import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt, type SongRef } from './blocklist';
 import { showNotification } from '../../ui/notifications';
 

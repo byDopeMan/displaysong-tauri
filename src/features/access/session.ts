@@ -12,7 +12,7 @@ import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
-import { showView, openExternal } from '../../ui/navigation.js';
+import { showView, openExternal } from '../../ui/navigation';
 import { fetchDeveloperCredentials } from './api';
 import { stopSSEConnection, stopStatusPolling, startBlockCheckSSE } from './connection';
 
@@ -218,7 +218,7 @@ export async function forceLogout(reason: string): Promise<void> {
       if (client) client.value = '';
       if (secret) secret.value = '';
 
-      const { updateWidgetList } = await import('../widgets.js');
+      const { updateWidgetList } = await import('../widgets');
       const { updateSpotifyStatus } = await import('../provider/auth');
 
       updateWidgetList();

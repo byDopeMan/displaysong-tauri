@@ -4,33 +4,31 @@
 
 import { showNotification } from '../ui/notifications';
 
-/**
- * Check for updates
- */
-export async function checkForUpdates() {
+/** Check for updates */
+export async function checkForUpdates(): Promise<void> {
   try {
     const checkUpdate = window.__TAURI__?.updater?.checkUpdate;
     const installUpdate = window.__TAURI__?.updater?.installUpdate;
     const onUpdaterEvent = window.__TAURI__?.updater?.onUpdaterEvent;
-    
+
     if (!checkUpdate) {
       console.log('Updater API nicht verfügbar');
       return;
     }
-    
+
     if (onUpdaterEvent) {
-      await onUpdaterEvent(({ error, status }) => {
+      await onUpdaterEvent(({ error, status }: any) => {
         console.log('Updater event:', status, error);
       });
     }
-    
+
     const update = await checkUpdate();
-    
+
     if (update.shouldUpdate) {
       console.log(`Update verfügbar: ${update.manifest?.version}`);
-      
+
       const shouldInstall = await showUpdateDialog(update.manifest);
-      
+
       if (shouldInstall && installUpdate) {
         showNotification('Update wird heruntergeladen...');
         await installUpdate();
@@ -43,10 +41,8 @@ export async function checkForUpdates() {
   }
 }
 
-/**
- * Show update dialog
- */
-async function showUpdateDialog(manifest) {
+/** Show update dialog */
+function showUpdateDialog(manifest: any): Promise<boolean> {
   return new Promise((resolve) => {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -65,15 +61,15 @@ async function showUpdateDialog(manifest) {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
-    modal.querySelector('#update-now').addEventListener('click', () => {
+
+    modal.querySelector('#update-now')?.addEventListener('click', () => {
       modal.remove();
       resolve(true);
     });
-    
-    modal.querySelector('#update-later').addEventListener('click', () => {
+
+    modal.querySelector('#update-later')?.addEventListener('click', () => {
       modal.remove();
       resolve(false);
     });

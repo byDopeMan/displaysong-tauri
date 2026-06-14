@@ -21,7 +21,7 @@ import {
   setPluginSettingsStyle,
 } from './settings';
 
-// Re-export the settings style setter (used by features/settings.js).
+// Re-export the settings style setter (used by features/settings).
 export { setPluginSettingsStyle };
 
 // Loaded plugin instances, keyed by pluginId.
