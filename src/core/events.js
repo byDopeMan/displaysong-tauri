@@ -41,11 +41,7 @@ export function setupEventListeners() {
 
   const btnReloadWidgets = document.getElementById('btn-reload-widgets');
   if (btnReloadWidgets) btnReloadWidgets.addEventListener('click', reloadWidgets);
-  
-  document.querySelectorAll('.design-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => setHistoryDesign(btn.dataset.design));
-  });
-  
+
   setupExternalLinks();
 }
 

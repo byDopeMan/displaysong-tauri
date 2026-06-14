@@ -147,12 +147,6 @@ export function applySettings() {
     try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHideCheck.checked }); } catch (e) {}
   }
 
-  import('./history/history.js').then(({ historyDesign }) => {
-    document.querySelectorAll('.design-toggle-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.design === historyDesign);
-    });
-  });
-
   const showPlayerCheck = document.getElementById('show-player-tab');
   if (showPlayerCheck) showPlayerCheck.checked = settings.showPlayerTab !== false;
 

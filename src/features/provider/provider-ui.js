@@ -193,13 +193,6 @@ function updateSpotifyDependentFeatures() {
       }
     }
   }
-  
-  // Spotify embed button in history
-  const embedBtn = document.querySelector('.design-toggle-btn[data-design="embedded"]');
-  if (embedBtn) {
-    embedBtn.disabled = !isSpotifyConnected;
-    embedBtn.title = isSpotifyConnected ? 'Spotify Embed' : 'Spotify nicht verbunden';
-  }
 }
 
 /**
