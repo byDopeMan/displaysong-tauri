@@ -6,7 +6,7 @@
 import { state, elements } from '../core/state';
 import { formatTime } from '../utils/format';
 import { t } from '../utils/i18n';
-import { getRequesterForTrack, maybeAutoAdvance } from '../features/queue/index.js';
+import { getRequesterForTrack, maybeAutoAdvance } from '../features/queue/index';
 
 /**
  * Show "requested by X" in the player when the current track was a song request,

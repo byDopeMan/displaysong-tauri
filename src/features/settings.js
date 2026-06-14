@@ -379,7 +379,7 @@ export function setupSettingsListeners() {
       updateGlobalBackground();
       
       // Update Queue rendering
-      const { onPlayerTabVisibilityChange } = await import('./queue/index.js');
+      const { onPlayerTabVisibilityChange } = await import('./queue/index');
       onPlayerTabVisibilityChange();
       
       showNotification(settings.showPlayerTab ? 'Player Tab eingeblendet' : 'Player Tab ausgeblendet');

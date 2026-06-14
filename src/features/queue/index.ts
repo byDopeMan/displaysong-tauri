@@ -14,16 +14,16 @@ import {
   startYouTubeTakeover,
   setupYouTubeControls,
   stopYouTubePlayback,
-} from './youtube.js';
+} from './youtube';
 
 // Re-export so existing importers (app.js) keep working.
-export { isYouTubePlaying } from './youtube.js';
+export { isYouTubePlaying } from './youtube';
 
 // State
-let queueItems = [];
-let trackInfoCache = new Map();
+let queueItems: any[] = [];
+const trackInfoCache = new Map<string, any>();
 let queueEventListenerSetup = false;
-let containerListenersSetup = new Set();
+const containerListenersSetup = new Set<string>();
 
 // Auto-advance: play queued requests one after another (track-changed driven).
 let autoPlayQueue = false;
@@ -34,41 +34,46 @@ let lastAutoPlayAt = 0;
 const YT_TAKEOVER_DELAY_MS = 1000;
 
 /** Prime the track-info cache (used by the request flow for YouTube items). */
-export function cacheTrackInfo(uri, info) { trackInfoCache.set(uri, info); }
+export function cacheTrackInfo(uri: string, info: any): void { trackInfoCache.set(uri, info); }
 
 // Requester memory: who requested a track. Survives the song's removal from the
 // queue, so "requested by X" can still be shown while it plays. Keyed by Spotify
 // track id AND by normalized "artist|title" (the Windows-media source has no
 // track id). Capped so it can't grow unbounded.
-const requesterMemory = new Map();
+const requesterMemory = new Map<string, { user: string; source: string }>();
 
-function reqNormKey(artist, title) {
+function reqNormKey(artist: unknown, title: unknown): string {
   return 'k:' + String(artist || '').toLowerCase().trim() + '|' + String(title || '').toLowerCase().trim();
 }
 
 /** Remember who requested a track (called when a request is added / loaded). */
-export function registerRequester({ trackId, track, artist, user, source }) {
+export function registerRequester(
+  { trackId, track, artist, user, source }:
+  { trackId?: string | null; track?: string; artist?: string; user?: string; source?: string },
+): void {
   if (!user) return;
   const entry = { user, source: source || 'chat' };
   if (trackId) requesterMemory.set('id:' + trackId, entry);
   if (track) requesterMemory.set(reqNormKey(artist, track), entry);
   while (requesterMemory.size > 300) {
-    requesterMemory.delete(requesterMemory.keys().next().value);
+    const oldest = requesterMemory.keys().next().value;
+    if (oldest === undefined) break;
+    requesterMemory.delete(oldest);
   }
 }
 
 /** Look up the requester for the currently playing track (by id, then title). */
-export function getRequesterForTrack(track) {
+export function getRequesterForTrack(track: any): { user: string; source: string } | null {
   if (!track) return null;
   if (track.trackId && requesterMemory.has('id:' + track.trackId)) {
-    return requesterMemory.get('id:' + track.trackId);
+    return requesterMemory.get('id:' + track.trackId) || null;
   }
   const k = reqNormKey(track.artist, track.track);
-  return requesterMemory.has(k) ? requesterMemory.get(k) : null;
+  return requesterMemory.has(k) ? requesterMemory.get(k) || null : null;
 }
 
 // SVG Icons
-const ICONS = {
+const ICONS: Record<string, string> = {
   music: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
   play: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
   trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
@@ -80,7 +85,7 @@ const ICONS = {
 /**
  * Initialize Queue
  */
-export async function initQueue() {
+export async function initQueue(): Promise<void> {
   // Give the YouTube module the queue accessors it needs (no circular import).
   initYouTube({
     getQueueItems: () => queueItems,
@@ -103,20 +108,17 @@ export async function initQueue() {
 }
 
 /**
- * Auto-advance setup: load the persisted toggle, wire the checkbox and start
- * the monitor. When enabled, the next queued request is played automatically
- * once nothing is playing — so the request queue is what gets played, not the
- * next song from the streamer's own playlist.
+ * Auto-advance setup.
  */
-function setupAutoPlay() {
+function setupAutoPlay(): void {
   autoPlayQueue = localStorage.getItem('queue-autoplay') === 'true';
   // The toggle lives in the queue header (player view + standalone queue view),
   // so there can be two checkboxes — keep them in sync.
-  const toggles = document.querySelectorAll('.js-queue-autoplay');
+  const toggles = document.querySelectorAll<HTMLInputElement>('.js-queue-autoplay');
   toggles.forEach((cb) => {
     cb.checked = autoPlayQueue;
     cb.addEventListener('change', (e) => {
-      autoPlayQueue = e.target.checked;
+      autoPlayQueue = (e.target as HTMLInputElement).checked;
       localStorage.setItem('queue-autoplay', String(autoPlayQueue));
       toggles.forEach((other) => { if (other !== e.target) other.checked = autoPlayQueue; });
       // If turned on while truly nothing is playing, start the queue right away.
@@ -127,27 +129,15 @@ function setupAutoPlay() {
 
 /**
  * Hand the next queued request over to Spotify's native queue shortly before the
- * current song ends (triggered from the player's progress loop and as a fallback
- * on track-changed). Using add_to_queue (instead of play_track) is important:
- * it plays the request right after the current song AND keeps the streamer's
- * playlist context, so music keeps going once the request queue is empty —
- * play_track would replace the context with a single track and leave silence.
- * A cooldown prevents queueing the same item repeatedly.
+ * current song ends.
  */
-export async function maybeAutoAdvance(remainingMs = 0) {
+export async function maybeAutoAdvance(remainingMs = 0): Promise<void> {
   if (!autoPlayQueue || queueItems.length === 0) return;
   if (isYouTubePlaying()) return; // the YouTube player drives its own advance
   if (Date.now() - lastAutoPlayAt < 6000) return; // one hand-over per song
   const next = queueItems[0];
   if (!next) return;
 
-  // Timing of the hand-over depends on the next item:
-  // - Spotify: queue it ~10s before the end, BEFORE Spotify's crossfade window
-  //   (up to 12s) kicks in. If we queue too late, Spotify has already started
-  //   crossfading into the next playlist track and the request is skipped/late.
-  // - YouTube: only once the current song is basically over (the stream is
-  //   prefetched, so it starts instantly) — this avoids cutting the last second
-  //   of the Spotify song before pausing it for YouTube.
   const isYt = isYouTubeUri(next.spotify_uri);
   const threshold = isYt ? 0 : 10000;
   if (remainingMs > threshold) return;
@@ -171,26 +161,22 @@ export async function maybeAutoAdvance(remainingMs = 0) {
 
 /**
  * Attach delegated click handlers to the queue containers.
- *
- * The list HTML is re-rendered on every update, so we listen on the (stable)
- * container instead of the buttons. This replaces the old inline `onclick`
- * handlers, which were brittle (broke on quotes in URIs and depended on
- * globals) and are the reason the queue buttons did nothing when clicked.
  */
-function setupQueueDelegation() {
+function setupQueueDelegation(): void {
   ['queue-list', 'queue-list-standalone'].forEach((id) => {
     const container = document.getElementById(id);
     if (!container || containerListenersSetup.has(id)) return;
     containerListenersSetup.add(id);
 
     container.addEventListener('click', (e) => {
-      const item = e.target.closest('.queue-item');
+      const target = e.target as HTMLElement;
+      const item = target.closest('.queue-item') as HTMLElement | null;
       if (!item) return;
       const { id: requestId, uri } = item.dataset;
 
-      if (e.target.closest('.queue-btn-play')) {
+      if (target.closest('.queue-btn-play')) {
         playSong(requestId, uri);
-      } else if (e.target.closest('.queue-btn-remove')) {
+      } else if (target.closest('.queue-btn-remove')) {
         removeSong(requestId);
       }
     });
@@ -200,21 +186,21 @@ function setupQueueDelegation() {
 /**
  * Setup Tauri event listener for queue updates (only once)
  */
-function setupQueueEventListener() {
+function setupQueueEventListener(): void {
   if (queueEventListenerSetup) return;
   if (!window.__TAURI__?.event) return;
-  
+
   queueEventListenerSetup = true;
-  
+
   window.__TAURI__.event.listen('queue-updated', async () => {
     await loadQueue();
     renderQueue();
     updateQueueVisibility();
   });
-  
+
   // Listen for track changes: auto-remove the matching queue item, and (when
   // Auto-Play is on) advance the queue once the current song ends.
-  window.__TAURI__.event.listen('track-changed', (event) => {
+  window.__TAURI__.event.listen('track-changed', (event: any) => {
     const track = event.payload;
     if (track?.trackId) {
       checkAndRemovePlayingTrack(track.trackId);
@@ -226,7 +212,7 @@ function setupQueueEventListener() {
 /**
  * Setup clear buttons (once)
  */
-function setupClearButtons() {
+function setupClearButtons(): void {
   document.getElementById('btn-clear-queue')?.addEventListener('click', clearQueue);
   document.getElementById('btn-clear-queue-standalone')?.addEventListener('click', clearQueue);
 }
@@ -234,10 +220,10 @@ function setupClearButtons() {
 /**
  * Check if currently playing track is in queue and remove it
  */
-async function checkAndRemovePlayingTrack(trackId) {
+async function checkAndRemovePlayingTrack(trackId: string): Promise<void> {
   const uri = `spotify:track:${trackId}`;
-  const item = queueItems.find(q => q.spotify_uri === uri);
-  
+  const item = queueItems.find((q) => q.spotify_uri === uri);
+
   if (item) {
     console.log('[Queue] Auto-removing playing track:', trackId);
     await removeSong(item.id);
@@ -247,13 +233,13 @@ async function checkAndRemovePlayingTrack(trackId) {
 /**
  * Load queue from backend
  */
-async function loadQueue() {
+async function loadQueue(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
   try {
     queueItems = await invoke('get_song_request_queue') || [];
-    
+
     // Fetch track info for items without cached info
     for (const item of queueItems) {
       if (!trackInfoCache.has(item.spotify_uri)) {
@@ -269,13 +255,11 @@ async function loadQueue() {
 /**
  * Fetch track info from Spotify API
  */
-async function fetchTrackInfo(spotifyUri) {
+async function fetchTrackInfo(spotifyUri: string): Promise<any> {
   const invoke = getTauriInvoke();
   if (!invoke) return null;
 
-  // YouTube-only items: metadata is primed when the request is added. If it's
-  // missing (e.g. queue restored from DB after a restart), re-resolve it from
-  // the video id instead of asking Spotify.
+  // YouTube-only items: metadata is primed when the request is added.
   if (isYouTubeUri(spotifyUri)) {
     if (!trackInfoCache.has(spotifyUri)) {
       const videoId = youTubeVideoId(spotifyUri);
@@ -300,8 +284,7 @@ async function fetchTrackInfo(spotifyUri) {
     const info = await invoke('get_track_info', { trackId });
     if (info) {
       trackInfoCache.set(spotifyUri, info);
-      // Remember the requester for this track now that we know its title/artist,
-      // so "requested by X" works even after it leaves the queue.
+      // Remember the requester now that we know its title/artist.
       const item = queueItems.find((q) => q.spotify_uri === spotifyUri);
       if (item) {
         registerRequester({ trackId, track: info.track, artist: info.artist, user: item.user_name, source: item.source });
@@ -317,7 +300,7 @@ async function fetchTrackInfo(spotifyUri) {
 /**
  * Get track info (for external use)
  */
-export async function getTrackInfo(spotifyUri) {
+export async function getTrackInfo(spotifyUri: string): Promise<any> {
   if (trackInfoCache.has(spotifyUri)) {
     return trackInfoCache.get(spotifyUri);
   }
@@ -327,9 +310,9 @@ export async function getTrackInfo(spotifyUri) {
 /**
  * Clear entire queue
  */
-async function clearQueue() {
+async function clearQueue(): Promise<void> {
   if (!confirm('Queue wirklich leeren?')) return;
-  
+
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -348,20 +331,18 @@ async function clearQueue() {
 /**
  * Play a song from queue (skip to it)
  */
-async function playSong(requestId, spotifyUri) {
+async function playSong(requestId: string | undefined, spotifyUri: string | undefined): Promise<void> {
   const invoke = getTauriInvoke();
-  if (!invoke) return;
+  if (!invoke || !spotifyUri) return;
 
-  // YouTube-only item: play it via the hidden YouTube player (pauses Spotify,
-  // shows it like a now-playing song) instead of Spotify's play_track.
+  // YouTube-only item: play it via the hidden YouTube player.
   if (isYouTubeUri(spotifyUri)) {
     const item = queueItems.find((q) => q.id === requestId) || { id: requestId, spotify_uri: spotifyUri };
     await startYouTubeTakeover(item);
     return;
   }
 
-  // Skipping to a Spotify song while a YouTube request is playing: stop the
-  // YouTube audio first so they don't overlap.
+  // Skipping to a Spotify song while a YouTube request is playing: stop YT first.
   await stopYouTubePlayback({ resume: false });
 
   try {
@@ -375,7 +356,7 @@ async function playSong(requestId, spotifyUri) {
 /**
  * Remove song from queue
  */
-async function removeSong(requestId) {
+async function removeSong(requestId: string | undefined): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -389,7 +370,7 @@ async function removeSong(requestId) {
 /**
  * Format time ago
  */
-function formatTimeAgo(timestamp) {
+function formatTimeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() / 1000) - timestamp);
   if (seconds < 60) return 'gerade eben';
   if (seconds < 3600) return `vor ${Math.floor(seconds / 60)}min`;
@@ -400,11 +381,7 @@ function formatTimeAgo(timestamp) {
 /**
  * Update queue container visibility based on queue content
  */
-function updateQueueVisibility() {
-  // The standalone Queue tab itself is shown/hidden by updateTabVisibility()
-  // (tied to the Player tab setting). Here we only toggle the mini-queue that
-  // lives inside the Player tab: visible when the Player tab is on and the
-  // queue has items.
+function updateQueueVisibility(): void {
   const playerQueue = document.getElementById('player-queue-container');
   if (!playerQueue) return;
 
@@ -418,31 +395,31 @@ function updateQueueVisibility() {
 /**
  * Render queue UI
  */
-function renderQueue() {
-  // Resolve the next YouTube song's audio stream ahead of time so it starts
-  // (near-)instantly when its turn comes, instead of waiting ~5s for yt-dlp.
+function renderQueue(): void {
+  // Resolve the next YouTube song's audio stream ahead of time.
   const next = queueItems[0];
   if (next && isYouTubeUri(next.spotify_uri)) {
-    prefetchYouTube(youTubeVideoId(next.spotify_uri));
+    const vid = youTubeVideoId(next.spotify_uri);
+    if (vid) prefetchYouTube(vid);
   }
 
   const containers = [
     document.getElementById('queue-list'),
-    document.getElementById('queue-list-standalone')
+    document.getElementById('queue-list-standalone'),
   ];
 
   const counts = [
     document.getElementById('queue-count'),
-    document.getElementById('queue-count-standalone')
+    document.getElementById('queue-count-standalone'),
   ];
 
   // Update counts
-  counts.forEach(el => {
-    if (el) el.textContent = queueItems.length;
+  counts.forEach((el) => {
+    if (el) el.textContent = String(queueItems.length);
   });
 
   // Render each container
-  containers.forEach(container => {
+  containers.forEach((container) => {
     if (!container) return;
 
     if (queueItems.length === 0) {
@@ -461,7 +438,7 @@ function renderQueue() {
       const hasInfo = trackInfo?.track && trackInfo?.artist;
       const sourceIcon = item.source === 'points' ? ICONS.star : ICONS.chat;
       const coverUrl = trackInfo?.albumCover || null;
-      
+
       return `
         <div class="queue-item" data-id="${escapeAttr(item.id)}" data-uri="${escapeAttr(item.spotify_uri)}">
           <div class="queue-item-position">${index + 1}</div>
@@ -492,7 +469,7 @@ function renderQueue() {
               <span class="queue-item-time">${formatTimeAgo(item.timestamp)}</span>
             </div>
           </div>
-          
+
           <div class="queue-item-actions">
             <button class="queue-btn queue-btn-play" title="Jetzt abspielen">
               ${ICONS.play}
@@ -510,14 +487,14 @@ function renderQueue() {
 /**
  * Called when player tab visibility changes
  */
-export function onPlayerTabVisibilityChange() {
+export function onPlayerTabVisibilityChange(): void {
   updateQueueVisibility();
 }
 
 /**
  * Called when track changes - check if it's in queue
  */
-export function onTrackChange(trackId) {
+export function onTrackChange(trackId: string): void {
   if (trackId) {
     checkAndRemovePlayingTrack(trackId);
   }

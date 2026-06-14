@@ -6,7 +6,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { queueItems, registerRequester, cacheTrackInfo } from '../queue/index.js';
+import { queueItems, registerRequester, cacheTrackInfo } from '../queue/index';
 import { addToHistory } from '../history/request-history.js';
 import { isUrl, isSpotifyInput, extractSpotifyTrackId } from './parse';
 import { isBlocked } from '../history/blocklist';

@@ -18,8 +18,18 @@ import {
   setYouTubeVolume,
 } from './youtube-player';
 
+interface QueueDeps {
+  getQueueItems: () => any[];
+  removeQueueItem: (id: any) => void;
+  isAutoPlay: () => boolean;
+  setLastAutoPlayAt: (v: number) => void;
+  renderQueue: () => void;
+  updateQueueVisibility: () => void;
+  getCachedTrackInfo: (uri: string) => any;
+}
+
 // Injected queue accessors (set by initYouTube).
-let Q = {
+let Q: QueueDeps = {
   getQueueItems: () => [],
   removeQueueItem: () => {},
   isAutoPlay: () => false,
@@ -30,33 +40,37 @@ let Q = {
 };
 
 /** Wire up the queue accessors this module needs. Call once from initQueue. */
-export function initYouTube(deps) {
+export function initYouTube(deps: Partial<QueueDeps>): void {
   Q = { ...Q, ...deps };
 }
 
 // ── State ───────────────────────────────────────────────────────────────────
 let youtubePlaying = false;
-let currentYtTrack = null; // now-playing track object for the active YouTube song
-let ytProgressTimer = null; // periodic now-playing emit while a YouTube song plays
-let ytVolumeTimer = null;   // live-syncs YouTube volume to the Spotify device volume
+let currentYtTrack: any = null; // now-playing track object for the active YouTube song
+let ytProgressTimer: ReturnType<typeof setInterval> | null = null; // periodic now-playing emit
+let ytVolumeTimer: ReturnType<typeof setInterval> | null = null;   // live-syncs YouTube volume
 
 // YouTube streams aren't loudness-normalized like Spotify, so at the same percent
 // they sound louder. YouTube plays at this fraction of the Spotify volume; the
 // user can lower it further via the dropdown in the YouTube controls.
-let ytVolumeFactor = parseFloat(localStorage.getItem('yt-volume-factor'));
+let ytVolumeFactor = parseFloat(localStorage.getItem('yt-volume-factor') || '');
 if (!(ytVolumeFactor > 0 && ytVolumeFactor <= 1)) ytVolumeFactor = 0.7;
 let lastSpotifyVolume = 50; // last known Spotify device volume (0-100)
 
 const YT_URI_PREFIX = 'youtube:';
-export function isYouTubeUri(uri) { return typeof uri === 'string' && uri.startsWith(YT_URI_PREFIX); }
-export function youTubeVideoId(uri) { return isYouTubeUri(uri) ? uri.slice(YT_URI_PREFIX.length) : null; }
+export function isYouTubeUri(uri: unknown): boolean {
+  return typeof uri === 'string' && uri.startsWith(YT_URI_PREFIX);
+}
+export function youTubeVideoId(uri: string): string | null {
+  return isYouTubeUri(uri) ? uri.slice(YT_URI_PREFIX.length) : null;
+}
 
 /** Whether a YouTube-only request is currently playing. */
-export function isYouTubePlaying() { return youtubePlaying; }
+export function isYouTubePlaying(): boolean { return youtubePlaying; }
 
 /** Push a now-playing track to the player tab + widgets (via the backend, so it
  *  reliably reaches all windows incl. widgets). */
-function emitNowPlaying(track) {
+function emitNowPlaying(track: any): void {
   const invoke = getTauriInvoke();
   if (invoke) {
     invoke('push_track_update', { track }).catch(() => {});
@@ -66,19 +80,19 @@ function emitNowPlaying(track) {
 }
 
 // ── Volume ───────────────────────────────────────────────────────────────────
-function applyYtVolume() {
+function applyYtVolume(): void {
   setYouTubeVolume(Math.round(lastSpotifyVolume * ytVolumeFactor));
 }
 
 /** Set the user's YouTube volume factor (0-1), persist it and apply immediately. */
-export function setYtVolumeFactor(factor) {
+export function setYtVolumeFactor(factor: number): void {
   ytVolumeFactor = Math.max(0.05, Math.min(1, factor));
   try { localStorage.setItem('yt-volume-factor', String(ytVolumeFactor)); } catch (e) {}
   console.log('[Queue] YT volume factor ->', ytVolumeFactor, 'playing:', youtubePlaying);
   if (youtubePlaying) applyYtVolume();
 }
 
-function startYtVolumeSync() {
+function startYtVolumeSync(): void {
   stopYtVolumeSync();
   ytVolumeTimer = setInterval(async () => {
     if (!youtubePlaying) return;
@@ -91,12 +105,12 @@ function startYtVolumeSync() {
   }, 2500);
 }
 
-function stopYtVolumeSync() {
+function stopYtVolumeSync(): void {
   if (ytVolumeTimer) { clearInterval(ytVolumeTimer); ytVolumeTimer = null; }
 }
 
 // ── Now-playing timeline ─────────────────────────────────────────────────────
-function startYtProgressTimer() {
+function startYtProgressTimer(): void {
   stopYtProgressTimer();
   ytProgressTimer = setInterval(() => {
     if (!currentYtTrack) return;
@@ -105,31 +119,31 @@ function startYtProgressTimer() {
   }, 1000);
 }
 
-function stopYtProgressTimer() {
+function stopYtProgressTimer(): void {
   if (ytProgressTimer) { clearInterval(ytProgressTimer); ytProgressTimer = null; }
   stopYtVolumeSync(); // the two always run together during YouTube playback
 }
 
 // ── Controls (floating pause/skip + volume dropdown) ─────────────────────────
-function showYouTubeControls(show) {
+function showYouTubeControls(show: boolean): void {
   const el = document.getElementById('youtube-controls');
   if (el) el.classList.toggle('hidden', !show);
   if (show) syncYouTubePauseButton();
 }
 
 /** Wire the YouTube pause/skip buttons + volume dropdown. Call once from initQueue. */
-export function setupYouTubeControls() {
+export function setupYouTubeControls(): void {
   document.getElementById('btn-youtube-pause')?.addEventListener('click', () => toggleYouTubePause());
   document.getElementById('btn-youtube-skip')?.addEventListener('click', () => skipYouTube());
 
-  const vol = document.getElementById('yt-volume-select');
+  const vol = document.getElementById('yt-volume-select') as HTMLSelectElement | null;
   if (vol) {
     vol.value = String(Math.round(ytVolumeFactor * 10) / 10);
     vol.addEventListener('change', () => setYtVolumeFactor(parseFloat(vol.value)));
   }
 }
 
-function syncYouTubePauseButton() {
+function syncYouTubePauseButton(): void {
   const btn = document.getElementById('btn-youtube-pause');
   if (!btn) return;
   const playing = currentYtTrack ? currentYtTrack.isPlaying : true;
@@ -138,7 +152,7 @@ function syncYouTubePauseButton() {
 }
 
 /** Pause/resume the currently playing YouTube request. */
-export function toggleYouTubePause() {
+export function toggleYouTubePause(): void {
   if (!youtubePlaying || !currentYtTrack) return;
   if (currentYtTrack.isPlaying) {
     pauseYouTube();
@@ -152,14 +166,14 @@ export function toggleYouTubePause() {
 }
 
 /** Skip the currently playing YouTube request (advance the queue). */
-export function skipYouTube() {
+export function skipYouTube(): void {
   if (!youtubePlaying) return;
   stopYouTube();
   onYouTubeEnded();
 }
 
 /** Tell the streamer (and the requester in chat) a YouTube request couldn't play. */
-function notifyYouTubeError(user, code) {
+function notifyYouTubeError(user: string, code: number): void {
   const embedBlocked = code === 101 || code === 150;
   const reason = embedBlocked
     ? 'erlaubt kein Einbetten und kann nicht abgespielt werden'
@@ -184,7 +198,7 @@ function notifyYouTubeError(user, code) {
  * context: add it to Spotify's queue, then skip to it. Falls back to play_track
  * only if there's no active device/context to queue into.
  */
-async function playSpotifyRequestNow(invoke, uri) {
+async function playSpotifyRequestNow(invoke: any, uri: string): Promise<void> {
   let queued = false;
   try {
     await invoke('add_to_queue', { uri });
@@ -205,7 +219,7 @@ async function playSpotifyRequestNow(invoke, uri) {
  * player, show it like a normal now-playing song. When it ends, hand back to
  * Spotify (or chain to the next request).
  */
-export async function startYouTubeTakeover(item) {
+export async function startYouTubeTakeover(item: any): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
   const videoId = youTubeVideoId(item.spotify_uri);
@@ -261,7 +275,7 @@ export async function startYouTubeTakeover(item) {
 
   // Tint the widgets from the thumbnail (mqdefault is 16:9, no letterbox black).
   invoke('get_dominant_color', { url: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` })
-    .then((c) => {
+    .then((c: any) => {
       if (c && currentYtTrack && youtubePlaying) {
         currentYtTrack = { ...currentYtTrack, color: c };
         emitNowPlaying(currentYtTrack);
@@ -281,15 +295,15 @@ export async function startYouTubeTakeover(item) {
       trackId: videoId,
       durationMs: 0,
     });
-    import('../history/history.js').then(({ refreshHistory }) => refreshHistory()).catch(() => {});
+    import('../history/history').then(({ refreshHistory }) => refreshHistory()).catch(() => {});
   } catch (e) { /* history is best-effort */ }
 
   const requester = item.user_name || '';
   playYouTube(videoId, {
     volume,
-    onPlaying: (durationMs, title) => {
+    onPlaying: (durationMs: number, title?: string) => {
       if (!currentYtTrack) return;
-      const patch = {
+      const patch: any = {
         durationMs: durationMs || currentYtTrack.durationMs || 0,
         isPlaying: true,
       };
@@ -299,7 +313,7 @@ export async function startYouTubeTakeover(item) {
       currentYtTrack = { ...currentYtTrack, ...patch };
       emitNowPlaying(currentYtTrack);
     },
-    onError: (code) => {
+    onError: (code: number) => {
       notifyYouTubeError(requester, code);
       onYouTubeEnded();
     },
@@ -308,7 +322,7 @@ export async function startYouTubeTakeover(item) {
 }
 
 /** Called when a YouTube request finishes (or errors): chain or hand back. */
-async function onYouTubeEnded() {
+async function onYouTubeEnded(): Promise<void> {
   const invoke = getTauriInvoke();
   const next = Q.getQueueItems()[0];
   console.log('[Queue] YouTube ended. next:', next ? next.spotify_uri : '(none)', 'autoPlay', Q.isAutoPlay());
@@ -353,7 +367,7 @@ async function onYouTubeEnded() {
  * Stop a running YouTube request (skip-to-Spotify / clear-queue). With
  * resume=true, hand playback back to the streamer's Spotify.
  */
-export async function stopYouTubePlayback({ resume = false } = {}) {
+export async function stopYouTubePlayback({ resume = false }: { resume?: boolean } = {}): Promise<void> {
   if (!youtubePlaying) return;
   youtubePlaying = false;
   currentYtTrack = null;
