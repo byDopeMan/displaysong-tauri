@@ -6,7 +6,7 @@
  * use it without creating a cycle.
  */
 
-function bucket(pluginId) {
+function bucket(pluginId: string): Record<string, unknown> {
   try {
     return JSON.parse(localStorage.getItem(`plugin:${pluginId}`) || '{}');
   } catch {
@@ -14,12 +14,12 @@ function bucket(pluginId) {
   }
 }
 
-export function getLocalSetting(pluginId, key, defaultValue = null) {
+export function getLocalSetting<T = unknown>(pluginId: string, key: string, defaultValue: T | null = null): T | null {
   const data = bucket(pluginId);
-  return data[key] ?? defaultValue;
+  return (data[key] as T) ?? defaultValue;
 }
 
-export function setLocalSetting(pluginId, key, value) {
+export function setLocalSetting(pluginId: string, key: string, value: unknown): void {
   try {
     const data = bucket(pluginId);
     data[key] = value;

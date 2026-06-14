@@ -8,7 +8,7 @@
  */
 
 import { escapeAttr } from '../../utils/format';
-import { getLocalSetting, setLocalSetting } from './storage.js';
+import { getLocalSetting, setLocalSetting } from './storage';
 
 // Registered settings configs, keyed by pluginId.
 const pluginSettingsConfigs = new Map();

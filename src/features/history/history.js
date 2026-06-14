@@ -7,7 +7,7 @@ import { getTauriInvoke } from '../../core/tauri';
 import { escapeHtml, escapeAttr } from '../../utils/format';
 import { openExternal } from '../../ui/navigation.js';
 import { settings } from '../settings.js';
-import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist.js';
+import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist';
 import { showNotification } from '../../ui/notifications.js';
 // Note: getHistorySourceFilter is imported dynamically to avoid circular dependency issues
 
