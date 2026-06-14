@@ -3,7 +3,7 @@
  * Manages the initial setup experience and provider selection
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
 import { setProvider, PROVIDER } from './provider.js';

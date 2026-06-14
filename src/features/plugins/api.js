@@ -4,7 +4,7 @@
  * surface so plugin code never touches Tauri internals directly.
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
 import { PluginWindow } from './window.js';
 import { getLocalSetting, setLocalSetting } from './storage.js';

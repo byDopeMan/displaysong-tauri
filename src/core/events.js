@@ -3,7 +3,7 @@
  */
 
 import { state, elements } from './state.js';
-import { getTauriListen } from './tauri.js';
+import { getTauriListen } from './tauri';
 import { updateTrackDisplay } from '../ui/track-display.js';
 import { switchTab, showView } from '../ui/navigation.js';
 import { showNotification } from '../ui/notifications.js';

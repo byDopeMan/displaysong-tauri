@@ -4,7 +4,7 @@
 
 import { getItem, setItem } from '../utils/storage';
 import { hexToRgb } from '../utils/format';
-import { getTauriInvoke, getTauriWebviewWindow } from '../core/tauri.js';
+import { getTauriInvoke, getTauriWebviewWindow } from '../core/tauri';
 import { showNotification } from '../ui/notifications.js';
 import { broadcastAccentColor } from './widgets.js';
 import { updateTabVisibility } from '../ui/navigation.js';

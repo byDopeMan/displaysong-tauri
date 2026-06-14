@@ -3,7 +3,7 @@
  * Handles Spotify connection status in Settings and visibility of Spotify-dependent features
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
 import { PROVIDER, loadSavedProvider, setProvider } from './provider.js';

@@ -2,7 +2,7 @@
  * Queue Feature - Song Request Queue with Track Info
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { state } from '../../core/state.js';
 import { escapeAttr } from '../../utils/format';
 import { prefetchYouTube } from './youtube-player.js';

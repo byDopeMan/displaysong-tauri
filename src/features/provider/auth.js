@@ -3,7 +3,7 @@
  */
 
 import { state, elements } from '../../core/state.js';
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showView, openExternal } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
 import { removeItem } from '../../utils/storage';

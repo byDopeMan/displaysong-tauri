@@ -7,7 +7,7 @@
  * via updateTwitchSettings() from the core module.
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
 import { escapeHtml } from './parse.js';
 import { isTwitchConnected } from './state.js';

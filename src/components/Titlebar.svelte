@@ -2,7 +2,7 @@
   // First Svelte component (pilot). Replaces the static titlebar markup in
   // index.html + ui/titlebar.js. Renders the custom window titlebar and wires
   // the minimize/close controls to the Tauri window/app commands.
-  import { getTauriAppWindow, getTauriInvoke } from '../core/tauri.js';
+  import { getTauriAppWindow, getTauriInvoke } from '../core/tauri';
 
   function minimize() {
     const appWindow = getTauriAppWindow();

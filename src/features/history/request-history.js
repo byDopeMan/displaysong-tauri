@@ -2,7 +2,7 @@
  * Request History - Spotify Playlist Integration & Scope Checking
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
 
 // State

@@ -5,7 +5,7 @@
  * bookkeeping; it does not touch the Twitch connection state.
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { queueItems, registerRequester, cacheTrackInfo } from '../queue/index.js';
 import { addToHistory } from '../history/request-history.js';
 import { isUrl, isSpotifyInput, extractSpotifyTrackId } from './parse.js';

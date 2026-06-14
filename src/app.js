@@ -5,7 +5,7 @@
 
 // Core
 import { state, initElements, initViews } from './core/state.js';
-import { waitForTauri, getTauriInvoke } from './core/tauri.js';
+import { waitForTauri, getTauriInvoke } from './core/tauri';
 import { setupEventListeners, setupDeepLinkHandler, setupTrackListener } from './core/events.js';
 
 // UI

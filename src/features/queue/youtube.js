@@ -7,7 +7,7 @@
  * injected via initYouTube() so there is no circular import with queue.js.
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
 import {
   playYouTube,

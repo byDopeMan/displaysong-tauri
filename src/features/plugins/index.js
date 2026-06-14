@@ -9,7 +9,7 @@
  *   - storage.js  per-plugin localStorage helpers
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
 import { escapeAttr } from '../../utils/format';
 import { createPluginAPI } from './api.js';

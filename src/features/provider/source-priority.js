@@ -5,7 +5,7 @@
 
 import { getString, setString } from '../../utils/storage';
 import { escapeAttr } from '../../utils/format';
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 
 // Known sources with their icons
 const SOURCE_ICONS = {

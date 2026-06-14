@@ -8,7 +8,7 @@
  * shown like a normal now-playing track by the queue/track-display code.
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 
 let audio = null;
 let callbacks = {};

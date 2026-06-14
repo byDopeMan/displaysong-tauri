@@ -3,7 +3,7 @@
  */
 
 import { state } from '../../core/state.js';
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { escapeHtml, escapeAttr } from '../../utils/format';
 import { openExternal } from '../../ui/navigation.js';
 import { settings } from '../settings.js';

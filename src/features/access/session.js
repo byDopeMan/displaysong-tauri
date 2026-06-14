@@ -9,7 +9,7 @@
  */
 
 import { state } from '../../core/state.js';
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications.js';
 import { showView, openExternal } from '../../ui/navigation.js';

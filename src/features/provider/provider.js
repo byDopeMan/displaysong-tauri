@@ -3,7 +3,7 @@
  * Handles switching between Windows Audio and Spotify API
  */
 
-import { getTauriInvoke } from '../../core/tauri.js';
+import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
 import { state } from '../../core/state.js';
 
