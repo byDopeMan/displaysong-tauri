@@ -105,13 +105,13 @@ export async function initQueue() {
 /**
  * Auto-advance setup: load the persisted toggle, wire the checkbox and start
  * the monitor. When enabled, the next queued request is played automatically
- * once nothing is playing â€” so the request queue is what gets played, not the
+ * once nothing is playing — so the request queue is what gets played, not the
  * next song from the streamer's own playlist.
  */
 function setupAutoPlay() {
   autoPlayQueue = localStorage.getItem('queue-autoplay') === 'true';
   // The toggle lives in the queue header (player view + standalone queue view),
-  // so there can be two checkboxes â€” keep them in sync.
+  // so there can be two checkboxes — keep them in sync.
   const toggles = document.querySelectorAll('.js-queue-autoplay');
   toggles.forEach((cb) => {
     cb.checked = autoPlayQueue;
@@ -130,7 +130,7 @@ function setupAutoPlay() {
  * current song ends (triggered from the player's progress loop and as a fallback
  * on track-changed). Using add_to_queue (instead of play_track) is important:
  * it plays the request right after the current song AND keeps the streamer's
- * playlist context, so music keeps going once the request queue is empty â€”
+ * playlist context, so music keeps going once the request queue is empty —
  * play_track would replace the context with a single track and leave silence.
  * A cooldown prevents queueing the same item repeatedly.
  */
@@ -146,7 +146,7 @@ export async function maybeAutoAdvance(remainingMs = 0) {
   //   (up to 12s) kicks in. If we queue too late, Spotify has already started
   //   crossfading into the next playlist track and the request is skipped/late.
   // - YouTube: only once the current song is basically over (the stream is
-  //   prefetched, so it starts instantly) â€” this avoids cutting the last second
+  //   prefetched, so it starts instantly) — this avoids cutting the last second
   //   of the Spotify song before pausing it for YouTube.
   const isYt = isYouTubeUri(next.spotify_uri);
   const threshold = isYt ? 0 : 10000;
@@ -450,7 +450,7 @@ function renderQueue() {
         <div class="queue-empty">
           <div class="queue-empty-icon">${ICONS.inbox}</div>
           <p class="queue-empty-text">Queue ist leer</p>
-          <p class="queue-empty-hint">Nutze !sr im Chat um Songs hinzuzufÃ¼gen</p>
+          <p class="queue-empty-hint">Nutze !sr im Chat um Songs hinzuzufügen</p>
         </div>
       `;
       return;
@@ -477,7 +477,7 @@ function renderQueue() {
             <div class="queue-item-track">
               ${hasInfo
                 ? `<span class="queue-item-title">${escapeAttr(trackInfo.track)}</span>`
-                : `<span class="queue-item-title loading">LÃ¤dt...</span>`
+                : `<span class="queue-item-title loading">Lädt...</span>`
               }
             </div>
             <div class="queue-item-meta">

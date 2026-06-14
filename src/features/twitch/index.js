@@ -80,7 +80,7 @@ export async function initTwitch() {
 /**
  * Check whether the stored Twitch token still has all required scopes.
  * After the app's scope set grows (e.g. channel point redemptions), an old
- * token keeps its original scopes until the user reconnects â€” which silently
+ * token keeps its original scopes until the user reconnects — which silently
  * breaks EventSub/chat. Warn and offer a reconnect when scopes are missing.
  */
 async function checkTwitchScopes() {
@@ -92,7 +92,7 @@ async function checkTwitchScopes() {
     if (Array.isArray(missing) && missing.length > 0) {
       console.warn('[Twitch] Missing scopes:', missing);
       showNotification(
-        'Twitch-Berechtigungen sind veraltet â€” bitte neu verbinden (Trennen â†’ Verbinden).',
+        'Twitch-Berechtigungen sind veraltet — bitte neu verbinden (Trennen → Verbinden).',
         { type: 'warning', duration: 8000 }
       );
       // Surface a persistent hint in the UI if the element exists.
@@ -103,7 +103,7 @@ async function checkTwitchScopes() {
       if (hint) hint.classList.add('hidden');
     }
   } catch (e) {
-    // Not connected or validation failed â€” ignore silently.
+    // Not connected or validation failed — ignore silently.
     console.debug('[Twitch] Scope check skipped:', e);
   }
 }
