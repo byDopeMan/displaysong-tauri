@@ -485,7 +485,7 @@ export function setupSettingsListeners() {
       updatePageTranslations();
       
       // Update Twitch UI after language change
-      const { updateTwitchUI } = await import('./twitch/index.js');
+      const { updateTwitchUI } = await import('./twitch/index');
       updateTwitchUI();
       
       showNotification('Sprache gewechselt');

@@ -1,15 +1,8 @@
 /**
  * Twitch Integration - Song Requests via Chat oder Channel Points
- * 
- * Supports:
- * - Spotify Links/URIs
- * - YouTube Links
- * - YouTube Music Links
- * - Apple Music Links
- * - SoundCloud Links
- * - Deezer Links
- * - Tidal Links
- * - And more via Songlink/Odesli API
+ *
+ * Supports: Spotify, YouTube, YouTube Music, Apple Music, SoundCloud, Deezer,
+ * Tidal and more via the Songlink/Odesli API.
  */
 
 import { getTauriInvoke } from '../../core/tauri';
@@ -21,7 +14,7 @@ import {
   simulateRedemption,
   setReward,
   createReward,
-} from './channel-points.js';
+} from './channel-points';
 import {
   loadMessagesFromStorage,
   saveMessagesToStorage,
@@ -31,7 +24,7 @@ import {
   setupSongRequestListeners,
   setupRequestSettingsListeners,
   loadLocalSettings,
-} from './song-request.js';
+} from './song-request';
 import {
   isTwitchConnected,
   getTwitchUser,
@@ -40,16 +33,14 @@ import {
   setUser,
   setConnecting,
 } from './state';
-import { updateTwitchUI, updateChatPreview } from './ui.js';
+import { updateTwitchUI, updateChatPreview } from './ui';
 
 // Re-export connection state getters + UI so existing importers keep working.
 export { isTwitchConnected, getTwitchUser } from './state';
-export { updateTwitchUI } from './ui.js';
+export { updateTwitchUI } from './ui';
 
-/**
- * Initialize Twitch integration
- */
-export async function initTwitch() {
+/** Initialize Twitch integration */
+export async function initTwitch(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -58,7 +49,7 @@ export async function initTwitch() {
 
   try {
     const hasCredentials = await invoke('check_twitch_credentials');
-    
+
     if (hasCredentials) {
       const info = await invoke('twitch_get_connection');
       setConnected(info.connected);
@@ -79,11 +70,8 @@ export async function initTwitch() {
 
 /**
  * Check whether the stored Twitch token still has all required scopes.
- * After the app's scope set grows (e.g. channel point redemptions), an old
- * token keeps its original scopes until the user reconnects — which silently
- * breaks EventSub/chat. Warn and offer a reconnect when scopes are missing.
  */
-async function checkTwitchScopes() {
+async function checkTwitchScopes(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -95,7 +83,6 @@ async function checkTwitchScopes() {
         'Twitch-Berechtigungen sind veraltet — bitte neu verbinden (Trennen → Verbinden).',
         { type: 'warning', duration: 8000 }
       );
-      // Surface a persistent hint in the UI if the element exists.
       const hint = document.getElementById('twitch-scope-warning');
       if (hint) hint.classList.remove('hidden');
     } else {
@@ -108,10 +95,8 @@ async function checkTwitchScopes() {
   }
 }
 
-/**
- * Start EventSub connection for chat commands
- */
-async function startEventSub() {
+/** Start EventSub connection for chat commands */
+async function startEventSub(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -123,10 +108,8 @@ async function startEventSub() {
   }
 }
 
-/**
- * Connect to Twitch - Shows OAuth modal while browser handles auth
- */
-export async function connectTwitch() {
+/** Connect to Twitch - Shows OAuth modal while browser handles auth */
+export async function connectTwitch(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -134,13 +117,13 @@ export async function connectTwitch() {
   setConnecting(true);
 
   const statusText = document.getElementById('twitch-status-text');
-  const btnConnect = document.getElementById('btn-twitch-connect');
+  const btnConnect = document.getElementById('btn-twitch-connect') as HTMLButtonElement | null;
   const oauthModal = document.getElementById('twitch-oauth-modal');
-  
+
   try {
     // Show OAuth modal
     if (oauthModal) oauthModal.classList.remove('hidden');
-    
+
     if (btnConnect) {
       btnConnect.disabled = true;
       btnConnect.textContent = 'Verbinde...';
@@ -163,8 +146,7 @@ export async function connectTwitch() {
     } else {
       throw new Error('Verbindung fehlgeschlagen');
     }
-
-  } catch (e) {
+  } catch (e: any) {
     console.error('[Twitch] Connect error:', e);
     showNotification(e.toString(), { type: 'error' });
     closeOAuthModal();
@@ -178,19 +160,15 @@ export async function connectTwitch() {
   }
 }
 
-/**
- * Close OAuth modal and cancel any pending auth
- */
-function closeOAuthModal() {
+/** Close OAuth modal and cancel any pending auth */
+function closeOAuthModal(): void {
   const modal = document.getElementById('twitch-oauth-modal');
   if (modal) modal.classList.add('hidden');
   setConnecting(false);
 }
 
-/**
- * Disconnect from Twitch
- */
-export async function disconnectTwitch() {
+/** Disconnect from Twitch */
+export async function disconnectTwitch(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -202,37 +180,31 @@ export async function disconnectTwitch() {
 
     showNotification('Twitch getrennt');
     updateTwitchUI();
-    
   } catch (e) {
     console.error('[Twitch] Disconnect error:', e);
     showNotification('Fehler beim Trennen', { type: 'error' });
   }
 }
 
-/**
- * Send a test chat message
- */
-export async function sendTestMessage() {
+/** Send a test chat message */
+export async function sendTestMessage(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
   try {
     const settings = await invoke('twitch_get_settings');
     const message = `DisplaySong Song Requests sind aktiv! Nutze ${settings.command} <link> (Spotify, YouTube, Apple Music, SoundCloud...)`;
-    
+
     await invoke('twitch_send_chat', { message });
     showNotification('Test-Nachricht gesendet');
-    
-  } catch (e) {
+  } catch (e: any) {
     console.error('[Twitch] Send test error:', e);
     showNotification(e.toString(), { type: 'error' });
   }
 }
 
-/**
- * Update Twitch settings
- */
-export async function updateTwitchSettings(settings) {
+/** Update Twitch settings */
+export async function updateTwitchSettings(settings: any): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -257,10 +229,8 @@ export async function updateTwitchSettings(settings) {
   }
 }
 
-/**
- * Setup Twitch event listeners
- */
-export function setupTwitchListeners() {
+/** Setup Twitch event listeners */
+export function setupTwitchListeners(): void {
   document.getElementById('btn-twitch-connect')?.addEventListener('click', connectTwitch);
   document.getElementById('btn-twitch-disconnect')?.addEventListener('click', disconnectTwitch);
 
@@ -270,23 +240,24 @@ export function setupTwitchListeners() {
   });
 
   document.getElementById('twitch-command')?.addEventListener('change', async (e) => {
-    await updateTwitchSettings({ command: e.target.value });
-    showNotification(`Command: ${e.target.value}`);
+    const value = (e.target as HTMLInputElement).value;
+    await updateTwitchSettings({ command: value });
+    showNotification(`Command: ${value}`);
   });
 
   document.getElementById('twitch-cooldown')?.addEventListener('change', async (e) => {
-    await updateTwitchSettings({ cooldown: e.target.value });
+    await updateTwitchSettings({ cooldown: (e.target as HTMLInputElement).value });
   });
 
   document.getElementById('twitch-sub-only')?.addEventListener('change', async (e) => {
-    await updateTwitchSettings({ subOnly: e.target.checked });
+    await updateTwitchSettings({ subOnly: (e.target as HTMLInputElement).checked });
   });
 
   // Channel Points: mode toggle + reward selection/creation
-  document.querySelectorAll('#twitch-mode-toggle .toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => setTwitchMode(btn.dataset.mode));
+  document.querySelectorAll('#twitch-mode-toggle .toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setTwitchMode((btn as HTMLElement).dataset.mode || ''));
   });
-  document.getElementById('twitch-reward-select')?.addEventListener('change', (e) => setReward(e.target.value));
+  document.getElementById('twitch-reward-select')?.addEventListener('change', (e) => setReward((e.target as HTMLSelectElement).value));
   document.getElementById('btn-twitch-refresh-rewards')?.addEventListener('click', () => loadRewards());
   document.getElementById('btn-twitch-create-reward')?.addEventListener('click', () => {
     document.getElementById('twitch-create-reward-form')?.classList.toggle('hidden');
@@ -298,7 +269,7 @@ export function setupTwitchListeners() {
   setupRequestSettingsListeners();
 
   document.getElementById('twitch-use-bot')?.addEventListener('change', async (e) => {
-    const useBot = e.target.value === 'true';
+    const useBot = (e.target as HTMLSelectElement).value === 'true';
     await updateTwitchSettings({ useBot });
     updateChatPreview();
   });
@@ -331,26 +302,24 @@ export function setupTwitchListeners() {
   loadLocalSettings();
 }
 
-/**
- * Load Twitch settings into UI
- */
-async function loadTwitchSettingsToUI() {
+/** Load Twitch settings into UI */
+async function loadTwitchSettingsToUI(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
   try {
     const settings = await invoke('twitch_get_settings');
-    
-    const cmdInput = document.getElementById('twitch-command');
+
+    const cmdInput = document.getElementById('twitch-command') as HTMLInputElement | null;
     if (cmdInput) cmdInput.value = settings.command || '!sr';
 
-    const cooldownInput = document.getElementById('twitch-cooldown');
-    if (cooldownInput) cooldownInput.value = settings.cooldown || 30;
+    const cooldownInput = document.getElementById('twitch-cooldown') as HTMLInputElement | null;
+    if (cooldownInput) cooldownInput.value = String(settings.cooldown || 30);
 
-    const subOnlyInput = document.getElementById('twitch-sub-only');
+    const subOnlyInput = document.getElementById('twitch-sub-only') as HTMLInputElement | null;
     if (subOnlyInput) subOnlyInput.checked = settings.subOnly || false;
 
-    const useBotSelect = document.getElementById('twitch-use-bot');
+    const useBotSelect = document.getElementById('twitch-use-bot') as HTMLSelectElement | null;
     if (useBotSelect) {
       useBotSelect.value = settings.useBotAccount ? 'true' : 'false';
       updateChatPreview();
@@ -362,12 +331,11 @@ async function loadTwitchSettingsToUI() {
     if (mode === 'points') {
       await loadRewards(settings.rewardId);
     }
-
   } catch (e) {
     console.error('[Twitch] Load settings error:', e);
   }
 }
 
 // Legacy exports
-export function openTwitchSetup() { connectTwitch(); }
-export function closeTwitchSetup() { closeOAuthModal(); }
+export function openTwitchSetup(): void { connectTwitch(); }
+export function closeTwitchSetup(): void { closeOAuthModal(); }

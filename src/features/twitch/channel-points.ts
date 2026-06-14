@@ -11,14 +11,12 @@ import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
 import { escapeHtml } from './parse';
 import { isTwitchConnected } from './state';
-import { updateTwitchSettings } from './index.js';
+import { updateTwitchSettings } from './index';
 
-/**
- * Toggle the request-mode UI (chat commands vs. channel points).
- */
-export function applyTwitchMode(mode) {
-  document.querySelectorAll('#twitch-mode-toggle .toggle-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.mode === mode);
+/** Toggle the request-mode UI (chat commands vs. channel points). */
+export function applyTwitchMode(mode: string): void {
+  document.querySelectorAll('#twitch-mode-toggle .toggle-btn').forEach((btn) => {
+    btn.classList.toggle('active', (btn as HTMLElement).dataset.mode === mode);
   });
   const commandSettings = document.getElementById('twitch-command-mode-settings');
   const pointsSettings = document.getElementById('twitch-points-mode-settings');
@@ -30,7 +28,7 @@ export function applyTwitchMode(mode) {
  * Switch request mode, persist it and reconnect EventSub so the correct
  * subscription (chat messages vs. channel-point redemptions) becomes active.
  */
-export async function setTwitchMode(mode) {
+export async function setTwitchMode(mode: string): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -46,19 +44,17 @@ export async function setTwitchMode(mode) {
   }
 }
 
-/**
- * Load the channel's existing point rewards into the dropdown.
- */
-export async function loadRewards(selectedId) {
+/** Load the channel's existing point rewards into the dropdown. */
+export async function loadRewards(selectedId?: string): Promise<void> {
   const invoke = getTauriInvoke();
-  const select = document.getElementById('twitch-reward-select');
+  const select = document.getElementById('twitch-reward-select') as HTMLSelectElement | null;
   if (!invoke || !select) return;
 
   try {
-    const rewards = await invoke('twitch_get_rewards');
+    const rewards: any[] = await invoke('twitch_get_rewards');
     const current = selectedId ?? select.value;
     select.innerHTML = '<option value="">— Belohnung wählen —</option>' +
-      (rewards || []).map(r =>
+      (rewards || []).map((r) =>
         `<option value="${r.id}">${escapeHtml(r.title)} (${r.cost})</option>`
       ).join('');
     if (current) select.value = current;
@@ -81,8 +77,8 @@ export async function loadRewards(selectedId) {
  * event a real redemption produces, so the full request pipeline runs unchanged —
  * letting users test channel points without Affiliate/Partner status.
  */
-export async function simulateRedemption() {
-  const input = document.getElementById('twitch-test-link');
+export async function simulateRedemption(): Promise<void> {
+  const input = document.getElementById('twitch-test-link') as HTMLInputElement | null;
   const link = input?.value?.trim();
   if (!link) {
     showNotification('Bitte einen Test-Link eingeben (Spotify, YouTube, …).', { type: 'warning' });
@@ -105,10 +101,8 @@ export async function simulateRedemption() {
   }
 }
 
-/**
- * Persist the selected reward id and reconnect EventSub for the redemption sub.
- */
-export async function setReward(rewardId) {
+/** Persist the selected reward id and reconnect EventSub for the redemption sub. */
+export async function setReward(rewardId: string | null): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
   try {
@@ -119,20 +113,18 @@ export async function setReward(rewardId) {
   }
 }
 
-/**
- * Create a new "Song Request" channel-point reward, then select it.
- */
-export async function createReward() {
+/** Create a new "Song Request" channel-point reward, then select it. */
+export async function createReward(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
-  const titleInput = document.getElementById('twitch-reward-title');
-  const costInput = document.getElementById('twitch-reward-cost');
+  const titleInput = document.getElementById('twitch-reward-title') as HTMLInputElement | null;
+  const costInput = document.getElementById('twitch-reward-cost') as HTMLInputElement | null;
   const title = titleInput?.value?.trim() || 'Song Request';
-  const cost = parseInt(costInput?.value) || 500;
+  const cost = parseInt(costInput?.value || '') || 500;
 
   try {
-    const reward = await invoke('twitch_create_reward', { title, cost });
+    const reward: any = await invoke('twitch_create_reward', { title, cost });
     showNotification(`Belohnung "${reward.title}" erstellt!`);
     document.getElementById('twitch-create-reward-form')?.classList.add('hidden');
     await loadRewards(reward.id);

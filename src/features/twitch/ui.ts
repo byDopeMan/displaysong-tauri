@@ -6,7 +6,7 @@
 import { isTwitchConnected, getTwitchUser } from './state';
 
 /** Update the Twitch status text, connect/disconnect buttons and settings section. */
-export function updateTwitchUI() {
+export function updateTwitchUI(): void {
   const connected = isTwitchConnected();
   const user = getTwitchUser();
 
@@ -42,9 +42,9 @@ export function updateTwitchUI() {
 }
 
 /** Update the chat preview sender name (bot vs user account). */
-export function updateChatPreview() {
+export function updateChatPreview(): void {
   const senderName = document.getElementById('chat-sender-name');
-  const useBotSelect = document.getElementById('twitch-use-bot');
+  const useBotSelect = document.getElementById('twitch-use-bot') as HTMLSelectElement | null;
 
   if (senderName && useBotSelect) {
     const useBot = useBotSelect.value === 'true';
@@ -57,7 +57,7 @@ export function updateChatPreview() {
 }
 
 /** Show the "disconnect all" button only when 2+ connections are active. */
-export function updateDisconnectAllButton() {
+export function updateDisconnectAllButton(): void {
   const btn = document.getElementById('btn-disconnect-all');
   if (!btn) return;
 

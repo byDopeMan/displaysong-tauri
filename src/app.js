@@ -20,7 +20,7 @@ import { setupAccessRequestListeners, initAccessSystem } from './features/access
 import { checkExistingCredentialsWithStatus } from './features/provider/auth.js';
 import { checkForUpdates } from './features/updater.js';
 import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index';
-import { setupTwitchListeners, initTwitch } from './features/twitch/index.js';
+import { setupTwitchListeners, initTwitch } from './features/twitch/index';
 import { initQueue, isYouTubePlaying } from './features/queue/index';
 import { initYouTubePlayer } from './features/queue/youtube-player';
 import { initRequestHistory } from './features/history/request-history.js';
