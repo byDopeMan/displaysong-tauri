@@ -4,7 +4,7 @@
  *  - Request-status SSE (+ polling fallback) for a pending access request
  *  - Block-check SSE (+ polling fallback) for an already-approved user
  *
- * Forms a runtime cycle with ./session.js – see the note there. All
+ * Forms a runtime cycle with ./session.ts – see the note there. All
  * cross-references are inside function bodies, so the cycle is safe.
  */
 
@@ -12,25 +12,25 @@ import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString, removeItem } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
-import { ACCESS_API_URL } from './api.js';
+import { ACCESS_API_URL } from './api';
 import {
   handleApproved,
   handleBlocked,
   autoLoginAfterUnblock,
-  forceLogout
-} from './session.js';
+  forceLogout,
+} from './session';
 
-let eventSource = null;
+let eventSource: EventSource | null = null;
 // Pending auto-reconnect timer for the request-status SSE. Tracked so an
 // intentional stopSSEConnection() can cancel a queued reconnect (otherwise a
 // reconnect scheduled just before stop would resurrect the connection).
-let sseReconnectTimer = null;
+let sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ============================================================================
 // SSE: Real-time Request Status Updates
 // ============================================================================
 
-export function startSSEConnection() {
+export function startSSEConnection(): void {
   const requestId = getString('accessRequestId');
   if (!requestId) return;
 
@@ -69,7 +69,7 @@ export function startSSEConnection() {
   };
 }
 
-export function stopSSEConnection() {
+export function stopSSEConnection(): void {
   if (sseReconnectTimer) {
     clearTimeout(sseReconnectTimer);
     sseReconnectTimer = null;
@@ -81,7 +81,7 @@ export function stopSSEConnection() {
   }
 }
 
-async function handleSSEUpdate(data) {
+async function handleSSEUpdate(data: any): Promise<void> {
   const { status } = data;
   const invoke = getTauriInvoke();
   const email = getString('user_email') || getString('accessRequestEmail');
@@ -133,7 +133,7 @@ async function handleSSEUpdate(data) {
   }
 }
 
-function updateConnectionStatus(connected) {
+function updateConnectionStatus(connected: boolean): void {
   const statusIndicator = document.getElementById('sse-status');
   if (statusIndicator) {
     statusIndicator.classList.toggle('connected', connected);
@@ -145,7 +145,7 @@ function updateConnectionStatus(connected) {
 // FALLBACK: Polling
 // ============================================================================
 
-export function startStatusPolling() {
+export function startStatusPolling(): void {
   const requestId = getString('accessRequestId');
   if (!requestId || state.statusCheckInterval) return;
 
@@ -154,14 +154,14 @@ export function startStatusPolling() {
   }, 30000);
 }
 
-export function stopStatusPolling() {
+export function stopStatusPolling(): void {
   if (state.statusCheckInterval) {
     clearInterval(state.statusCheckInterval);
     state.statusCheckInterval = null;
   }
 }
 
-export async function checkAccessStatus() {
+export async function checkAccessStatus(): Promise<void> {
   const requestId = getString('accessRequestId');
   if (!requestId) {
     stopStatusPolling();
@@ -190,7 +190,7 @@ export async function checkAccessStatus() {
 // SSE: Block-Check for logged-in users
 // ============================================================================
 
-export function startBlockCheckSSE() {
+export function startBlockCheckSSE(): void {
   const email = getString('user_email');
   if (!email) return;
 
@@ -200,7 +200,7 @@ export function startBlockCheckSSE() {
 
   state.blockCheckSSE = new EventSource(`${ACCESS_API_URL}/block-check/${encodeURIComponent(email)}`);
 
-  state.blockCheckSSE.onmessage = async (event) => {
+  state.blockCheckSSE.onmessage = async (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data);
 
@@ -208,9 +208,7 @@ export function startBlockCheckSSE() {
         console.warn('🚫 User BLOCKED via SSE!');
         state.blockCheckSSE.close();
         await forceLogout('Du wurdest vom Developer blockiert.');
-      }
-
-      else if (data.type === 'unblock' && !data.blocked) {
+      } else if (data.type === 'unblock' && !data.blocked) {
         state.blockCheckSSE.close();
         showNotification('🎉 Du wurdest entsperrt! Anmeldung läuft...');
         await autoLoginAfterUnblock();
@@ -226,7 +224,7 @@ export function startBlockCheckSSE() {
   };
 }
 
-export function startBlockCheckPolling() {
+export function startBlockCheckPolling(): void {
   if (state.blockCheckInterval) return;
 
   const email = getString('user_email');
@@ -237,7 +235,7 @@ export function startBlockCheckPolling() {
       const response = await fetch(`${ACCESS_API_URL}/check-block`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
 
       if (response.ok) {
@@ -255,7 +253,7 @@ export function startBlockCheckPolling() {
   }, 60000);
 }
 
-export function stopBlockCheckPolling() {
+export function stopBlockCheckPolling(): void {
   if (state.blockCheckInterval) {
     clearInterval(state.blockCheckInterval);
     state.blockCheckInterval = null;

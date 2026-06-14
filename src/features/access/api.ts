@@ -7,14 +7,19 @@
 
 export const ACCESS_API_URL = 'https://displaysong-api.bydopeman.workers.dev';
 
+export interface DeveloperCredentials {
+  clientId: string | null;
+  clientSecret: string | null;
+}
+
 /**
  * Fetch the shared Spotify developer credentials for an approved user.
  * Never throws – returns nulls on any failure so callers can branch safely.
  */
-export async function fetchDeveloperCredentials(userEmail) {
+export async function fetchDeveloperCredentials(userEmail: string): Promise<DeveloperCredentials> {
   try {
     const res = await fetch(`${ACCESS_API_URL}/get-developer-credentials`, {
-      headers: { 'X-User-Email': userEmail }
+      headers: { 'X-User-Email': userEmail },
     });
 
     if (!res.ok) {

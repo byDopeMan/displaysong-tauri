@@ -76,7 +76,7 @@ export async function disconnectSpotify() {
     // showView('setup'); // REMOVED
     
     // Stop access request polling
-    import('../access/index.js').then(module => {
+    import('../access/index').then(module => {
       if (module.stopBlockCheckPolling) module.stopBlockCheckPolling();
       if (module.stopStatusPolling) module.stopStatusPolling();
     });

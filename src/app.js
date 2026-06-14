@@ -16,7 +16,7 @@ import Titlebar from './components/Titlebar.svelte';
 // Features
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings.js';
 import { loadWidgetPositions, autoShowWidgets, syncActiveWidgets } from './features/widgets.js';
-import { setupAccessRequestListeners, initAccessSystem } from './features/access/index.js';
+import { setupAccessRequestListeners, initAccessSystem } from './features/access/index';
 import { checkExistingCredentialsWithStatus } from './features/provider/auth.js';
 import { checkForUpdates } from './features/updater.js';
 import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index.js';

@@ -88,7 +88,7 @@ export async function setupDeepLinkHandler() {
     console.log('[Auth] Spotify connected, current provider:', currentProvider);
     
     // Only start access system (for 420 code users)
-    const { initAccessSystem } = await import('../features/access/index.js');
+    const { initAccessSystem } = await import('../features/access/index');
     initAccessSystem();
   });
   

@@ -14,6 +14,9 @@
        enough is converted. */
     "allowJs": true,
     "checkJs": false,
+    /* Keep `catch (e)` as `any` so existing `'...' + e` / `e.toString()` error
+       handling converts without a cast on every catch block. */
+    "useUnknownInCatchVariables": false,
     "types": ["svelte", "vite/client"]
   },
   "include": ["src/**/*.js", "src/**/*.ts", "src/**/*.svelte"],

@@ -2,7 +2,7 @@
  * Access session handlers – everything that reacts to an access decision:
  * auto-login, developer-credential connect, approval/block handling, logout.
  *
- * Forms a runtime cycle with ./connection.js (the connection layer triggers
+ * Forms a runtime cycle with ./connection.ts (the connection layer triggers
  * these handlers, and these handlers start/stop connections). The cycle is
  * safe because every cross-reference happens inside a function body, never at
  * module-evaluation time.
@@ -13,14 +13,14 @@ import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
 import { showView, openExternal } from '../../ui/navigation.js';
-import { fetchDeveloperCredentials } from './api.js';
-import { stopSSEConnection, stopStatusPolling, startBlockCheckSSE } from './connection.js';
+import { fetchDeveloperCredentials } from './api';
+import { stopSSEConnection, stopStatusPolling, startBlockCheckSSE } from './connection';
 
 // ============================================================================
 // Auto-Login
 // ============================================================================
 
-export async function autoLoginAfterUnblock() {
+export async function autoLoginAfterUnblock(): Promise<void> {
   const email = getString('user_email');
 
   if (!email) {
@@ -60,7 +60,7 @@ export async function autoLoginAfterUnblock() {
   }
 }
 
-export async function autoLogin() {
+export async function autoLogin(): Promise<void> {
   const userEmail = getString('accessRequestEmail') || getString('user_email');
 
   if (!userEmail) {
@@ -83,7 +83,7 @@ export async function autoLogin() {
   try {
     await invoke('save_credentials', {
       clientId: clientId,
-      clientSecret: clientSecret
+      clientSecret: clientSecret,
     });
 
     await invoke('start_auth_server');
@@ -93,7 +93,6 @@ export async function autoLogin() {
       showView('auth');
       openExternal(authUrl);
     }
-
   } catch (e) {
     console.error('Auto-login failed:', e);
     showNotification('Fehler beim Auto-Login: ' + e);
@@ -104,7 +103,7 @@ export async function autoLogin() {
 // Status Handlers
 // ============================================================================
 
-export async function handleApproved() {
+export async function handleApproved(): Promise<void> {
   const requestId = getString('accessRequestId');
   const email = getString('accessRequestEmail');
 
@@ -121,7 +120,7 @@ export async function handleApproved() {
     statusDiv.innerHTML = '<div class="status-approved">✅ Zugang genehmigt! Verbinde mit Spotify...</div>';
   }
 
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise((r) => setTimeout(r, 1000));
   modal?.classList.add('hidden');
 
   const success = await connectWithDeveloperCredentials(email);
@@ -140,7 +139,7 @@ export async function handleApproved() {
   startBlockCheckSSE();
 }
 
-export async function handleBlocked() {
+export async function handleBlocked(): Promise<void> {
   // ✅ Status auf blocked setzen (Daten bleiben!)
   setString('accessRequestStatus', 'blocked');
 
@@ -151,7 +150,7 @@ export async function handleBlocked() {
   }
 }
 
-export async function connectWithDeveloperCredentials(userEmail) {
+export async function connectWithDeveloperCredentials(userEmail: string): Promise<boolean> {
   try {
     const { clientId, clientSecret } = await fetchDeveloperCredentials(userEmail);
 
@@ -160,8 +159,8 @@ export async function connectWithDeveloperCredentials(userEmail) {
       return false;
     }
 
-    const clientIdInput = document.getElementById('client-id');
-    const clientSecretInput = document.getElementById('client-secret');
+    const clientIdInput = document.getElementById('client-id') as HTMLInputElement | null;
+    const clientSecretInput = document.getElementById('client-secret') as HTMLInputElement | null;
     if (clientIdInput) clientIdInput.value = clientId;
     if (clientSecretInput) clientSecretInput.value = clientSecret;
 
@@ -202,9 +201,9 @@ export async function connectWithDeveloperCredentials(userEmail) {
   }
 }
 
-export async function forceLogout(reason) {
-  const client = document.getElementById('client-id');
-  const secret = document.getElementById('client-secret');
+export async function forceLogout(reason: string): Promise<void> {
+  const client = document.getElementById('client-id') as HTMLInputElement | null;
+  const secret = document.getElementById('client-secret') as HTMLInputElement | null;
 
   showNotification(reason);
 
@@ -228,7 +227,6 @@ export async function forceLogout(reason) {
 
       // ✅ Status auf blocked setzen (Email & Request-ID bleiben für Unblock!)
       setString('accessRequestStatus', 'blocked');
-
     } catch (e) {
       console.error('Force logout failed:', e);
     }

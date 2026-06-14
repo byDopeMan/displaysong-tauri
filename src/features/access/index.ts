@@ -5,28 +5,28 @@
  * This is the public entry point for the access subsystem. app.js wires up
  * setupAccessRequestListeners() and initAccessSystem(); the heavy lifting lives
  * in the sibling modules:
- *   - api.js        low-level HTTP helpers
- *   - connection.js SSE + polling transports
- *   - session.js    login/logout/approval handlers
+ *   - api.ts        low-level HTTP helpers
+ *   - connection.ts SSE + polling transports
+ *   - session.ts    login/logout/approval handlers
  */
 
 import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
-import { ACCESS_API_URL } from './api.js';
+import { ACCESS_API_URL } from './api';
 import {
   startSSEConnection,
   stopSSEConnection,
   startStatusPolling,
   stopStatusPolling,
   startBlockCheckSSE,
-  checkAccessStatus
-} from './connection.js';
-import { autoLogin, handleApproved } from './session.js';
+  checkAccessStatus,
+} from './connection';
+import { autoLogin, handleApproved } from './session';
 
 // Re-export the public API surface other modules rely on.
-export { fetchDeveloperCredentials } from './api.js';
+export { fetchDeveloperCredentials } from './api';
 export {
   startSSEConnection,
   stopSSEConnection,
@@ -34,19 +34,19 @@ export {
   stopStatusPolling,
   startBlockCheckSSE,
   startBlockCheckPolling,
-  stopBlockCheckPolling
-} from './connection.js';
-export { autoLogin } from './session.js';
+  stopBlockCheckPolling,
+} from './connection';
+export { autoLogin } from './session';
 
 // ============================================================================
 // Access Request Form
 // ============================================================================
 
-async function submitAccessRequest() {
-  const name = document.getElementById('access-name')?.value?.trim();
-  const email = document.getElementById('access-email')?.value?.trim();
-  const discord = document.getElementById('access-discord')?.value?.trim();
-  const submitBtn = document.getElementById('btn-submit-access-a');
+async function submitAccessRequest(): Promise<void> {
+  const name = (document.getElementById('access-name') as HTMLInputElement | null)?.value?.trim();
+  const email = (document.getElementById('access-email') as HTMLInputElement | null)?.value?.trim();
+  const discord = (document.getElementById('access-discord') as HTMLInputElement | null)?.value?.trim();
+  const submitBtn = document.getElementById('btn-submit-access-a') as HTMLButtonElement | null;
   const statusDiv = document.getElementById('access-status');
 
   if (!name || !email) {
@@ -65,7 +65,7 @@ async function submitAccessRequest() {
     const response = await fetch(`${ACCESS_API_URL}/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, discord })
+      body: JSON.stringify({ name, email, discord }),
     });
 
     if (response.ok) {
@@ -84,7 +84,6 @@ async function submitAccessRequest() {
         }
         await autoLogin();
         return;
-
       } else if (data.status === 'blocked') {
         setString('accessRequestStatus', 'blocked');
         if (invoke) await invoke('save_access_data', { email, requestId: data.id || '', status: 'blocked' });
@@ -93,7 +92,6 @@ async function submitAccessRequest() {
           statusDiv.innerHTML = '<div class="status-denied">🚫 Du wurdest blockiert.</div>';
         }
         return;
-
       } else if (data.status === 'pending') {
         setString('accessRequestId', data.id);
         setString('accessRequestStatus', 'pending');
@@ -126,9 +124,9 @@ async function submitAccessRequest() {
 // Status Checks
 // ============================================================================
 
-export async function checkAccessStatusOnStartup() {
+export async function checkAccessStatusOnStartup(): Promise<void> {
   const requestId = getString('accessRequestId');
-  const btnRequestAccess = document.getElementById('btn-request-access');
+  const btnRequestAccess = document.getElementById('btn-request-access') as HTMLButtonElement | null;
 
   if (!requestId) return;
 
@@ -139,7 +137,6 @@ export async function checkAccessStatusOnStartup() {
     const data = await response.json();
 
     if (data.status === 'approved') {
-      // ✅ Status setzen
       setString('accessRequestStatus', 'approved');
       if (btnRequestAccess) {
         btnRequestAccess.textContent = '✅ Zugang genehmigt';
@@ -152,21 +149,15 @@ export async function checkAccessStatusOnStartup() {
       if (!state.isAuthenticated) {
         await handleApproved();
       }
-
     } else if (data.status === 'denied') {
-      // ✅ Status setzen
       setString('accessRequestStatus', 'denied');
-
     } else if (data.status === 'blocked') {
-      // ✅ Status setzen
       setString('accessRequestStatus', 'blocked');
       if (btnRequestAccess) {
         btnRequestAccess.textContent = '🚫 Zugang blockiert';
         btnRequestAccess.disabled = true;
       }
-
     } else if (data.status === 'pending') {
-      // ✅ Status setzen
       setString('accessRequestStatus', 'pending');
       if (btnRequestAccess) {
         btnRequestAccess.textContent = '⏳ Anfrage wird bearbeitet...';
@@ -175,6 +166,7 @@ export async function checkAccessStatusOnStartup() {
       startStatusPolling();
     }
   } catch (e) {
+    /* best-effort */
   }
 }
 
@@ -182,11 +174,11 @@ export async function checkAccessStatusOnStartup() {
 // Event Listeners & Init
 // ============================================================================
 
-export function setupAccessRequestListeners() {
+export function setupAccessRequestListeners(): void {
   const modal = document.getElementById('access-request-modal');
   const form = document.getElementById('access-request-form');
 
-  modal?.querySelectorAll('[data-close-modal]').forEach(btn => {
+  modal?.querySelectorAll('[data-close-modal]').forEach((btn) => {
     btn.addEventListener('click', () => modal.classList.add('hidden'));
   });
 
@@ -225,7 +217,7 @@ export function setupAccessRequestListeners() {
   });
 }
 
-export async function initAccessSystem() {
+export async function initAccessSystem(): Promise<void> {
   const invoke = getTauriInvoke();
 
   // Try to load persistent data from Windows Credential Manager first
