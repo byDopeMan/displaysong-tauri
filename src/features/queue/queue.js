@@ -4,9 +4,20 @@
 
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
-import { showNotification } from '../../ui/notifications.js';
 import { escapeAttr } from '../../utils/format.js';
-import { playYouTube, stopYouTube, pauseYouTube, resumeYouTube, getYouTubeProgressMs, setYouTubeVolume, prefetchYouTube } from '../youtube-player.js';
+import { prefetchYouTube } from '../youtube-player.js';
+import {
+  initYouTube,
+  isYouTubePlaying,
+  isYouTubeUri,
+  youTubeVideoId,
+  startYouTubeTakeover,
+  setupYouTubeControls,
+  stopYouTubePlayback,
+} from './youtube.js';
+
+// Re-export so existing importers (app.js) keep working.
+export { isYouTubePlaying } from './youtube.js';
 
 // State
 let queueItems = [];
@@ -18,98 +29,12 @@ let containerListenersSetup = new Set();
 let autoPlayQueue = false;
 let lastAutoPlayAt = 0;
 
-// While a YouTube-only request plays (hidden IFrame), Spotify is paused and the
-// frontend drives the now-playing display. The YouTube player's onEnded handles
-// advancing, so the normal near-end auto-advance must stand down meanwhile.
-let youtubePlaying = false;
-let currentYtTrack = null; // the now-playing track object for the active YouTube song
-let ytProgressTimer = null; // periodic now-playing emit while a YouTube song plays
-let ytVolumeTimer = null;   // live-syncs YouTube volume to the Spotify device volume
-
-// How long to let the current Spotify song keep playing after our progress
-// interpolation says it ended, before pausing it for a YouTube request. The
-// interpolation tends to run a touch ahead, so a small grace delay lets the song
-// finish cleanly (the YouTube stream is prefetched, so this adds no real gap).
+// Grace delay before a YouTube takeover, so the current Spotify song finishes
+// (the YouTube stream is prefetched, so this adds no real gap).
 const YT_TAKEOVER_DELAY_MS = 1000;
-
-// YouTube streams aren't loudness-normalized like Spotify, so at the same percent
-// they sound louder. YouTube plays at this fraction of the Spotify volume; the
-// user can lower it further via the dropdown in the YouTube controls.
-let ytVolumeFactor = parseFloat(localStorage.getItem('yt-volume-factor'));
-if (!(ytVolumeFactor > 0 && ytVolumeFactor <= 1)) ytVolumeFactor = 0.7;
-let lastSpotifyVolume = 50; // last known Spotify device volume (0-100)
-
-/** Apply the current Spotify volume * factor to the YouTube player. */
-function applyYtVolume() {
-  setYouTubeVolume(Math.round(lastSpotifyVolume * ytVolumeFactor));
-}
-
-/** Set the user's YouTube volume factor (0-1), persist it and apply immediately. */
-export function setYtVolumeFactor(factor) {
-  ytVolumeFactor = Math.max(0.05, Math.min(1, factor));
-  try { localStorage.setItem('yt-volume-factor', String(ytVolumeFactor)); } catch (e) {}
-  console.log('[Queue] YT volume factor ->', ytVolumeFactor, 'playing:', youtubePlaying);
-  if (youtubePlaying) applyYtVolume();
-}
-
-/** Live-sync the YouTube volume to the Spotify device volume while a YT song
- *  plays, so changing Spotify's volume also changes the YouTube volume. */
-function startYtVolumeSync() {
-  stopYtVolumeSync();
-  ytVolumeTimer = setInterval(async () => {
-    if (!youtubePlaying) return;
-    const invoke = getTauriInvoke();
-    if (!invoke) return;
-    try {
-      const v = await invoke('spotify_get_volume');
-      if (typeof v === 'number' && v >= 0) { lastSpotifyVolume = v; applyYtVolume(); }
-    } catch (e) { /* keep last volume */ }
-  }, 2500);
-}
-
-function stopYtVolumeSync() {
-  if (ytVolumeTimer) { clearInterval(ytVolumeTimer); ytVolumeTimer = null; }
-}
-
-/** Periodically push the YouTube now-playing (with live position) to player +
- *  widgets. The Windows poll is suppressed during YouTube, so without this the
- *  timeline wouldn't move and widgets opened mid-song would show nothing. */
-function startYtProgressTimer() {
-  stopYtProgressTimer();
-  ytProgressTimer = setInterval(() => {
-    if (!currentYtTrack) return;
-    currentYtTrack = { ...currentYtTrack, progressMs: getYouTubeProgressMs() };
-    emitNowPlaying(currentYtTrack);
-  }, 1000);
-}
-
-function stopYtProgressTimer() {
-  if (ytProgressTimer) { clearInterval(ytProgressTimer); ytProgressTimer = null; }
-  stopYtVolumeSync(); // the two always run together during YouTube playback
-}
-
-const YT_URI_PREFIX = 'youtube:';
-function isYouTubeUri(uri) { return typeof uri === 'string' && uri.startsWith(YT_URI_PREFIX); }
-function youTubeVideoId(uri) { return isYouTubeUri(uri) ? uri.slice(YT_URI_PREFIX.length) : null; }
-
-/** Whether a YouTube-only request is currently playing. */
-export function isYouTubePlaying() { return youtubePlaying; }
 
 /** Prime the track-info cache (used by the request flow for YouTube items). */
 export function cacheTrackInfo(uri, info) { trackInfoCache.set(uri, info); }
-
-/** Push a now-playing track to the player tab + widgets (same event the backend
- *  poll uses). Used to show a YouTube request like a normal Spotify song. */
-function emitNowPlaying(track) {
-  // Route through the backend (emit_all) so it reliably reaches ALL windows incl.
-  // widgets — a window's own event.emit does not reach other windows in Tauri v1.
-  const invoke = getTauriInvoke();
-  if (invoke) {
-    invoke('push_track_update', { track }).catch(() => {});
-  } else {
-    try { window.__TAURI__?.event?.emit('track-update', track); } catch (e) {}
-  }
-}
 
 // Requester memory: who requested a track. Survives the song's removal from the
 // queue, so "requested by X" can still be shown while it plays. Keyed by Spotify
@@ -156,6 +81,17 @@ const ICONS = {
  * Initialize Queue
  */
 export async function initQueue() {
+  // Give the YouTube module the queue accessors it needs (no circular import).
+  initYouTube({
+    getQueueItems: () => queueItems,
+    removeQueueItem: (id) => { queueItems = queueItems.filter((q) => q.id !== id); },
+    isAutoPlay: () => autoPlayQueue,
+    setLastAutoPlayAt: (v) => { lastAutoPlayAt = v; },
+    renderQueue,
+    updateQueueVisibility,
+    getCachedTrackInfo: (uri) => trackInfoCache.get(uri),
+  });
+
   setupQueueEventListener();
   setupClearButtons();
   setupQueueDelegation();
@@ -169,13 +105,13 @@ export async function initQueue() {
 /**
  * Auto-advance setup: load the persisted toggle, wire the checkbox and start
  * the monitor. When enabled, the next queued request is played automatically
- * once nothing is playing — so the request queue is what gets played, not the
+ * once nothing is playing â€” so the request queue is what gets played, not the
  * next song from the streamer's own playlist.
  */
 function setupAutoPlay() {
   autoPlayQueue = localStorage.getItem('queue-autoplay') === 'true';
   // The toggle lives in the queue header (player view + standalone queue view),
-  // so there can be two checkboxes — keep them in sync.
+  // so there can be two checkboxes â€” keep them in sync.
   const toggles = document.querySelectorAll('.js-queue-autoplay');
   toggles.forEach((cb) => {
     cb.checked = autoPlayQueue;
@@ -194,13 +130,13 @@ function setupAutoPlay() {
  * current song ends (triggered from the player's progress loop and as a fallback
  * on track-changed). Using add_to_queue (instead of play_track) is important:
  * it plays the request right after the current song AND keeps the streamer's
- * playlist context, so music keeps going once the request queue is empty —
+ * playlist context, so music keeps going once the request queue is empty â€”
  * play_track would replace the context with a single track and leave silence.
  * A cooldown prevents queueing the same item repeatedly.
  */
 export async function maybeAutoAdvance(remainingMs = 0) {
   if (!autoPlayQueue || queueItems.length === 0) return;
-  if (youtubePlaying) return; // the YouTube player drives its own advance
+  if (isYouTubePlaying()) return; // the YouTube player drives its own advance
   if (Date.now() - lastAutoPlayAt < 6000) return; // one hand-over per song
   const next = queueItems[0];
   if (!next) return;
@@ -210,7 +146,7 @@ export async function maybeAutoAdvance(remainingMs = 0) {
   //   (up to 12s) kicks in. If we queue too late, Spotify has already started
   //   crossfading into the next playlist track and the request is skipped/late.
   // - YouTube: only once the current song is basically over (the stream is
-  //   prefetched, so it starts instantly) — this avoids cutting the last second
+  //   prefetched, so it starts instantly) â€” this avoids cutting the last second
   //   of the Spotify song before pausing it for YouTube.
   const isYt = isYouTubeUri(next.spotify_uri);
   const threshold = isYt ? 0 : 10000;
@@ -231,258 +167,6 @@ export async function maybeAutoAdvance(remainingMs = 0) {
     console.error('[Queue] Auto-play queue error:', e);
     lastAutoPlayAt = 0; // allow a retry on the next trigger
   }
-}
-
-/**
- * Play a YouTube-only request: pause Spotify, play the audio via the hidden
- * IFrame, and show it like a normal now-playing song (cover + timeline) on the
- * player tab and widgets. When it ends, hand back to Spotify (or chain to the
- * next YouTube request).
- */
-async function startYouTubeTakeover(item) {
-  const invoke = getTauriInvoke();
-  if (!invoke) return;
-  const videoId = youTubeVideoId(item.spotify_uri);
-  if (!videoId) return;
-
-  // Was a YouTube song already playing? (chaining YouTube -> YouTube means
-  // Spotify is already paused, so we must not pause it again.)
-  const alreadyExternal = youtubePlaying;
-  youtubePlaying = true;
-  console.log('[Queue] YouTube takeover start:', item.spotify_uri, 'videoId', videoId);
-  const info = trackInfoCache.get(item.spotify_uri) || {};
-  const cover = info.albumCover || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
-  // Play at the same volume Spotify uses (so YouTube isn't a blast). Falls back
-  // to a safe low default when Spotify has no active device.
-  let volume = Math.round(lastSpotifyVolume * ytVolumeFactor);
-  try {
-    const v = await invoke('spotify_get_volume');
-    if (typeof v === 'number' && v >= 0) { lastSpotifyVolume = v; volume = Math.round(v * ytVolumeFactor); }
-    console.log('[Queue] Spotify volume for YouTube:', v, '-> yt', volume);
-  } catch (e) { console.warn('[Queue] spotify_get_volume failed:', e); }
-
-  try {
-    // Only pause Spotify on the FIRST takeover; when chaining YouTube -> YouTube
-    // it's already paused (pausing again returns a harmless 403).
-    if (!alreadyExternal) {
-      await invoke('set_external_playback', { active: true });
-      try { await invoke('spotify_pause'); console.log('[Queue] Spotify paused for YouTube'); } catch (e) { console.warn('[Queue] spotify_pause failed:', e); }
-    }
-    await invoke('remove_song_request', { requestId: item.id });
-    queueItems = queueItems.filter((q) => q.id !== item.id);
-    renderQueue();
-    updateQueueVisibility();
-  } catch (e) {
-    console.error('[Queue] YouTube takeover setup error:', e);
-  }
-
-  currentYtTrack = {
-    track: info.track || 'YouTube',
-    artist: info.artist || '',
-    album: '',
-    albumCover: cover,
-    isPlaying: true,
-    durationMs: info.durationMs || 0,
-    progressMs: 0,
-    source: 'youtube',
-    trackId: null,
-    color: null,
-  };
-  showYouTubeControls(true);
-  // Show the song immediately (duration filled in once playback reports it).
-  emitNowPlaying(currentYtTrack);
-  startYtProgressTimer();
-  startYtVolumeSync();
-
-  // Tint the widgets from the thumbnail (mqdefault is 16:9 with no black bars,
-  // so the dominant color isn't just the letterbox black of hqdefault).
-  invoke('get_dominant_color', { url: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` })
-    .then((c) => {
-      if (c && currentYtTrack && youtubePlaying) {
-        currentYtTrack = { ...currentYtTrack, color: c };
-        emitNowPlaying(currentYtTrack);
-      }
-    })
-    .catch(() => {});
-
-  // Save the played YouTube song to the history (the Windows-Media poll is
-  // suppressed during YouTube playback, so it won't record it otherwise).
-  try {
-    await invoke('save_track_to_history', {
-      track: currentYtTrack.track,
-      artist: currentYtTrack.artist,
-      album: '',
-      albumCover: cover,
-      source: 'YouTube',
-      trackId: videoId,
-      durationMs: 0,
-    });
-    import('../history.js').then(({ refreshHistory }) => refreshHistory()).catch(() => {});
-  } catch (e) { /* history is best-effort */ }
-
-  const requester = item.user_name || '';
-  playYouTube(videoId, {
-    volume,
-    onPlaying: (durationMs, title) => {
-      if (!currentYtTrack) return;
-      const patch = {
-        durationMs: durationMs || currentYtTrack.durationMs || 0,
-        isPlaying: true,
-      };
-      // Fill in a real title from yt-dlp if we only had a placeholder.
-      if (title && (!currentYtTrack.track || currentYtTrack.track === 'YouTube')) {
-        patch.track = title;
-      }
-      currentYtTrack = { ...currentYtTrack, ...patch };
-      emitNowPlaying(currentYtTrack);
-    },
-    onError: (code) => {
-      notifyYouTubeError(requester, code);
-      onYouTubeEnded();
-    },
-    onEnded: () => { onYouTubeEnded(); },
-  });
-}
-
-/** Tell the streamer (and the requester in chat) a YouTube request couldn't play. */
-function notifyYouTubeError(user, code) {
-  const embedBlocked = code === 101 || code === 150;
-  const reason = embedBlocked
-    ? 'erlaubt kein Einbetten und kann nicht abgespielt werden'
-    : 'konnte nicht abgespielt werden';
-  try {
-    showNotification(
-      embedBlocked
-        ? 'YouTube-Video erlaubt kein Einbetten – übersprungen.'
-        : 'YouTube-Video konnte nicht abgespielt werden – übersprungen.',
-      { type: 'warning' }
-    );
-  } catch (e) {}
-  const invoke = getTauriInvoke();
-  if (invoke && user) {
-    invoke('twitch_send_chat', { message: `@${user} Dein YouTube-Video ${reason} und wurde übersprungen.` })
-      .catch(() => {});
-  }
-}
-
-/** Show/hide the YouTube playback controls (pause/skip) in the player tab. */
-function showYouTubeControls(show) {
-  const el = document.getElementById('youtube-controls');
-  if (el) el.classList.toggle('hidden', !show);
-  if (show) syncYouTubePauseButton();
-}
-
-/** Wire the YouTube pause/skip buttons + volume dropdown (shown while a YT plays). */
-function setupYouTubeControls() {
-  document.getElementById('btn-youtube-pause')?.addEventListener('click', () => toggleYouTubePause());
-  document.getElementById('btn-youtube-skip')?.addEventListener('click', () => skipYouTube());
-
-  const vol = document.getElementById('yt-volume-select');
-  if (vol) {
-    // Reflect the persisted factor (nearest 0.1 step).
-    vol.value = String(Math.round(ytVolumeFactor * 10) / 10);
-    vol.addEventListener('change', () => setYtVolumeFactor(parseFloat(vol.value)));
-  }
-}
-
-/** Pause/resume the currently playing YouTube request. */
-export function toggleYouTubePause() {
-  if (!youtubePlaying || !currentYtTrack) return;
-  if (currentYtTrack.isPlaying) {
-    pauseYouTube();
-    currentYtTrack = { ...currentYtTrack, isPlaying: false };
-  } else {
-    resumeYouTube();
-    currentYtTrack = { ...currentYtTrack, isPlaying: true };
-  }
-  emitNowPlaying(currentYtTrack);
-  syncYouTubePauseButton();
-}
-
-/** Skip the currently playing YouTube request (advance the queue). */
-export function skipYouTube() {
-  if (!youtubePlaying) return;
-  stopYouTube();
-  onYouTubeEnded();
-}
-
-/**
- * Play a Spotify request immediately WITHOUT destroying the streamer's playlist
- * context: add it to Spotify's queue, then skip to it. After the request (and any
- * further queued requests) the streamer's playlist continues natively. Falls back
- * to play_track only if there's no active device/context to queue into.
- */
-async function playSpotifyRequestNow(invoke, uri) {
-  let queued = false;
-  try {
-    await invoke('add_to_queue', { uri });
-    queued = true;
-  } catch (e) {
-    // No active device to queue into -> play it directly.
-    try { await invoke('play_track', { uri }); } catch (e2) { console.error('[Queue] play_track failed:', e2); }
-    return;
-  }
-  if (queued) {
-    // Give Spotify a moment to register the queued item before skipping to it.
-    await new Promise((r) => setTimeout(r, 600));
-    try { await invoke('spotify_next'); } catch (e) { console.warn('[Queue] spotify_next failed:', e); }
-    try { await invoke('spotify_resume'); } catch (e) {}
-  }
-}
-
-/** Called when a YouTube request finishes (or errors): chain or hand back. */
-async function onYouTubeEnded() {
-  const invoke = getTauriInvoke();
-  const next = queueItems[0];
-  console.log('[Queue] YouTube ended. next:', next ? next.spotify_uri : '(none)', 'autoPlay', autoPlayQueue);
-
-  // Auto-play on with another request queued: play it back-to-back.
-  if (autoPlayQueue && next) {
-    if (isYouTubeUri(next.spotify_uri)) {
-      await startYouTubeTakeover(next); // keep Spotify paused, play the next YT
-      return;
-    }
-    // Next is a Spotify request: play it now but KEEP the streamer's context so
-    // the playlist resumes after the request queue empties. We add it to Spotify's
-    // queue and skip to it, instead of play_track (which would replace the context
-    // and leave silence once the queue runs out).
-    youtubePlaying = false;
-    currentYtTrack = null;
-    showYouTubeControls(false);
-    stopYtProgressTimer();
-    lastAutoPlayAt = Date.now(); // don't let maybeAutoAdvance double-fire
-    if (invoke) {
-      try { await invoke('set_external_playback', { active: false }); } catch (e) {}
-      await playSpotifyRequestNow(invoke, next.spotify_uri);
-      try { await invoke('remove_song_request', { requestId: next.id }); } catch (e) {}
-    }
-    return;
-  }
-
-  // Nothing queued: hand playback back to the streamer's Spotify. YouTube took
-  // over near the end of the paused track, so skip its leftover and play the next
-  // playlist track fresh (instead of replaying the last second), then ensure it's
-  // actually playing.
-  youtubePlaying = false;
-  currentYtTrack = null;
-  showYouTubeControls(false);
-  stopYtProgressTimer();
-  lastAutoPlayAt = 0;
-  if (invoke) {
-    try { await invoke('set_external_playback', { active: false }); } catch (e) {}
-    try { await invoke('spotify_next'); } catch (e) {}
-    try { await invoke('spotify_resume'); } catch (e) {}
-  }
-}
-
-/** Update the pause button's icon/label to match the current play state. */
-function syncYouTubePauseButton() {
-  const btn = document.getElementById('btn-youtube-pause');
-  if (!btn) return;
-  const playing = currentYtTrack ? currentYtTrack.isPlaying : true;
-  btn.dataset.state = playing ? 'playing' : 'paused';
-  btn.title = playing ? 'Pausieren' : 'Fortsetzen';
 }
 
 /**
@@ -653,15 +337,7 @@ async function clearQueue() {
     await invoke('clear_song_request_queue');
     queueItems = [];
     // Stop a running YouTube request and hand playback back to Spotify.
-    if (youtubePlaying) {
-      youtubePlaying = false;
-      currentYtTrack = null;
-      showYouTubeControls(false);
-      stopYtProgressTimer();
-      stopYouTube();
-      try { await invoke('set_external_playback', { active: false }); } catch (e) {}
-      try { await invoke('spotify_resume'); } catch (e) {}
-    }
+    await stopYouTubePlayback({ resume: true });
     renderQueue();
     updateQueueVisibility();
   } catch (e) {
@@ -686,14 +362,7 @@ async function playSong(requestId, spotifyUri) {
 
   // Skipping to a Spotify song while a YouTube request is playing: stop the
   // YouTube audio first so they don't overlap.
-  if (youtubePlaying) {
-    youtubePlaying = false;
-    currentYtTrack = null;
-    showYouTubeControls(false);
-    stopYtProgressTimer();
-    stopYouTube();
-    try { await invoke('set_external_playback', { active: false }); } catch (e) {}
-  }
+  await stopYouTubePlayback({ resume: false });
 
   try {
     await invoke('play_track', { uri: spotifyUri });
@@ -781,7 +450,7 @@ function renderQueue() {
         <div class="queue-empty">
           <div class="queue-empty-icon">${ICONS.inbox}</div>
           <p class="queue-empty-text">Queue ist leer</p>
-          <p class="queue-empty-hint">Nutze !sr im Chat um Songs hinzuzufügen</p>
+          <p class="queue-empty-hint">Nutze !sr im Chat um Songs hinzuzufÃ¼gen</p>
         </div>
       `;
       return;
@@ -808,7 +477,7 @@ function renderQueue() {
             <div class="queue-item-track">
               ${hasInfo
                 ? `<span class="queue-item-title">${escapeAttr(trackInfo.track)}</span>`
-                : `<span class="queue-item-title loading">Lädt...</span>`
+                : `<span class="queue-item-title loading">LÃ¤dt...</span>`
               }
             </div>
             <div class="queue-item-meta">
