@@ -4,8 +4,9 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { state } from '../../core/state';
-import { escapeAttr } from '../../utils/format';
 import { prefetchYouTube } from './youtube-player';
+import { queueDisplay, type QueueDisplayItem } from './store';
+import Queue from './Queue.svelte';
 import {
   initYouTube,
   isYouTubePlaying,
@@ -72,16 +73,6 @@ export function getRequesterForTrack(track: any): { user: string; source: string
   return requesterMemory.has(k) ? requesterMemory.get(k) || null : null;
 }
 
-// SVG Icons
-const ICONS: Record<string, string> = {
-  music: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
-  play: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
-  trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
-  chat: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`,
-  star: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
-  inbox: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`,
-};
-
 /**
  * Initialize Queue
  */
@@ -99,7 +90,7 @@ export async function initQueue(): Promise<void> {
 
   setupQueueEventListener();
   setupClearButtons();
-  setupQueueDelegation();
+  mountQueueViews();
   setupAutoPlay();
   setupYouTubeControls();
   await loadQueue();
@@ -159,27 +150,15 @@ export async function maybeAutoAdvance(remainingMs = 0): Promise<void> {
   }
 }
 
-/**
- * Attach delegated click handlers to the queue containers.
- */
-function setupQueueDelegation(): void {
+/** Mount the Svelte queue list into the player-tab and standalone containers. */
+function mountQueueViews(): void {
   ['queue-list', 'queue-list-standalone'].forEach((id) => {
-    const container = document.getElementById(id);
-    if (!container || containerListenersSetup.has(id)) return;
-    containerListenersSetup.add(id);
-
-    container.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const item = target.closest('.queue-item') as HTMLElement | null;
-      if (!item) return;
-      const { id: requestId, uri } = item.dataset;
-
-      if (target.closest('.queue-btn-play')) {
-        playSong(requestId, uri);
-      } else if (target.closest('.queue-btn-remove')) {
-        removeSong(requestId);
-      }
-    });
+    const el = document.getElementById(id);
+    if (el && !containerListenersSetup.has(id)) {
+      containerListenersSetup.add(id);
+      el.innerHTML = '';
+      new Queue({ target: el });
+    }
   });
 }
 
@@ -331,7 +310,7 @@ async function clearQueue(): Promise<void> {
 /**
  * Play a song from queue (skip to it)
  */
-async function playSong(requestId: string | undefined, spotifyUri: string | undefined): Promise<void> {
+export async function playSong(requestId: string | undefined, spotifyUri: string | undefined): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke || !spotifyUri) return;
 
@@ -356,7 +335,7 @@ async function playSong(requestId: string | undefined, spotifyUri: string | unde
 /**
  * Remove song from queue
  */
-async function removeSong(requestId: string | undefined): Promise<void> {
+export async function removeSong(requestId: string | undefined): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -403,85 +382,29 @@ function renderQueue(): void {
     if (vid) prefetchYouTube(vid);
   }
 
-  const containers = [
-    document.getElementById('queue-list'),
-    document.getElementById('queue-list-standalone'),
-  ];
+  // Counts live outside the Svelte-managed list containers.
+  [document.getElementById('queue-count'), document.getElementById('queue-count-standalone')]
+    .forEach((el) => { if (el) el.textContent = String(queueItems.length); });
 
-  const counts = [
-    document.getElementById('queue-count'),
-    document.getElementById('queue-count-standalone'),
-  ];
-
-  // Update counts
-  counts.forEach((el) => {
-    if (el) el.textContent = String(queueItems.length);
+  // Publish a plain display snapshot; the Queue.svelte instances re-render.
+  const display: QueueDisplayItem[] = queueItems.map((item, index) => {
+    const info = trackInfoCache.get(item.spotify_uri);
+    const hasInfo = !!(info?.track && info?.artist);
+    return {
+      id: item.id,
+      uri: item.spotify_uri,
+      position: index + 1,
+      hasInfo,
+      track: info?.track || '',
+      artist: info?.artist || '',
+      coverUrl: info?.albumCover || null,
+      uriShort: String(item.spotify_uri).substring(14, 30),
+      isPoints: item.source === 'points',
+      user: item.user_name || '',
+      timeAgo: formatTimeAgo(item.timestamp),
+    };
   });
-
-  // Render each container
-  containers.forEach((container) => {
-    if (!container) return;
-
-    if (queueItems.length === 0) {
-      container.innerHTML = `
-        <div class="queue-empty">
-          <div class="queue-empty-icon">${ICONS.inbox}</div>
-          <p class="queue-empty-text">Queue ist leer</p>
-          <p class="queue-empty-hint">Nutze !sr im Chat um Songs hinzuzufügen</p>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = queueItems.map((item, index) => {
-      const trackInfo = trackInfoCache.get(item.spotify_uri);
-      const hasInfo = trackInfo?.track && trackInfo?.artist;
-      const sourceIcon = item.source === 'points' ? ICONS.star : ICONS.chat;
-      const coverUrl = trackInfo?.albumCover || null;
-
-      return `
-        <div class="queue-item" data-id="${escapeAttr(item.id)}" data-uri="${escapeAttr(item.spotify_uri)}">
-          <div class="queue-item-position">${index + 1}</div>
-
-          <div class="queue-item-cover">
-            ${coverUrl
-              ? `<img src="${escapeAttr(coverUrl)}" alt="Cover">`
-              : `<div class="queue-item-cover-placeholder">${ICONS.music}</div>`
-            }
-          </div>
-
-          <div class="queue-item-info">
-            <div class="queue-item-track">
-              ${hasInfo
-                ? `<span class="queue-item-title">${escapeAttr(trackInfo.track)}</span>`
-                : `<span class="queue-item-title loading">Lädt...</span>`
-              }
-            </div>
-            <div class="queue-item-meta">
-              ${hasInfo
-                ? `<span class="queue-item-artist">${escapeAttr(trackInfo.artist)}</span>`
-                : `<span class="queue-item-uri">${escapeAttr(item.spotify_uri.substring(14, 30))}...</span>`
-              }
-            </div>
-            <div class="queue-item-requester">
-              <span class="queue-item-source" title="${item.source === 'points' ? 'Channel Points' : 'Chat Command'}">${sourceIcon}</span>
-              <span class="queue-item-user">${escapeAttr(item.user_name)}</span>
-              <span class="queue-item-time">${formatTimeAgo(item.timestamp)}</span>
-            </div>
-          </div>
-
-          <div class="queue-item-actions">
-            <button class="queue-btn queue-btn-play" title="Jetzt abspielen">
-              ${ICONS.play}
-            </button>
-            <button class="queue-btn queue-btn-remove" title="Entfernen">
-              ${ICONS.trash}
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  });
+  queueDisplay.set(display);
 }
 
 /**
