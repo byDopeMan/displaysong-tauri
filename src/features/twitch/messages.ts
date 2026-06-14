@@ -7,7 +7,7 @@
 
 import { showNotification } from '../../ui/notifications.js';
 
-export const DEFAULT_MESSAGES = {
+export const DEFAULT_MESSAGES: Record<string, string> = {
   nowPlaying: 'Jetzt laeuft: {artist} - {title}',
   songAdded: '@{user} hat hinzugefuegt: {artist} - {title}',
   songNotFound: '@{user} Song nicht gefunden. Nutze einen Spotify, YouTube oder Apple Music Link.',
@@ -18,10 +18,10 @@ export const DEFAULT_MESSAGES = {
   notOnSpotify: '@{user} Song ist nicht auf Spotify verfuegbar',
 };
 
-let messages = { ...DEFAULT_MESSAGES };
+let messages: Record<string, string> = { ...DEFAULT_MESSAGES };
 
 // The four templates that are editable in the settings UI.
-const FIELD_IDS = {
+const FIELD_IDS: Record<string, string> = {
   nowPlaying: 'msg-now-playing',
   songAdded: 'msg-song-added',
   songNotFound: 'msg-song-not-found',
@@ -29,18 +29,18 @@ const FIELD_IDS = {
 };
 
 /** Current message templates. */
-export function getTwitchMessages() {
+export function getTwitchMessages(): Record<string, string> {
   return messages;
 }
 
 /** Load saved templates from localStorage and reflect them in the UI fields. */
-export function loadMessagesFromStorage() {
+export function loadMessagesFromStorage(): void {
   try {
     const stored = localStorage.getItem('twitch-messages');
     if (stored) messages = { ...messages, ...JSON.parse(stored) };
 
     for (const [key, id] of Object.entries(FIELD_IDS)) {
-      const input = document.getElementById(id);
+      const input = document.getElementById(id) as HTMLInputElement | null;
       if (input) input.value = messages[key];
     }
   } catch (e) {
@@ -49,13 +49,13 @@ export function loadMessagesFromStorage() {
 }
 
 /** Persist the current field values (including empty strings) to localStorage. */
-export function saveMessagesToStorage() {
+export function saveMessagesToStorage(): void {
   try {
     // Save the actual field values — including empty strings. An empty message is
     // intentional ("send nothing for this") and must not fall back to the
     // default, otherwise clearing a field wouldn't disable that message.
     for (const [key, id] of Object.entries(FIELD_IDS)) {
-      const input = document.getElementById(id);
+      const input = document.getElementById(id) as HTMLInputElement | null;
       if (input) messages[key] = input.value;
     }
     localStorage.setItem('twitch-messages', JSON.stringify(messages));
@@ -66,7 +66,7 @@ export function saveMessagesToStorage() {
 }
 
 /** Reset all templates back to the defaults. */
-export function resetMessagesToDefault() {
+export function resetMessagesToDefault(): void {
   messages = { ...DEFAULT_MESSAGES };
   localStorage.removeItem('twitch-messages');
   loadMessagesFromStorage();

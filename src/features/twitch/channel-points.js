@@ -9,8 +9,8 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
-import { escapeHtml } from './parse.js';
-import { isTwitchConnected } from './state.js';
+import { escapeHtml } from './parse';
+import { isTwitchConnected } from './state';
 import { updateTwitchSettings } from './index.js';
 
 /**

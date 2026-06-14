@@ -26,7 +26,7 @@ import {
   loadMessagesFromStorage,
   saveMessagesToStorage,
   resetMessagesToDefault,
-} from './messages.js';
+} from './messages';
 import {
   setupSongRequestListeners,
   setupRequestSettingsListeners,
@@ -39,11 +39,11 @@ import {
   setConnected,
   setUser,
   setConnecting,
-} from './state.js';
+} from './state';
 import { updateTwitchUI, updateChatPreview } from './ui.js';
 
 // Re-export connection state getters + UI so existing importers keep working.
-export { isTwitchConnected, getTwitchUser } from './state.js';
+export { isTwitchConnected, getTwitchUser } from './state';
 export { updateTwitchUI } from './ui.js';
 
 /**

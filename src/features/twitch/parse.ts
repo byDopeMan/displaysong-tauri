@@ -5,10 +5,8 @@
  * in via chat or channel points.
  */
 
-/**
- * Check if input looks like a URL.
- */
-export function isUrl(input) {
+/** Check if input looks like a URL. */
+export function isUrl(input: string): boolean {
   return input.startsWith('http://') ||
          input.startsWith('https://') ||
          input.startsWith('spotify:') ||
@@ -16,19 +14,15 @@ export function isUrl(input) {
          input.includes('.be/');
 }
 
-/**
- * Check if input is a Spotify link/URI.
- */
-export function isSpotifyInput(input) {
+/** Check if input is a Spotify link/URI. */
+export function isSpotifyInput(input: string): boolean {
   return input.startsWith('spotify:track:') ||
          input.includes('spotify.com/track/') ||
          input.includes('spotify.com/intl-');
 }
 
-/**
- * Extract Spotify track ID from various Spotify URL formats.
- */
-export function extractSpotifyTrackId(input) {
+/** Extract Spotify track ID from various Spotify URL formats. */
+export function extractSpotifyTrackId(input: string): string | null {
   // spotify:track:ID format
   if (input.startsWith('spotify:track:')) {
     return input.replace('spotify:track:', '').split('?')[0];
@@ -48,10 +42,10 @@ export function extractSpotifyTrackId(input) {
   return null;
 }
 
-/**
- * Escape user-provided text before inserting it into option markup.
- */
-export function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+/** Escape user-provided text before inserting it into option markup. */
+export function escapeHtml(s: unknown): string {
+  const map: Record<string, string> = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  };
+  return String(s).replace(/[&<>"']/g, (c) => map[c]);
 }

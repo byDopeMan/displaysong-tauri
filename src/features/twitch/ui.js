@@ -3,7 +3,7 @@
  * Reads connection state via the state accessors; does not mutate it.
  */
 
-import { isTwitchConnected, getTwitchUser } from './state.js';
+import { isTwitchConnected, getTwitchUser } from './state';
 
 /** Update the Twitch status text, connect/disconnect buttons and settings section. */
 export function updateTwitchUI() {

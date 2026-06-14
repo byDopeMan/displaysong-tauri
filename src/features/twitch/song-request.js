@@ -8,9 +8,9 @@
 import { getTauriInvoke } from '../../core/tauri';
 import { queueItems, registerRequester, cacheTrackInfo } from '../queue/index.js';
 import { addToHistory } from '../history/request-history.js';
-import { isUrl, isSpotifyInput, extractSpotifyTrackId } from './parse.js';
+import { isUrl, isSpotifyInput, extractSpotifyTrackId } from './parse';
 import { isBlocked } from '../history/blocklist.js';
-import { getTwitchMessages } from './messages.js';
+import { getTwitchMessages } from './messages';
 
 // Request-related local settings (stored in localStorage).
 let localSettings = {
