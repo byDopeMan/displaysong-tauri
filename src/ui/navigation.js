@@ -2,7 +2,7 @@
  * Navigation & View Management
  */
 
-import { state, views, elements } from '../core/state.js';
+import { state, views, elements } from '../core/state';
 
 /**
  * Switch between tabs

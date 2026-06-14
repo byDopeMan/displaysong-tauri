@@ -5,7 +5,7 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications.js';
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 
 // Provider types
 export const PROVIDER = {

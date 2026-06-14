@@ -2,7 +2,7 @@
  * Event Listeners Setup
  */
 
-import { state, elements } from './state.js';
+import { state, elements } from './state';
 import { getTauriListen } from './tauri';
 import { updateTrackDisplay } from '../ui/track-display.js';
 import { switchTab, showView } from '../ui/navigation.js';

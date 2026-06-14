@@ -10,7 +10,7 @@
  *   - session.js    login/logout/approval handlers
  */
 
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications.js';

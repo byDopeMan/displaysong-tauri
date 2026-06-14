@@ -3,7 +3,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 import { escapeAttr } from '../../utils/format';
 import { prefetchYouTube } from './youtube-player.js';
 import {

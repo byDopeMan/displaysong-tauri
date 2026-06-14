@@ -2,7 +2,7 @@
  * Song History Management
  */
 
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { escapeHtml, escapeAttr } from '../../utils/format';
 import { openExternal } from '../../ui/navigation.js';

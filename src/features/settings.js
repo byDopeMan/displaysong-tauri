@@ -335,7 +335,7 @@ export function setupSettingsListeners() {
       settings.widgetAccentColors[widget] = checkbox.checked;
       saveSettings();
       
-      const { state } = await import('../core/state.js');
+      const { state } = await import('../core/state');
       const { sendAccentColorToWidget, resetWidgetToTrackColor } = await import('./widgets.js');
       
       if (state.activeWidgets.has(widget)) {

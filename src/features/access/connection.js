@@ -8,7 +8,7 @@
  * cross-references are inside function bodies, so the cycle is safe.
  */
 
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString, removeItem } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications.js';

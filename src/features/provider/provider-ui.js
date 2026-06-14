@@ -7,7 +7,7 @@ import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
 import { PROVIDER, loadSavedProvider, setProvider } from './provider.js';
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 import { updatePriorityButtonVisibility } from './source-priority.js';
 
 // Track Spotify connection state

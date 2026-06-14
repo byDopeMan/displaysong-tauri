@@ -2,7 +2,7 @@
  * Spotify Authentication
  */
 
-import { state, elements } from '../../core/state.js';
+import { state, elements } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { showView, openExternal } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';

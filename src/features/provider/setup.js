@@ -7,7 +7,7 @@ import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
 import { setProvider, PROVIDER } from './provider.js';
-import { state } from '../../core/state.js';
+import { state } from '../../core/state';
 
 // Secret code buffer for 420
 let secretBuffer = '';

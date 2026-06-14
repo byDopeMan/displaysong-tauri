@@ -4,7 +4,7 @@
  * Andere Optimierungen (Cache, Timer, CSS) bleiben erhalten
  */
 
-import { state } from '../core/state.js';
+import { state } from '../core/state';
 import { getTauriInvoke, getTauriWebviewWindow, getTauriPhysicalPosition, getTauriPhysicalSize } from '../core/tauri';
 import { getItem, setItem } from '../utils/storage';
 import { settings, getCurrentAccentColor } from './settings.js';
