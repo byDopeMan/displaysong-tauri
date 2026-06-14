@@ -3,11 +3,11 @@
  * Manages the initial setup experience and provider selection
  */
 
-import { getTauriInvoke } from '../core/tauri.js';
-import { showView } from '../ui/navigation.js';
-import { showNotification } from '../ui/notifications.js';
+import { getTauriInvoke } from '../../core/tauri.js';
+import { showView } from '../../ui/navigation.js';
+import { showNotification } from '../../ui/notifications.js';
 import { setProvider, PROVIDER } from './provider.js';
-import { state } from '../core/state.js';
+import { state } from '../../core/state.js';
 
 // Secret code buffer for 420
 let secretBuffer = '';
@@ -42,7 +42,7 @@ function setupProviderButtons() {
     document.getElementById('nav-tabs')?.classList.remove('hidden');
     
     // Start Windows Audio polling (dynamic import to avoid circular dependency)
-    const { startWindowsAudioPolling } = await import('../app.js');
+    const { startWindowsAudioPolling } = await import('../../app.js');
     startWindowsAudioPolling(invoke);
     
     showNotification('Windows Audio aktiviert - Musik wird automatisch erkannt!');
@@ -103,7 +103,7 @@ function setupSpotifyForm() {
       showView('auth');
       
       // Open in default browser
-      const { openExternal } = await import('../ui/navigation.js');
+      const { openExternal } = await import('../../ui/navigation.js');
       await openExternal(authUrl);
       
       // Reset button after a short delay

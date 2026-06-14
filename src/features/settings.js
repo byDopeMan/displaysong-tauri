@@ -147,7 +147,7 @@ export function applySettings() {
     try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHideCheck.checked }); } catch (e) {}
   }
 
-  import('./history.js').then(({ historyDesign }) => {
+  import('./history/history.js').then(({ historyDesign }) => {
     document.querySelectorAll('.design-toggle-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.design === historyDesign);
     });

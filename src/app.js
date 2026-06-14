@@ -17,18 +17,18 @@ import { setupTitlebarControls } from './ui/titlebar.js';
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings.js';
 import { loadWidgetPositions, autoShowWidgets, syncActiveWidgets } from './features/widgets.js';
 import { setupAccessRequestListeners, initAccessSystem } from './features/access/index.js';
-import { checkExistingCredentialsWithStatus } from './features/auth.js';
+import { checkExistingCredentialsWithStatus } from './features/provider/auth.js';
 import { checkForUpdates } from './features/updater.js';
 import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index.js';
 import { setupTwitchListeners, initTwitch } from './features/twitch.js';
 import { initQueue, isYouTubePlaying } from './features/queue/queue.js';
-import { initYouTubePlayer } from './features/youtube-player.js';
-import { initRequestHistory } from './features/requestHistory.js';
-import { initSetupFlow, isSetupComplete } from './features/setup.js';
-import { initProvider, loadSavedProvider, PROVIDER, startProviderPolling } from './features/provider.js';
-import { initProviderUI, setSpotifyConnected } from './features/provider-ui.js';
+import { initYouTubePlayer } from './features/queue/youtube-player.js';
+import { initRequestHistory } from './features/history/requestHistory.js';
+import { initSetupFlow, isSetupComplete } from './features/provider/setup.js';
+import { initProvider, loadSavedProvider, PROVIDER, startProviderPolling } from './features/provider/provider.js';
+import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui.js';
 import { loadLanguage, updatePageTranslations, populateLanguageSelect } from './utils/i18n.js';
-import { initSourcePriority, addSeenSource, getSourcePriority } from './features/source-priority.js';
+import { initSourcePriority, addSeenSource, getSourcePriority } from './features/provider/source-priority.js';
 
 /**
  * Windows Audio Polling
@@ -100,7 +100,7 @@ export async function startWindowsAudioPolling(invoke) {
             console.log('[WindowsAudio] Track saved to history:', trackKey);
             
             // Refresh history display
-            const { refreshHistory } = await import('./features/history.js');
+            const { refreshHistory } = await import('./features/history/history.js');
             refreshHistory();
           } catch (e) {
             console.error('[WindowsAudio] Failed to save track:', e);
@@ -317,14 +317,14 @@ async function init() {
   initYouTubePlayer();
 
   // Wire the history blocklist management button
-  const { setupBlocklistUI } = await import('./features/history.js');
+  const { setupBlocklistUI } = await import('./features/history/history.js');
   setupBlocklistUI();
   
   // Initialize Request History (Spotify Playlist integration)
   await initRequestHistory();
   
   // Load history on startup
-  const { loadHistory } = await import('./features/history.js');
+  const { loadHistory } = await import('./features/history/history.js');
   await loadHistory();
   
   console.log('DisplaySong v4.1.0 initialized!');

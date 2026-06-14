@@ -2,13 +2,13 @@
  * Song History Management
  */
 
-import { state } from '../core/state.js';
-import { getTauriInvoke } from '../core/tauri.js';
-import { escapeHtml, escapeAttr } from '../utils/format.js';
-import { openExternal } from '../ui/navigation.js';
-import { settings } from './settings.js';
+import { state } from '../../core/state.js';
+import { getTauriInvoke } from '../../core/tauri.js';
+import { escapeHtml, escapeAttr } from '../../utils/format.js';
+import { openExternal } from '../../ui/navigation.js';
+import { settings } from '../settings.js';
 import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist.js';
-import { showNotification } from '../ui/notifications.js';
+import { showNotification } from '../../ui/notifications.js';
 // Note: getHistorySourceFilter is imported dynamically to avoid circular dependency issues
 
 // History design is now always 'simple' with platform links menu

@@ -179,7 +179,7 @@ export async function connectWithDeveloperCredentials(userEmail) {
       const alreadyConnected = await invoke('check_credentials');
       if (alreadyConnected) {
         state.isAuthenticated = true;
-        const { setSpotifyConnected } = await import('../provider-ui.js');
+        const { setSpotifyConnected } = await import('../provider/provider-ui.js');
         setSpotifyConnected(true);
         return true;
       }
@@ -220,7 +220,7 @@ export async function forceLogout(reason) {
       if (secret) secret.value = '';
 
       const { updateWidgetList } = await import('../widgets.js');
-      const { updateSpotifyStatus } = await import('../auth.js');
+      const { updateSpotifyStatus } = await import('../provider/auth.js');
 
       updateWidgetList();
       showView('setup');

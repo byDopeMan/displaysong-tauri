@@ -26,7 +26,7 @@ export function switchTab(tabName) {
   if (tabName === 'history') {
     import('../features/settings.js').then(({ settings }) => {
       if (settings.showHistoryTab !== false) {
-        import('../features/history.js').then(({ loadHistory }) => loadHistory());
+        import('../features/history/history.js').then(({ loadHistory }) => loadHistory());
       }
     });
   }

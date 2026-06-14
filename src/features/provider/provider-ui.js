@@ -3,11 +3,11 @@
  * Handles Spotify connection status in Settings and visibility of Spotify-dependent features
  */
 
-import { getTauriInvoke } from '../core/tauri.js';
-import { showView } from '../ui/navigation.js';
-import { showNotification } from '../ui/notifications.js';
+import { getTauriInvoke } from '../../core/tauri.js';
+import { showView } from '../../ui/navigation.js';
+import { showNotification } from '../../ui/notifications.js';
 import { PROVIDER, loadSavedProvider, setProvider } from './provider.js';
-import { state } from '../core/state.js';
+import { state } from '../../core/state.js';
 import { updatePriorityButtonVisibility } from './source-priority.js';
 
 // Track Spotify connection state
@@ -113,7 +113,7 @@ function setupProviderSelect() {
         }
         
         // Start Windows Audio polling
-        const { startWindowsAudioPolling } = await import('../app.js');
+        const { startWindowsAudioPolling } = await import('../../app.js');
         setProvider(newProvider);
         updateProviderHint(newProvider, hint);
         updatePriorityButtonVisibility();
@@ -130,7 +130,7 @@ function setupProviderSelect() {
         }
         
         // Stop Windows Audio polling
-        const { stopWindowsAudioPolling } = await import('../app.js');
+        const { stopWindowsAudioPolling } = await import('../../app.js');
         stopWindowsAudioPolling();
         
         setProvider(newProvider);
@@ -156,7 +156,7 @@ function setupProviderSelect() {
 async function updateProviderHint(provider, hintEl) {
   if (!hintEl) return;
   
-  const { t } = await import('../utils/i18n.js');
+  const { t } = await import('../../utils/i18n.js');
   
   if (provider === PROVIDER.WINDOWS_AUDIO) {
     hintEl.textContent = t('settings.system.providerHintWindows', {}, 'Windows Audio erkennt Musik von allen Playern automatisch.');

@@ -3,8 +3,8 @@
  * Allows users to set priority order for Windows Audio sources
  */
 
-import { getString, setString } from '../utils/storage.js';
-import { escapeAttr } from '../utils/format.js';
+import { getString, setString } from '../../utils/storage.js';
+import { escapeAttr } from '../../utils/format.js';
 
 // Known sources with their icons
 const SOURCE_ICONS = {

@@ -2,13 +2,13 @@
  * Spotify Authentication
  */
 
-import { state, elements } from '../core/state.js';
-import { getTauriInvoke } from '../core/tauri.js';
-import { showView, openExternal } from '../ui/navigation.js';
-import { showNotification } from '../ui/notifications.js';
-import { removeItem } from '../utils/storage.js';
-import { updateWidgetList } from './widgets.js';
-import { t } from '../utils/i18n.js';
+import { state, elements } from '../../core/state.js';
+import { getTauriInvoke } from '../../core/tauri.js';
+import { showView, openExternal } from '../../ui/navigation.js';
+import { showNotification } from '../../ui/notifications.js';
+import { removeItem } from '../../utils/storage.js';
+import { updateWidgetList } from '../widgets.js';
+import { t } from '../../utils/i18n.js';
 import { setSpotifyConnected } from './provider-ui.js';
 
 /**
@@ -66,7 +66,7 @@ export async function disconnectSpotify() {
       }
       
       // Restart Windows Audio polling
-      const { startWindowsAudioPolling } = await import('../app.js');
+      const { startWindowsAudioPolling } = await import('../../app.js');
       startWindowsAudioPolling(invoke);
       
       showNotification('Zu Windows Audio gewechselt');
@@ -76,7 +76,7 @@ export async function disconnectSpotify() {
     // showView('setup'); // REMOVED
     
     // Stop access request polling
-    import('./access/index.js').then(module => {
+    import('../access/index.js').then(module => {
       if (module.stopBlockCheckPolling) module.stopBlockCheckPolling();
       if (module.stopStatusPolling) module.stopStatusPolling();
     });

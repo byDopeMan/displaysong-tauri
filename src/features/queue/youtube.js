@@ -16,7 +16,7 @@ import {
   resumeYouTube,
   getYouTubeProgressMs,
   setYouTubeVolume,
-} from '../youtube-player.js';
+} from './youtube-player.js';
 
 // Injected queue accessors (set by initYouTube).
 let Q = {
@@ -281,7 +281,7 @@ export async function startYouTubeTakeover(item) {
       trackId: videoId,
       durationMs: 0,
     });
-    import('../history.js').then(({ refreshHistory }) => refreshHistory()).catch(() => {});
+    import('../history/history.js').then(({ refreshHistory }) => refreshHistory()).catch(() => {});
   } catch (e) { /* history is best-effort */ }
 
   const requester = item.user_name || '';
