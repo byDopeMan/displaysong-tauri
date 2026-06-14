@@ -23,7 +23,7 @@ import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './fe
 import { setupTwitchListeners, initTwitch } from './features/twitch/index';
 import { initQueue, isYouTubePlaying } from './features/queue/index';
 import { initYouTubePlayer } from './features/queue/youtube-player';
-import { initRequestHistory } from './features/history/request-history.js';
+import { initRequestHistory } from './features/history/request-history';
 import { initSetupFlow, isSetupComplete } from './features/provider/setup.js';
 import { initProvider, loadSavedProvider, PROVIDER, startProviderPolling } from './features/provider/provider';
 import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui.js';
@@ -100,7 +100,7 @@ export async function startWindowsAudioPolling(invoke) {
             console.log('[WindowsAudio] Track saved to history:', trackKey);
             
             // Refresh history display
-            const { refreshHistory } = await import('./features/history/history.js');
+            const { refreshHistory } = await import('./features/history/history');
             refreshHistory();
           } catch (e) {
             console.error('[WindowsAudio] Failed to save track:', e);
@@ -319,14 +319,14 @@ async function init() {
   initYouTubePlayer();
 
   // Wire the history blocklist management button
-  const { setupBlocklistUI } = await import('./features/history/history.js');
+  const { setupBlocklistUI } = await import('./features/history/history');
   setupBlocklistUI();
   
   // Initialize Request History (Spotify Playlist integration)
   await initRequestHistory();
   
   // Load history on startup
-  const { loadHistory } = await import('./features/history/history.js');
+  const { loadHistory } = await import('./features/history/history');
   await loadHistory();
   
   console.log('DisplaySong v4.1.0 initialized!');

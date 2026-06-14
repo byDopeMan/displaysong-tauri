@@ -9,7 +9,7 @@ import { switchTab, showView } from '../ui/navigation.js';
 import { showNotification } from '../ui/notifications';
 import { toggleWidget, openConfigFolder, reloadWidgets } from '../features/widgets.js';
 import { disconnectSpotify } from '../features/provider/auth.js';
-import { refreshHistory } from '../features/history/history.js';
+import { refreshHistory } from '../features/history/history';
 
 /**
  * Setup all UI event listeners

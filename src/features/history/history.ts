@@ -7,9 +7,8 @@ import { getTauriInvoke } from '../../core/tauri';
 import { escapeHtml, escapeAttr } from '../../utils/format';
 import { openExternal } from '../../ui/navigation.js';
 import { settings } from '../settings.js';
-import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist';
+import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt, type SongRef } from './blocklist';
 import { showNotification } from '../../ui/notifications';
-// Note: getHistorySourceFilter is imported dynamically to avoid circular dependency issues
 
 // History design is now always 'simple' with platform links menu
 
@@ -18,91 +17,65 @@ window.addEventListener('history-filter-change', () => {
   refreshHistory();
 });
 
-/**
- * Load history from backend (uses local DB for all providers)
- */
-export async function loadHistory() {
-  // Don't load if history tab is disabled
+function formatEntries(history: any[]): any[] {
+  return (history || []).map((entry) => ({
+    track: entry.track,
+    artist: entry.artist,
+    album: entry.album,
+    albumCover: entry.album_cover,
+    trackId: entry.track_id,
+    source: entry.source,
+    playedAt: entry.played_at,
+  }));
+}
+
+/** Load history from backend (uses local DB for all providers) */
+export async function loadHistory(): Promise<void> {
   if (settings.showHistoryTab === false) {
     console.log('[History] Tab disabled, skipping load');
     return;
   }
-  
+
   try {
     const invoke = getTauriInvoke();
     if (!invoke) {
       console.error('[History] No invoke available');
       return;
     }
-    
+
     console.log('[History] Loading from local DB...');
-    
-    // Always use local track history (works for both Windows Audio and Spotify)
     const history = await invoke('get_local_track_history', { limit: 100 });
-    
     console.log('[History] Got', (history || []).length, 'entries from DB');
-    
-    // Transform to expected format
-    const formattedHistory = (history || []).map(entry => ({
-      track: entry.track,
-      artist: entry.artist,
-      album: entry.album,
-      albumCover: entry.album_cover,
-      trackId: entry.track_id,
-      source: entry.source,
-      playedAt: entry.played_at
-    }));
-    
-    updateHistoryDisplay(formattedHistory);
+    updateHistoryDisplay(formatEntries(history));
   } catch (e) {
     console.error('[History] Load failed:', e);
   }
 }
 
-/**
- * Refresh history (called on new track)
- */
-export async function refreshHistory() {
-  // Don't refresh if history tab is disabled
-  if (settings.showHistoryTab === false) {
-    return;
-  }
-  
+/** Refresh history (called on new track) */
+export async function refreshHistory(): Promise<void> {
+  if (settings.showHistoryTab === false) return;
+
   try {
     const invoke = getTauriInvoke();
     if (!invoke) return;
-    
     const history = await invoke('get_local_track_history', { limit: 100 });
-    
-    const formattedHistory = (history || []).map(entry => ({
-      track: entry.track,
-      artist: entry.artist,
-      album: entry.album,
-      albumCover: entry.album_cover,
-      trackId: entry.track_id,
-      source: entry.source,
-      playedAt: entry.played_at
-    }));
-    
-    updateHistoryDisplay(formattedHistory);
+    updateHistoryDisplay(formatEntries(history));
   } catch (e) {
     console.error('Refresh history failed:', e);
   }
 }
 
-/**
- * Update history display
- */
-function updateHistoryDisplay(history) {
+/** Update history display */
+function updateHistoryDisplay(history: any[]): void {
   const simpleList = document.getElementById('history-simple');
-  
   if (!simpleList) return;
-  
+
   // Always update cached history (even if empty array)
   state.cachedHistory = history || [];
-  
+
   console.log('[History] Updating display with', state.cachedHistory.length, 'tracks');
-  
+
   if (state.cachedHistory.length === 0) {
     simpleList.innerHTML = `
       <div class="history-empty">
@@ -116,18 +89,15 @@ function updateHistoryDisplay(history) {
     `;
     return;
   }
-  
-  // Limit history to maxItems
+
   const maxItems = settings.historyLength || 20;
   const limitedHistory = state.cachedHistory.slice(0, maxItems);
-  
+
   updateSimpleList(simpleList, limitedHistory);
 }
 
-/**
- * Platform icons SVG
- */
-const PLATFORM_ICONS = {
+/** Platform icons SVG */
+const PLATFORM_ICONS: Record<string, string> = {
   spotify: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`,
   youtube: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
   apple: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>`,
@@ -135,13 +105,11 @@ const PLATFORM_ICONS = {
   deezer: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.81 4.16v3.03H24V4.16h-5.19zM6.27 8.38v3.027h5.189V8.38h-5.19zm12.54 0v3.027H24V8.38h-5.19zM6.27 12.594v3.027h5.189v-3.027h-5.19zm6.271 0v3.027h5.19v-3.027h-5.19zm6.27 0v3.027H24v-3.027h-5.19zM0 16.81v3.029h5.19v-3.03H0zm6.27 0v3.029h5.189v-3.03h-5.19zm6.271 0v3.029h5.19v-3.03h-5.19zm6.27 0v3.029H24v-3.03h-5.19z"/></svg>`,
   tidal: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.012 3.992L8.008 7.996 4.004 3.992 0 7.996 4.004 12l4.004-4.004L12.012 12l-4.004 4.004 4.004 4.004 4.004-4.004L12.012 12l4.004-4.004-4.004-4.004zm4.004 4.004l4.004 4.004L24.024 7.996l-4.004-4.004-4.004 4.004z"/></svg>`,
   amazon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M.045 18.02c.072-.116.187-.124.348-.022 3.636 2.11 7.594 3.166 11.87 3.166 2.852 0 5.668-.533 8.447-1.595l.315-.14c.138-.06.234-.1.293-.13.226-.088.39-.046.525.13.12.174.09.336-.12.48-.256.19-.6.41-1.006.654-1.244.743-2.64 1.316-4.185 1.726a17.617 17.617 0 01-10.951-.577 17.88 17.88 0 01-5.43-3.35c-.1-.074-.151-.15-.151-.22 0-.047.021-.093.045-.122zm6.221-1.996c1.263-1.623 2.644-2.96 5.022-2.96 2.378 0 4.326 1.337 5.589 2.96.313.4.313.747-.156 1.091l-1.175.78c-.312.22-.625.22-.938-.06-.547-.467-1.015-.78-1.484-.935-.312-.156-.703-.156-1.25-.156-.625 0-1.172.156-1.641.467-.312.22-.547.467-.703.747-.156.28-.234.56-.234.84 0 .56.234 1.027.703 1.404.47.374 1.172.654 2.109.84 1.954.374 3.438.934 4.454 1.684 1.015.747 1.523 1.776 1.523 3.086 0 1.404-.547 2.524-1.641 3.364-1.094.84-2.5 1.26-4.22 1.26-1.25 0-2.422-.187-3.515-.56-1.094-.374-2.031-.934-2.813-1.684-.312-.28-.312-.56 0-.84l1.094-1.027c.313-.28.625-.28.938 0 .469.374.938.654 1.406.84.47.187 1.016.28 1.641.28.625 0 1.133-.093 1.523-.28.39-.187.586-.467.586-.84 0-.467-.312-.84-.938-1.12-.625-.28-1.562-.56-2.813-.84-1.25-.28-2.265-.747-3.047-1.404-.78-.654-1.172-1.59-1.172-2.804 0-.934.273-1.776.82-2.524z"/></svg>`,
-  link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+  link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
 };
 
-/**
- * Update simple list view
- */
-function updateSimpleList(container, history) {
+/** Update simple list view */
+function updateSimpleList(container: HTMLElement, history: any[]): void {
   container.innerHTML = history.map((track, index) => `
     <div class="history-item" data-track-id="${escapeAttr(track.trackId || '')}" data-track="${escapeAttr(track.track)}" data-artist="${escapeAttr(track.artist)}">
       <span class="history-index">${index + 1}</span>
@@ -158,39 +126,41 @@ function updateSimpleList(container, history) {
       </div>
     </div>
   `).join('');
-  
+
   // Setup radial menu triggers
-  container.querySelectorAll('.platform-radial').forEach((radial) => {
+  container.querySelectorAll('.platform-radial').forEach((radialEl) => {
+    const radial = radialEl as HTMLElement;
     const trigger = radial.querySelector('.platform-radial-trigger');
-    const menu = radial.querySelector('.platform-radial-menu');
-    
+    const menu = radial.querySelector('.platform-radial-menu') as HTMLElement | null;
+    if (!trigger || !menu) return;
+
     trigger.addEventListener('click', async (e) => {
       e.stopPropagation();
-      
+
       // Close all other radials first
-      document.querySelectorAll('.platform-radial.expanded').forEach(r => {
+      document.querySelectorAll('.platform-radial.expanded').forEach((r) => {
         if (r !== radial) r.classList.remove('expanded');
       });
-      
+
       // Toggle this radial
       const isExpanded = radial.classList.toggle('expanded');
-      
+
       if (isExpanded && !radial.dataset.loaded) {
         await loadPlatformLinks(radial, menu);
       }
     });
   });
-  
-  // Close radial when clicking outside. Bound once at module level — the list is
-  // re-rendered on every track change, so binding here per render would leak a
-  // new document listener each time.
+
+  // Close radial when clicking outside (bound once — see ensureRadialOutsideClose).
   ensureRadialOutsideClose();
 
   // Right-click a history entry -> block / unblock the song.
-  container.querySelectorAll('.history-item').forEach((item) => {
+  container.querySelectorAll('.history-item').forEach((itemEl) => {
+    const item = itemEl as HTMLElement;
     item.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      showBlockMenu(e.clientX, e.clientY, {
+      const me = e as MouseEvent;
+      me.preventDefault();
+      showBlockMenu(me.clientX, me.clientY, {
         id: item.dataset.trackId || null,
         artist: item.dataset.artist || '',
         title: item.dataset.track || '',
@@ -201,24 +171,24 @@ function updateSimpleList(container, history) {
 
 // Bind the radial outside-click handler exactly once (see updateSimpleList).
 let radialOutsideBound = false;
-function ensureRadialOutsideClose() {
+function ensureRadialOutsideClose(): void {
   if (radialOutsideBound) return;
   radialOutsideBound = true;
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.platform-radial')) {
-      document.querySelectorAll('.platform-radial.expanded').forEach(r => r.classList.remove('expanded'));
+    if (!(e.target as HTMLElement).closest('.platform-radial')) {
+      document.querySelectorAll('.platform-radial.expanded').forEach((r) => r.classList.remove('expanded'));
     }
   });
 }
 
-let blockMenuEl = null;
-function closeBlockMenu() {
+let blockMenuEl: HTMLElement | null = null;
+function closeBlockMenu(): void {
   if (blockMenuEl) { blockMenuEl.remove(); blockMenuEl = null; }
   document.removeEventListener('click', closeBlockMenu);
 }
 
 /** Show the right-click block/unblock menu for a history entry. */
-function showBlockMenu(x, y, song) {
+function showBlockMenu(x: number, y: number, song: SongRef): void {
   closeBlockMenu();
   const blocked = isBlocked(song);
   const menu = document.createElement('div');
@@ -254,7 +224,7 @@ function showBlockMenu(x, y, song) {
 }
 
 /** Wire the "Blockiert" button to open the management modal. Call once at init. */
-export function setupBlocklistUI() {
+export function setupBlocklistUI(): void {
   const btn = document.getElementById('btn-open-blocklist');
   if (btn) {
     btn.addEventListener('click', () => {
@@ -270,7 +240,7 @@ export function setupBlocklistUI() {
 }
 
 /** Render the blocklist management modal contents and wire its buttons. */
-export function renderBlocklistModal() {
+export function renderBlocklistModal(): void {
   const listEl = document.getElementById('blocklist-items');
   if (!listEl) return;
   const list = getBlocklist();
@@ -291,28 +261,24 @@ export function renderBlocklistModal() {
   `).join('');
   listEl.querySelectorAll('.blocklist-remove').forEach((b) => {
     b.addEventListener('click', () => {
-      removeBlockAt(parseInt(b.dataset.index));
+      removeBlockAt(parseInt((b as HTMLElement).dataset.index || '0'));
       renderBlocklistModal();
     });
   });
 }
 
-/**
- * Load platform links for a track (radial menu)
- */
-async function loadPlatformLinks(radial, menu) {
+/** Load platform links for a track (radial menu) */
+async function loadPlatformLinks(radial: HTMLElement, menu: HTMLElement): Promise<void> {
   const trackId = radial.dataset.trackId;
   const trackName = radial.dataset.track;
   const artistName = radial.dataset.artist;
-  
+
   try {
     const invoke = getTauriInvoke();
-    if (!invoke) {
-      return;
-    }
-    
-    let links = null;
-    
+    if (!invoke) return;
+
+    let links: any = null;
+
     // Try to get links via Songlink API if we have a track ID
     if (trackId) {
       try {
@@ -321,7 +287,7 @@ async function loadPlatformLinks(radial, menu) {
         console.log('[History] Songlink API failed:', e);
       }
     }
-    
+
     // Build radial menu items (4 platforms only)
     const platforms = [
       { key: 'spotify', name: 'Spotify', url: links?.spotify },
@@ -329,11 +295,11 @@ async function loadPlatformLinks(radial, menu) {
       { key: 'apple', name: 'Apple Music', url: links?.apple_music },
       { key: 'soundcloud', name: 'SoundCloud', url: links?.soundcloud },
     ];
-    
+
     // If no links from API, create search links
     const searchQuery = encodeURIComponent(`${artistName} ${trackName}`);
-    
-    const menuHtml = platforms.map(p => {
+
+    const menuHtml = platforms.map((p) => {
       const url = p.url || getSearchUrl(p.key, searchQuery);
       const hasDirectLink = !!p.url;
       return `
@@ -344,29 +310,26 @@ async function loadPlatformLinks(radial, menu) {
         </button>
       `;
     }).join('');
-    
+
     menu.innerHTML = menuHtml;
     radial.dataset.loaded = 'true';
-    
+
     // Add click handlers
-    menu.querySelectorAll('.platform-radial-item').forEach(item => {
-      item.addEventListener('click', (e) => {
+    menu.querySelectorAll('.platform-radial-item').forEach((itemEl) => {
+      itemEl.addEventListener('click', (e) => {
         e.stopPropagation();
-        const url = item.dataset.url;
+        const url = (itemEl as HTMLElement).dataset.url;
         if (url) openExternal(url);
         radial.classList.remove('expanded');
       });
     });
-    
   } catch (e) {
     console.error('[History] Failed to load platform links:', e);
   }
 }
 
-/**
- * Get search URL for a platform
- */
-function getSearchUrl(platform, query) {
+/** Get search URL for a platform */
+function getSearchUrl(platform: string, query: string): string {
   switch (platform) {
     case 'spotify': return `https://open.spotify.com/search/${query}`;
     case 'youtube': return `https://www.youtube.com/results?search_query=${query}`;
@@ -378,6 +341,3 @@ function getSearchUrl(platform, query) {
     default: return '';
   }
 }
-
-// Note: Embedded list and design toggle have been removed in favor of
-// the platform links menu which provides direct links to all streaming platforms
