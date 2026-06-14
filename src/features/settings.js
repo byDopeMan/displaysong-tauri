@@ -2,7 +2,7 @@
  * Settings Management
  */
 
-import { getItem, setItem } from '../utils/storage.js';
+import { getItem, setItem } from '../utils/storage';
 import { hexToRgb } from '../utils/format';
 import { getTauriInvoke, getTauriWebviewWindow } from '../core/tauri.js';
 import { showNotification } from '../ui/notifications.js';

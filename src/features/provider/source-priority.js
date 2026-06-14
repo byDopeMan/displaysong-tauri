@@ -3,7 +3,7 @@
  * Allows users to set priority order for Windows Audio sources
  */
 
-import { getString, setString } from '../../utils/storage.js';
+import { getString, setString } from '../../utils/storage';
 import { escapeAttr } from '../../utils/format';
 import { getTauriInvoke } from '../../core/tauri.js';
 

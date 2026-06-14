@@ -6,7 +6,7 @@
 
 import { state } from '../core/state.js';
 import { getTauriInvoke, getTauriWebviewWindow, getTauriPhysicalPosition, getTauriPhysicalSize } from '../core/tauri.js';
-import { getItem, setItem } from '../utils/storage.js';
+import { getItem, setItem } from '../utils/storage';
 import { settings, getCurrentAccentColor } from './settings.js';
 import { showNotification } from '../ui/notifications.js';
 

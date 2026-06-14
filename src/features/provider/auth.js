@@ -6,7 +6,7 @@ import { state, elements } from '../../core/state.js';
 import { getTauriInvoke } from '../../core/tauri.js';
 import { showView, openExternal } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
-import { removeItem } from '../../utils/storage.js';
+import { removeItem } from '../../utils/storage';
 import { updateWidgetList } from '../widgets.js';
 import { t } from '../../utils/i18n.js';
 import { setSpotifyConnected } from './provider-ui.js';

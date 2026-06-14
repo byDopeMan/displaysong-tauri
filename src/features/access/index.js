@@ -12,7 +12,7 @@
 
 import { state } from '../../core/state.js';
 import { getTauriInvoke } from '../../core/tauri.js';
-import { getString, setString } from '../../utils/storage.js';
+import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications.js';
 import { ACCESS_API_URL } from './api.js';
 import {
