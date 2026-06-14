@@ -182,10 +182,18 @@ function openAccessModal() {
 }
 
 /**
- * Check if setup is complete
+ * Check if setup is complete.
+ *
+ * Besides the explicit setup-complete flag (set when a provider is picked), the
+ * 420/developer-credentials access flow also counts as set up: it connects
+ * Spotify via approved access but never sets setup-complete. Without this, those
+ * users hit the "Setup required" early-return on every start, which skips
+ * initTwitch()/initQueue() — so the !sr chat listener was never registered and
+ * song requests silently did nothing.
  */
 export function isSetupComplete() {
-  return localStorage.getItem('setup-complete') === 'true';
+  return localStorage.getItem('setup-complete') === 'true'
+    || localStorage.getItem('using_developer_credentials') === 'true';
 }
 
 /**

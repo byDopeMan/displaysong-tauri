@@ -709,14 +709,26 @@ pub async fn twitch_connect_eventsub(
                 }
             });
 
-            let _ = http.post(format!("{}/eventsub/subscriptions", API_BASE))
+            match http.post(format!("{}/eventsub/subscriptions", API_BASE))
                 .header("Authorization", format!("Bearer {}", access_token))
                 .header("Client-Id", &client_id)
                 .json(&sub_body)
                 .send()
-                .await;
+                .await
+            {
+                Ok(resp) => {
+                    let status = resp.status();
+                    if status.is_success() {
+                        info!("EventSub chat subscription OK ({})", status);
+                    } else {
+                        let body = resp.text().await.unwrap_or_default();
+                        error!("EventSub chat subscription FAILED: {} - {}", status, body);
+                    }
+                }
+                Err(e) => error!("EventSub chat subscription request error: {}", e),
+            }
         }
-        
+
         // Mark as connected
         {
             let mut es = eventsub_connected.write().await;
@@ -774,6 +786,7 @@ pub async fn twitch_connect_eventsub(
                                 String::new() // Empty = user wants permit
                             };
                             
+                            info!("Chat command '{}' from {} (input: '{}')", command, chat_msg.user_name, input);
                             let _ = app.emit_all("twitch-chat-command", serde_json::json!({
                                 "userId": chat_msg.user_id,
                                 "userName": chat_msg.user_name,

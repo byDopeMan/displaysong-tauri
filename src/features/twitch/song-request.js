@@ -79,6 +79,7 @@ export function setupSongRequestListeners() {
   if (!window.__TAURI__?.event) return;
 
   listenersSetup = true;
+  console.log('[Twitch] song-request listeners registered');
 
   // Handle !sr command (with or without link)
   window.__TAURI__.event.listen('twitch-chat-command', async (event) => {
