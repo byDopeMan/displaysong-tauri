@@ -8,7 +8,7 @@ import { getTauriInvoke, getTauriWebviewWindow } from '../core/tauri';
 import { showNotification } from '../ui/notifications';
 import { broadcastAccentColor } from './widgets.js';
 import { updateTabVisibility } from '../ui/navigation.js';
-import { setPluginSettingsStyle } from './plugins/index.js';
+import { setPluginSettingsStyle } from './plugins/index';
 
 export const DEFAULT_SETTINGS = {
   pollingInterval: 2000,

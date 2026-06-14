@@ -6,15 +6,15 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
-import { PluginWindow } from './window.js';
+import { PluginWindow, type PluginWindowOptions } from './window';
 import { getLocalSetting, setLocalSetting } from './storage';
 import {
   registerPluginSettings,
   unregisterPluginSettings,
-  updateSettingsInfo
-} from './settings.js';
+  updateSettingsInfo,
+} from './settings';
 
-export function createPluginAPI(pluginId) {
+export function createPluginAPI(pluginId: string) {
   const invoke = getTauriInvoke();
 
   return {
@@ -28,71 +28,71 @@ export function createPluginAPI(pluginId) {
       return [];
     },
 
-    onTrackChange(callback) {
+    onTrackChange(callback: (payload: any) => void) {
       if (window.__TAURI__?.event) {
-        return window.__TAURI__.event.listen('track-update', (e) => callback(e.payload));
+        return window.__TAURI__.event.listen('track-update', (e: any) => callback(e.payload));
       }
       return () => {};
     },
 
-    showNotification(msg) {
+    showNotification(msg: string) {
       showNotification(msg);
     },
 
-    async storeData(key, value) {
+    async storeData(key: string, value: any) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_store_data', { pluginId, key, value });
     },
 
-    async getData(key) {
+    async getData(key: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_get_data', { pluginId, key });
     },
 
-    async deleteData(key) {
+    async deleteData(key: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_delete_data', { pluginId, key });
     },
 
-    async storeSecret(key, value) {
+    async storeSecret(key: string, value: any) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_store_secret', { pluginId, key, value });
     },
 
-    async getSecret(key) {
+    async getSecret(key: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_get_secret', { pluginId, key });
     },
 
-    async deleteSecret(key) {
+    async deleteSecret(key: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('plugin_delete_secret', { pluginId, key });
     },
 
-    async httpRequest(method, url, options = {}) {
+    async httpRequest(method: string, url: string, options: any = {}) {
       if (!invoke) throw new Error('Backend not available');
-      const result = await invoke('plugin_http_request', {
+      const result: any = await invoke('plugin_http_request', {
         pluginId, method, url,
         headers: options.headers || null,
-        body: options.body || null
+        body: options.body || null,
       });
       return {
         status: result.status,
         headers: result.headers,
         body: result.body,
-        json() { return JSON.parse(result.body); }
+        json() { return JSON.parse(result.body); },
       };
     },
 
-    on(event, callback) {
-      window.addEventListener(`plugin:${event}`, (e) => callback(e.detail));
+    on(event: string, callback: (detail: any) => void) {
+      window.addEventListener(`plugin:${event}`, (e: any) => callback(e.detail));
     },
 
-    emit(event, data) {
+    emit(event: string, data: any) {
       window.dispatchEvent(new CustomEvent(`plugin:${event}`, { detail: data }));
     },
 
-    createElement(tag, attrs = {}, children = []) {
+    createElement(tag: string, attrs: Record<string, any> = {}, children: any[] = []) {
       const el = document.createElement(tag);
       for (const [k, v] of Object.entries(attrs)) {
         if (k === 'className') el.className = v;
@@ -106,11 +106,11 @@ export function createPluginAPI(pluginId) {
       return el;
     },
 
-    getLocalSetting(key, defaultValue = null) {
+    getLocalSetting(key: string, defaultValue: any = null) {
       return getLocalSetting(pluginId, key, defaultValue);
     },
 
-    setLocalSetting(key, value) {
+    setLocalSetting(key: string, value: any) {
       setLocalSetting(pluginId, key, value);
     },
 
@@ -118,12 +118,12 @@ export function createPluginAPI(pluginId) {
     getAppVersion() { return '2.2.0'; },
 
     // Spotify Playback Control
-    async addToQueue(spotifyUri) {
+    async addToQueue(spotifyUri: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('add_to_queue', { uri: spotifyUri });
     },
 
-    async playTrack(spotifyUri) {
+    async playTrack(spotifyUri: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('play_track', { uri: spotifyUri });
     },
@@ -132,12 +132,7 @@ export function createPluginAPI(pluginId) {
     // PLUGIN WINDOW API
     // ============================================================
 
-    /**
-     * Create a plugin window/widget
-     * @param {Object} options - Window configuration
-     * @returns {PluginWindow} Window controller
-     */
-    createWindow(options = {}) {
+    createWindow(options: PluginWindowOptions = {}) {
       return new PluginWindow(pluginId, options);
     },
 
@@ -145,14 +140,14 @@ export function createPluginAPI(pluginId) {
     // TWITCH API (for plugins that want Twitch integration)
     // ============================================================
 
-    onTwitchRedemption(callback) {
+    onTwitchRedemption(callback: (payload: any) => void) {
       if (window.__TAURI__?.event) {
-        return window.__TAURI__.event.listen('twitch-redemption', (e) => callback(e.payload));
+        return window.__TAURI__.event.listen('twitch-redemption', (e: any) => callback(e.payload));
       }
       return () => {};
     },
 
-    async sendTwitchChat(message) {
+    async sendTwitchChat(message: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('twitch_send_chat', { message });
     },
@@ -176,22 +171,22 @@ export function createPluginAPI(pluginId) {
       return await invoke('python_version');
     },
 
-    async pythonRun(code) {
+    async pythonRun(code: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('python_run_code', { code });
     },
 
-    async pythonRunScript(scriptPath, args = []) {
+    async pythonRunScript(scriptPath: string, args: any[] = []) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('python_run_script', { scriptPath, args });
     },
 
-    async pythonInstall(packageName) {
+    async pythonInstall(packageName: string) {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('python_pip_install', { package: packageName });
     },
 
-    async pythonPackageInstalled(packageName) {
+    async pythonPackageInstalled(packageName: string) {
       if (!invoke) return false;
       return await invoke('python_package_installed', { package: packageName });
     },
@@ -200,16 +195,16 @@ export function createPluginAPI(pluginId) {
     // SETTINGS UI
     // ============================================================
 
-    registerSettings(config) {
+    registerSettings(config: any) {
       registerPluginSettings(pluginId, config);
     },
 
-    updateSettingsInfo(fieldId, text) {
+    updateSettingsInfo(fieldId: string, text: string) {
       updateSettingsInfo(fieldId, text);
     },
 
     unregisterSettings() {
       unregisterPluginSettings(pluginId);
-    }
+    },
   };
 }

@@ -3,23 +3,43 @@
  * modal or a side panel, and persists changes to the plugin's local bucket.
  *
  * Owns the settings-related shared state (registered configs, the currently
- * open plugin, and the modal-vs-panel style). The plugin API (api.js) drives
+ * open plugin, and the modal-vs-panel style). The plugin API (api.ts) drives
  * this via registerPluginSettings / unregisterPluginSettings / updateSettingsInfo.
  */
 
 import { escapeAttr } from '../../utils/format';
 import { getLocalSetting, setLocalSetting } from './storage';
 
+interface PluginField {
+  type: 'text' | 'password' | 'toggle' | 'select' | 'button' | 'info';
+  key?: string;
+  label?: string;
+  placeholder?: string;
+  default?: any;
+  options?: { value: string; label: string }[];
+  buttonText?: string;
+  id?: string;
+  text?: string;
+  onChange?: (value: any) => void;
+  onClick?: () => void;
+}
+
+interface PluginSettingsConfig {
+  fields?: PluginField[];
+  icon?: string;
+  pluginId?: string;
+}
+
 // Registered settings configs, keyed by pluginId.
-const pluginSettingsConfigs = new Map();
+const pluginSettingsConfigs = new Map<string, PluginSettingsConfig>();
 
 // Currently open plugin's id (null when no settings are open).
-let currentPluginId = null;
+let currentPluginId: string | null = null;
 
 // Settings presentation: 'modal' or 'panel'.
 let settingsStyle = 'panel';
 
-export function setPluginSettingsStyle(style) {
+export function setPluginSettingsStyle(style: string): void {
   settingsStyle = style;
 }
 
@@ -27,28 +47,28 @@ export function setPluginSettingsStyle(style) {
 // API-facing hooks (called from createPluginAPI)
 // ---------------------------------------------------------------------------
 
-export function registerPluginSettings(pluginId, config) {
+export function registerPluginSettings(pluginId: string, config: PluginSettingsConfig): void {
   pluginSettingsConfigs.set(pluginId, { ...config, pluginId });
   if (currentPluginId === pluginId) {
     renderPluginSettings(pluginId);
   }
 }
 
-export function unregisterPluginSettings(pluginId) {
+export function unregisterPluginSettings(pluginId: string): void {
   pluginSettingsConfigs.delete(pluginId);
   if (currentPluginId === pluginId) {
     closePluginSettings();
   }
 }
 
-export function updateSettingsInfo(fieldId, text) {
+export function updateSettingsInfo(fieldId: string, text: string): void {
   const container = settingsStyle === 'modal' ? '#plugin-modal-body' : '#plugin-panel-body';
   const el = document.querySelector(`${container} [data-field="${fieldId}"]`);
   if (el) el.textContent = text;
 }
 
 /** Drop a plugin's registered config (used by the loader on unload). */
-export function dropPluginSettings(pluginId) {
+export function dropPluginSettings(pluginId: string): void {
   pluginSettingsConfigs.delete(pluginId);
 }
 
@@ -56,7 +76,7 @@ export function dropPluginSettings(pluginId) {
 // Open / close
 // ---------------------------------------------------------------------------
 
-export function openPluginSettings(pluginId, pluginName) {
+export function openPluginSettings(pluginId: string, pluginName: string): void {
   currentPluginId = pluginId;
 
   if (settingsStyle === 'modal') {
@@ -74,7 +94,7 @@ export function openPluginSettings(pluginId, pluginName) {
   }
 }
 
-export function closePluginSettings() {
+export function closePluginSettings(): void {
   if (settingsStyle === 'modal') {
     const modal = document.getElementById('plugin-settings-modal');
     if (modal) modal.classList.add('hidden');
@@ -89,7 +109,7 @@ export function closePluginSettings() {
 // Rendering
 // ---------------------------------------------------------------------------
 
-function renderPluginSettings(pluginId) {
+function renderPluginSettings(pluginId: string): void {
   const bodyId = settingsStyle === 'modal' ? 'plugin-modal-body' : 'plugin-panel-body';
   const iconId = settingsStyle === 'modal' ? 'plugin-modal-icon' : 'plugin-panel-icon';
 
@@ -118,17 +138,17 @@ function renderPluginSettings(pluginId) {
   }
 
   // Fields
-  const fieldsHtml = config.fields.map(field => createSettingsFieldHtml(pluginId, field)).join('');
+  const fieldsHtml = config.fields.map((field) => createSettingsFieldHtml(pluginId, field)).join('');
   body.innerHTML = `<div class="plugin-settings-fields">${fieldsHtml}</div>`;
 
   attachSettingsFieldListeners(pluginId, config.fields, bodyId);
 }
 
-function createSettingsFieldHtml(pluginId, field) {
+function createSettingsFieldHtml(pluginId: string, field: PluginField): string {
   switch (field.type) {
     case 'text':
     case 'password': {
-      const savedValue = getLocalSetting(pluginId, field.key, field.default || '');
+      const savedValue = getLocalSetting(pluginId, field.key || '', field.default || '');
       return `
         <div class="setting-row">
           <label>${escapeAttr(field.label)}</label>
@@ -138,7 +158,7 @@ function createSettingsFieldHtml(pluginId, field) {
       `;
     }
     case 'toggle': {
-      const checked = getLocalSetting(pluginId, field.key, field.default || false);
+      const checked = getLocalSetting(pluginId, field.key || '', field.default || false);
       return `
         <div class="setting-row">
           <label>${escapeAttr(field.label)}</label>
@@ -147,8 +167,8 @@ function createSettingsFieldHtml(pluginId, field) {
       `;
     }
     case 'select': {
-      const savedValue = getLocalSetting(pluginId, field.key, field.default || '');
-      const options = (field.options || []).map(opt =>
+      const savedValue = getLocalSetting(pluginId, field.key || '', field.default || '');
+      const options = (field.options || []).map((opt) =>
         `<option value="${escapeAttr(opt.value)}" ${opt.value === savedValue ? 'selected' : ''}>${escapeAttr(opt.label)}</option>`
       ).join('');
       return `
@@ -178,41 +198,41 @@ function createSettingsFieldHtml(pluginId, field) {
   }
 }
 
-function attachSettingsFieldListeners(pluginId, fields, bodyId) {
+function attachSettingsFieldListeners(pluginId: string, fields: PluginField[], bodyId: string): void {
   const body = document.getElementById(bodyId);
   if (!body) return;
 
   for (const field of fields) {
     if (field.type === 'text' || field.type === 'password') {
-      const input = body.querySelector(`input[data-key="${field.key}"]`);
+      const input = body.querySelector(`input[data-key="${field.key}"]`) as HTMLInputElement | null;
       if (input) {
         input.addEventListener('change', () => {
-          setLocalSetting(pluginId, field.key, input.value);
+          setLocalSetting(pluginId, field.key || '', input.value);
           if (field.onChange) field.onChange(input.value);
         });
       }
     }
     if (field.type === 'toggle') {
-      const checkbox = body.querySelector(`input[data-key="${field.key}"]`);
+      const checkbox = body.querySelector(`input[data-key="${field.key}"]`) as HTMLInputElement | null;
       if (checkbox) {
         checkbox.addEventListener('change', () => {
-          setLocalSetting(pluginId, field.key, checkbox.checked);
+          setLocalSetting(pluginId, field.key || '', checkbox.checked);
           if (field.onChange) field.onChange(checkbox.checked);
         });
       }
     }
     if (field.type === 'select') {
-      const select = body.querySelector(`select[data-key="${field.key}"]`);
+      const select = body.querySelector(`select[data-key="${field.key}"]`) as HTMLSelectElement | null;
       if (select) {
         select.addEventListener('change', () => {
-          setLocalSetting(pluginId, field.key, select.value);
+          setLocalSetting(pluginId, field.key || '', select.value);
           if (field.onChange) field.onChange(select.value);
         });
       }
     }
     if (field.type === 'button' && field.onClick) {
       const btn = body.querySelector(`button[data-action="${field.key || 'button'}"]`);
-      if (btn) btn.addEventListener('click', () => field.onClick());
+      if (btn) btn.addEventListener('click', () => field.onClick && field.onClick());
     }
   }
 }

@@ -3,35 +3,35 @@
  *
  * Loads enabled plugins, renders the management list, and wires up the
  * plugins-tab toolbar. The supporting concerns live in sibling modules:
- *   - api.js      the `api` object passed to each plugin
- *   - window.js   plugin-created floating windows
- *   - settings.js plugin settings modal/panel
- *   - storage.js  per-plugin localStorage helpers
+ *   - api.ts      the `api` object passed to each plugin
+ *   - window.ts   plugin-created floating windows
+ *   - settings.ts plugin settings modal/panel
+ *   - storage.ts  per-plugin localStorage helpers
  */
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
 import { escapeAttr } from '../../utils/format';
-import { createPluginAPI } from './api.js';
-import { closePluginWindows } from './window.js';
+import { createPluginAPI } from './api';
+import { closePluginWindows } from './window';
 import {
   openPluginSettings,
   closePluginSettings,
   dropPluginSettings,
-  setPluginSettingsStyle
-} from './settings.js';
+  setPluginSettingsStyle,
+} from './settings';
 
 // Re-export the settings style setter (used by features/settings.js).
 export { setPluginSettingsStyle };
 
 // Loaded plugin instances, keyed by pluginId.
-const loadedPlugins = new Map();
+const loadedPlugins = new Map<string, any>();
 
 // ============================================================================
 // PLUGIN LOADING
 // ============================================================================
 
-export async function loadEnabledPlugins() {
+export async function loadEnabledPlugins(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -47,7 +47,7 @@ export async function loadEnabledPlugins() {
   }
 }
 
-async function loadPlugin(pluginId, pluginName) {
+async function loadPlugin(pluginId: string, pluginName: string): Promise<void> {
   if (loadedPlugins.has(pluginId)) return;
 
   const invoke = getTauriInvoke();
@@ -75,13 +75,13 @@ async function loadPlugin(pluginId, pluginName) {
     }
 
     loadedPlugins.set(pluginId, instance);
-  } catch (e) {
+  } catch (e: any) {
     console.error(`[Plugin Loader] ${pluginId} Fehler:`, e);
-    console.error('[Plugin Loader] Stack:', e.stack);
+    console.error('[Plugin Loader] Stack:', e?.stack);
   }
 }
 
-async function unloadPlugin(pluginId) {
+async function unloadPlugin(pluginId: string): Promise<void> {
   const instance = loadedPlugins.get(pluginId);
   if (instance?.cleanup) {
     try { await instance.cleanup(); } catch {}
@@ -96,7 +96,7 @@ async function unloadPlugin(pluginId) {
 // UI RENDERING
 // ============================================================================
 
-export async function renderPluginList() {
+export async function renderPluginList(): Promise<void> {
   const container = document.getElementById('plugin-list');
 
   const invoke = getTauriInvoke();
@@ -165,7 +165,7 @@ export async function renderPluginList() {
       });
 
       // Toggle
-      const toggle = card.querySelector('input[type="checkbox"]');
+      const toggle = card.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
       toggle?.addEventListener('change', async () => {
         try {
           await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled: toggle.checked });
@@ -177,7 +177,7 @@ export async function renderPluginList() {
             showNotification(`${plugin.name} deaktiviert`);
           }
           card.classList.toggle('enabled', toggle.checked);
-          const settingsBtn = card.querySelector('.plugin-settings');
+          const settingsBtn = card.querySelector('.plugin-settings') as HTMLButtonElement | null;
           if (settingsBtn) settingsBtn.disabled = !toggle.checked;
         } catch (e) {
           toggle.checked = !toggle.checked;
@@ -209,7 +209,7 @@ export async function renderPluginList() {
 // EVENT LISTENERS
 // ============================================================================
 
-export function setupPluginListeners() {
+export function setupPluginListeners(): void {
   // Open Folder
   document.getElementById('btn-plugins-folder')?.addEventListener('click', async () => {
     const invoke = getTauriInvoke();
@@ -230,7 +230,7 @@ export function setupPluginListeners() {
     try {
       const path = await window.__TAURI__.dialog.open({
         multiple: false,
-        filters: [{ name: 'Plugin', extensions: ['zip'] }]
+        filters: [{ name: 'Plugin', extensions: ['zip'] }],
       });
       if (path) {
         const invoke = getTauriInvoke();
@@ -250,7 +250,7 @@ export function setupPluginListeners() {
   // Modal Close
   document.querySelector('#plugin-settings-modal .modal-close')?.addEventListener('click', closePluginSettings);
   document.getElementById('plugin-settings-modal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'plugin-settings-modal') closePluginSettings();
+    if ((e.target as HTMLElement).id === 'plugin-settings-modal') closePluginSettings();
   });
 
   // Panel Close

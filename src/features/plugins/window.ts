@@ -5,12 +5,49 @@
 
 import { escapeAttr } from '../../utils/format';
 
+export interface PluginWindowOptions {
+  title?: string;
+  width?: number;
+  height?: number;
+  html?: string;
+  resizable?: boolean;
+  alwaysOnTop?: boolean;
+  transparent?: boolean;
+  x?: number | null;
+  y?: number | null;
+  minWidth?: number;
+  minHeight?: number;
+}
+
+interface ResolvedOptions {
+  title: string;
+  width: number;
+  height: number;
+  html: string;
+  resizable: boolean;
+  alwaysOnTop: boolean;
+  transparent: boolean;
+  x: number | null;
+  y: number | null;
+  minWidth: number;
+  minHeight: number;
+}
+
 // All live plugin windows, keyed by their generated windowId.
-const pluginWindows = new Map();
+const pluginWindows = new Map<string, PluginWindow>();
 let windowIdCounter = 0;
 
 export class PluginWindow {
-  constructor(pluginId, options = {}) {
+  pluginId: string;
+  windowId: string;
+  options: ResolvedOptions;
+  element: HTMLDivElement | null = null;
+  contentElement: HTMLElement | null = null;
+  isVisible = false;
+  isDragging = false;
+  isResizing = false;
+
+  constructor(pluginId: string, options: PluginWindowOptions = {}) {
     this.pluginId = pluginId;
     this.windowId = `plugin-window-${pluginId}-${++windowIdCounter}`;
     this.options = {
@@ -21,23 +58,17 @@ export class PluginWindow {
       resizable: options.resizable !== false,
       alwaysOnTop: options.alwaysOnTop || false,
       transparent: options.transparent || false,
-      x: options.x || null,
-      y: options.y || null,
+      x: options.x ?? null,
+      y: options.y ?? null,
       minWidth: options.minWidth || 200,
       minHeight: options.minHeight || 100,
     };
-
-    this.element = null;
-    this.contentElement = null;
-    this.isVisible = false;
-    this.isDragging = false;
-    this.isResizing = false;
 
     pluginWindows.set(this.windowId, this);
   }
 
   /** Show the window */
-  show() {
+  show(): void {
     if (this.element) {
       this.element.style.display = 'flex';
       this.isVisible = true;
@@ -49,7 +80,7 @@ export class PluginWindow {
   }
 
   /** Hide the window */
-  hide() {
+  hide(): void {
     if (this.element) {
       this.element.style.display = 'none';
       this.isVisible = false;
@@ -57,7 +88,7 @@ export class PluginWindow {
   }
 
   /** Close and destroy the window */
-  close() {
+  close(): void {
     if (this.element) {
       this.element.remove();
       this.element = null;
@@ -68,7 +99,7 @@ export class PluginWindow {
   }
 
   /** Set HTML content */
-  setContent(html) {
+  setContent(html: string): void {
     this.options.html = html;
     if (this.contentElement) {
       this.contentElement.innerHTML = html;
@@ -76,19 +107,19 @@ export class PluginWindow {
   }
 
   /** Get the content element for direct DOM manipulation */
-  getContentElement() {
+  getContentElement(): HTMLElement | null {
     return this.contentElement;
   }
 
   /** Set window title */
-  setTitle(title) {
+  setTitle(title: string): void {
     this.options.title = title;
     const titleEl = this.element?.querySelector('.plugin-window-title');
     if (titleEl) titleEl.textContent = title;
   }
 
   /** Resize the window */
-  setSize(width, height) {
+  setSize(width: number, height: number): void {
     this.options.width = width;
     this.options.height = height;
     if (this.element) {
@@ -98,7 +129,7 @@ export class PluginWindow {
   }
 
   /** Move the window */
-  setPosition(x, y) {
+  setPosition(x: number, y: number): void {
     this.options.x = x;
     this.options.y = y;
     if (this.element) {
@@ -108,7 +139,7 @@ export class PluginWindow {
   }
 
   /** Internal: Create the window DOM */
-  _create() {
+  _create(): void {
     const win = document.createElement('div');
     win.id = this.windowId;
     win.className = 'plugin-window';
@@ -145,7 +176,7 @@ export class PluginWindow {
 
     this.element = win;
     this.contentElement = win.querySelector('.plugin-window-content');
-    this.contentElement.innerHTML = this.options.html;
+    if (this.contentElement) this.contentElement.innerHTML = this.options.html;
 
     // Event handlers
     this._setupDrag(win);
@@ -157,11 +188,12 @@ export class PluginWindow {
     document.body.appendChild(win);
   }
 
-  _setupDrag(win) {
+  _setupDrag(win: HTMLElement): void {
     const header = win.querySelector('.plugin-window-header');
-    let startX, startY, startLeft, startTop;
+    if (!header) return;
+    let startX = 0, startY = 0, startLeft = 0, startTop = 0;
 
-    const onMouseMove = (e) => {
+    const onMouseMove = (e: MouseEvent) => {
       if (!this.isDragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
@@ -177,10 +209,11 @@ export class PluginWindow {
     };
 
     header.addEventListener('mousedown', (e) => {
-      if (e.target.classList.contains('plugin-window-btn')) return;
+      const me = e as MouseEvent;
+      if ((me.target as HTMLElement).classList.contains('plugin-window-btn')) return;
       this.isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
+      startX = me.clientX;
+      startY = me.clientY;
       startLeft = win.offsetLeft;
       startTop = win.offsetTop;
       document.addEventListener('mousemove', onMouseMove);
@@ -188,13 +221,13 @@ export class PluginWindow {
     });
   }
 
-  _setupResize(win) {
+  _setupResize(win: HTMLElement): void {
     const handle = win.querySelector('.plugin-window-resize');
     if (!handle) return;
 
-    let startX, startY, startW, startH;
+    let startX = 0, startY = 0, startW = 0, startH = 0;
 
-    const onMouseMove = (e) => {
+    const onMouseMove = (e: MouseEvent) => {
       if (!this.isResizing) return;
       const dw = e.clientX - startX;
       const dh = e.clientY - startY;
@@ -209,14 +242,15 @@ export class PluginWindow {
     };
 
     handle.addEventListener('mousedown', (e) => {
+      const me = e as MouseEvent;
       this.isResizing = true;
-      startX = e.clientX;
-      startY = e.clientY;
+      startX = me.clientX;
+      startY = me.clientY;
       startW = win.offsetWidth;
       startH = win.offsetHeight;
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
-      e.preventDefault();
+      me.preventDefault();
     });
   }
 }
@@ -225,7 +259,7 @@ export class PluginWindow {
  * Close and destroy every window created by a given plugin. Called when a
  * plugin is disabled or uninstalled so its overlays don't linger in the DOM.
  */
-export function closePluginWindows(pluginId) {
+export function closePluginWindows(pluginId: string): void {
   for (const win of [...pluginWindows.values()]) {
     if (win.pluginId === pluginId) win.close();
   }
