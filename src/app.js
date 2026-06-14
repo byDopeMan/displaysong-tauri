@@ -19,7 +19,7 @@ import { loadWidgetPositions, autoShowWidgets, syncActiveWidgets } from './featu
 import { setupAccessRequestListeners, initAccessSystem } from './features/access/index.js';
 import { checkExistingCredentialsWithStatus } from './features/auth.js';
 import { checkForUpdates } from './features/updater.js';
-import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins.js';
+import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index.js';
 import { setupTwitchListeners, initTwitch } from './features/twitch.js';
 import { initQueue, isYouTubePlaying } from './features/queue/queue.js';
 import { initYouTubePlayer } from './features/youtube-player.js';
