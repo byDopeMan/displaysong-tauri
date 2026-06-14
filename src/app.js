@@ -260,7 +260,7 @@ async function init() {
     state.isAuthenticated = true;
   }
   
-  // Start progress interpolation (uses central timer)
+  // Start progress interpolation (requestAnimationFrame-based, see track-display.js)
   startProgressInterpolation();
   
   // Load current track based on provider and start polling
