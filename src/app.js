@@ -27,7 +27,7 @@ import { initRequestHistory } from './features/history/request-history.js';
 import { initSetupFlow, isSetupComplete } from './features/provider/setup.js';
 import { initProvider, loadSavedProvider, PROVIDER, startProviderPolling } from './features/provider/provider.js';
 import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui.js';
-import { loadLanguage, updatePageTranslations, populateLanguageSelect } from './utils/i18n.js';
+import { loadLanguage, updatePageTranslations, populateLanguageSelect } from './utils/i18n';
 import { initSourcePriority, addSeenSource, getSourcePriority } from './features/provider/source-priority.js';
 
 /**

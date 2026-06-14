@@ -156,7 +156,7 @@ function setupProviderSelect() {
 async function updateProviderHint(provider, hintEl) {
   if (!hintEl) return;
   
-  const { t } = await import('../../utils/i18n.js');
+  const { t } = await import('../../utils/i18n');
   
   if (provider === PROVIDER.WINDOWS_AUDIO) {
     hintEl.textContent = t('settings.system.providerHintWindows', {}, 'Windows Audio erkennt Musik von allen Playern automatisch.');

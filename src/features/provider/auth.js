@@ -8,7 +8,7 @@ import { showView, openExternal } from '../../ui/navigation.js';
 import { showNotification } from '../../ui/notifications.js';
 import { removeItem } from '../../utils/storage';
 import { updateWidgetList } from '../widgets.js';
-import { t } from '../../utils/i18n.js';
+import { t } from '../../utils/i18n';
 import { setSpotifyConnected } from './provider-ui.js';
 
 /**

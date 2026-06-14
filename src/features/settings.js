@@ -480,7 +480,7 @@ export function setupSettingsListeners() {
       const lang = languageSelect.value;
       localStorage.setItem('language', lang);
       
-      const { loadLanguage, updatePageTranslations } = await import('../utils/i18n.js');
+      const { loadLanguage, updatePageTranslations } = await import('../utils/i18n');
       await loadLanguage(lang);
       updatePageTranslations();
       
