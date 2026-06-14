@@ -11,7 +11,7 @@
 import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import { showView, openExternal } from '../../ui/navigation.js';
 import { fetchDeveloperCredentials } from './api.js';
 import { stopSSEConnection, stopStatusPolling, startBlockCheckSSE } from './connection.js';

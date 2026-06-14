@@ -10,7 +10,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import { escapeAttr } from '../../utils/format';
 import { createPluginAPI } from './api.js';
 import { closePluginWindows } from './window.js';

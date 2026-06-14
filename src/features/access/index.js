@@ -13,7 +13,7 @@
 import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import { ACCESS_API_URL } from './api.js';
 import {
   startSSEConnection,

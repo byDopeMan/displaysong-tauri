@@ -4,58 +4,50 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import { state } from '../../core/state';
 
 // Provider types
 export const PROVIDER = {
   WINDOWS_AUDIO: 'windows',
-  SPOTIFY: 'spotify'
-};
+  SPOTIFY: 'spotify',
+} as const;
+
+export type ProviderId = (typeof PROVIDER)[keyof typeof PROVIDER];
 
 // Current provider state
-let currentProvider = PROVIDER.WINDOWS_AUDIO;
-let pollingInterval = null;
-let lastTrack = null;
+let currentProvider: string = PROVIDER.WINDOWS_AUDIO;
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
+let lastTrack: any = null;
 
-/**
- * Get current provider
- */
-export function getProvider() {
+/** Get current provider */
+export function getProvider(): string {
   return currentProvider;
 }
 
-/**
- * Set provider
- */
-export function setProvider(provider) {
+/** Set provider */
+export function setProvider(provider: string): void {
   currentProvider = provider;
   localStorage.setItem('music-provider', provider);
   console.log('[Provider] Set to:', provider);
 }
 
-/**
- * Load saved provider from localStorage
- */
-export function loadSavedProvider() {
+/** Load saved provider from localStorage */
+export function loadSavedProvider(): string {
   const saved = localStorage.getItem('music-provider');
-  if (saved && Object.values(PROVIDER).includes(saved)) {
+  if (saved && (Object.values(PROVIDER) as string[]).includes(saved)) {
     currentProvider = saved;
   }
   return currentProvider;
 }
 
-/**
- * Check if Spotify is connected
- */
-export function isSpotifyConnected() {
+/** Check if Spotify is connected */
+export function isSpotifyConnected(): boolean {
   return state.isAuthenticated === true;
 }
 
-/**
- * Start polling for current track based on provider
- */
-export async function startProviderPolling(app, interval = 2000) {
+/** Start polling for current track based on provider */
+export async function startProviderPolling(app: any, interval = 2000): Promise<void> {
   if (pollingInterval) {
     clearInterval(pollingInterval);
   }
@@ -80,12 +72,12 @@ export async function startProviderPolling(app, interval = 2000) {
         if (app && typeof app.emit === 'function') {
           app.emit('track-update', track);
         }
-        
+
         // Check if track changed
-        const trackChanged = !lastTrack || 
-          lastTrack.track !== track.track || 
+        const trackChanged = !lastTrack ||
+          lastTrack.track !== track.track ||
           lastTrack.artist !== track.artist;
-        
+
         if (trackChanged && track.track) {
           // Save to local history
           await saveToLocalHistory(track);
@@ -104,20 +96,16 @@ export async function startProviderPolling(app, interval = 2000) {
   pollingInterval = setInterval(poll, interval);
 }
 
-/**
- * Stop polling
- */
-export function stopProviderPolling() {
+/** Stop polling */
+export function stopProviderPolling(): void {
   if (pollingInterval) {
     clearInterval(pollingInterval);
     pollingInterval = null;
   }
 }
 
-/**
- * Save track to local history (SQLite)
- */
-async function saveToLocalHistory(track) {
+/** Save track to local history (SQLite) */
+async function saveToLocalHistory(track: any): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -129,7 +117,7 @@ async function saveToLocalHistory(track) {
       albumCover: track.albumCover || track.album_cover || '',
       source: track.source || 'Unknown',
       trackId: track.trackId || track.track_id || null,
-      durationMs: track.durationMs || track.duration_ms || 0
+      durationMs: track.durationMs || track.duration_ms || 0,
     });
   } catch (e) {
     // Command might not exist yet, ignore silently
@@ -137,12 +125,10 @@ async function saveToLocalHistory(track) {
   }
 }
 
-/**
- * Initialize provider system
- */
-export async function initProvider() {
+/** Initialize provider system */
+export async function initProvider(): Promise<void> {
   loadSavedProvider();
-  
+
   const invoke = getTauriInvoke();
   if (!invoke) return;
 
@@ -155,18 +141,14 @@ export async function initProvider() {
   }
 }
 
-/**
- * Switch to Windows Audio provider
- */
-export function useWindowsAudio() {
+/** Switch to Windows Audio provider */
+export function useWindowsAudio(): void {
   setProvider(PROVIDER.WINDOWS_AUDIO);
   showNotification('Windows Audio aktiviert');
 }
 
-/**
- * Switch to Spotify provider
- */
-export function useSpotify() {
+/** Switch to Spotify provider */
+export function useSpotify(): boolean {
   if (!isSpotifyConnected()) {
     showNotification('Bitte zuerst mit Spotify verbinden', { type: 'warning' });
     return false;

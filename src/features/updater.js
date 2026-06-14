@@ -2,7 +2,7 @@
  * Auto-Updater System
  */
 
-import { showNotification } from '../ui/notifications.js';
+import { showNotification } from '../ui/notifications';
 
 /**
  * Check for updates

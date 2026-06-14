@@ -5,7 +5,7 @@
  * nothing"). Split out of twitch.js.
  */
 
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 
 export const DEFAULT_MESSAGES: Record<string, string> = {
   nowPlaying: 'Jetzt laeuft: {artist} - {title}',

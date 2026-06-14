@@ -5,7 +5,7 @@
 import { state, elements } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { showView, openExternal } from '../../ui/navigation.js';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import { removeItem } from '../../utils/storage';
 import { updateWidgetList } from '../widgets.js';
 import { t } from '../../utils/i18n';
@@ -53,7 +53,7 @@ export async function disconnectSpotify() {
     setSpotifyConnected(false);
     
     // Auto-switch to Windows Audio provider when Spotify is disconnected
-    const { PROVIDER, setProvider, loadSavedProvider } = await import('./provider.js');
+    const { PROVIDER, setProvider, loadSavedProvider } = await import('./provider');
     const currentProvider = loadSavedProvider();
     
     if (currentProvider === PROVIDER.SPOTIFY) {

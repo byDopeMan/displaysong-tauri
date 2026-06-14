@@ -3,7 +3,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 
 // State
 let playlistConfig = null;

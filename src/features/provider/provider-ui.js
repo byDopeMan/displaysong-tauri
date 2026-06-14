@@ -5,8 +5,8 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation.js';
-import { showNotification } from '../../ui/notifications.js';
-import { PROVIDER, loadSavedProvider, setProvider } from './provider.js';
+import { showNotification } from '../../ui/notifications';
+import { PROVIDER, loadSavedProvider, setProvider } from './provider';
 import { state } from '../../core/state';
 import { updatePriorityButtonVisibility } from './source-priority.js';
 

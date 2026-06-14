@@ -6,7 +6,7 @@ import { state, elements } from './state';
 import { getTauriListen } from './tauri';
 import { updateTrackDisplay } from '../ui/track-display.js';
 import { switchTab, showView } from '../ui/navigation.js';
-import { showNotification } from '../ui/notifications.js';
+import { showNotification } from '../ui/notifications';
 import { toggleWidget, openConfigFolder, reloadWidgets } from '../features/widgets.js';
 import { disconnectSpotify } from '../features/provider/auth.js';
 import { refreshHistory } from '../features/history/history.js';
@@ -71,7 +71,7 @@ export async function setupDeepLinkHandler() {
     showView('player');
     const { updateSpotifyStatus } = await import('../features/provider/auth.js');
     const { setSpotifyConnected } = await import('../features/provider/provider-ui.js');
-    const { PROVIDER, loadSavedProvider } = await import('../features/provider/provider.js');
+    const { PROVIDER, loadSavedProvider } = await import('../features/provider/provider');
     
     updateSpotifyStatus(true);
     setSpotifyConnected(true);

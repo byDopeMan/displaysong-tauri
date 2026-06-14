@@ -8,7 +8,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import {
   playYouTube,
   stopYouTube,
@@ -16,7 +16,7 @@ import {
   resumeYouTube,
   getYouTubeProgressMs,
   setYouTubeVolume,
-} from './youtube-player.js';
+} from './youtube-player';
 
 // Injected queue accessors (set by initYouTube).
 let Q = {

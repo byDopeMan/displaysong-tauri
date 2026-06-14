@@ -5,7 +5,7 @@
  */
 
 import { getTauriInvoke } from '../../core/tauri';
-import { showNotification } from '../../ui/notifications.js';
+import { showNotification } from '../../ui/notifications';
 import { PluginWindow } from './window.js';
 import { getLocalSetting, setLocalSetting } from './storage';
 import {

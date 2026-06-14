@@ -252,7 +252,7 @@ export function stopProgressInterpolation() {
  * Copy current song info to clipboard
  */
 export async function copySongInfo() {
-  const { showNotification } = await import('../ui/notifications.js');
+  const { showNotification } = await import('../ui/notifications');
   
   if (!state.currentTrack || !state.currentTrack.track) {
     showNotification(t('player.nothingPlaying', {}, 'Kein Song zum Kopieren'));

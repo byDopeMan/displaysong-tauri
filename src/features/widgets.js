@@ -8,7 +8,7 @@ import { state } from '../core/state';
 import { getTauriInvoke, getTauriWebviewWindow, getTauriPhysicalPosition, getTauriPhysicalSize } from '../core/tauri';
 import { getItem, setItem } from '../utils/storage';
 import { settings, getCurrentAccentColor } from './settings.js';
-import { showNotification } from '../ui/notifications.js';
+import { showNotification } from '../ui/notifications';
 
 export const WIDGET_NAMES = {
   'widget-1': 'Compact Bar',
