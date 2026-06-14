@@ -11,7 +11,7 @@
 
 import { getTauriInvoke } from '../../core/tauri.js';
 import { showNotification } from '../../ui/notifications.js';
-import { escapeAttr } from '../../utils/format.js';
+import { escapeAttr } from '../../utils/format';
 import { createPluginAPI } from './api.js';
 import { closePluginWindows } from './window.js';
 import {

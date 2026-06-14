@@ -3,7 +3,7 @@
  * window rendered as a div overlay (not a native OS window).
  */
 
-import { escapeAttr } from '../../utils/format.js';
+import { escapeAttr } from '../../utils/format';
 
 // All live plugin windows, keyed by their generated windowId.
 const pluginWindows = new Map();

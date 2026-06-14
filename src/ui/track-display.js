@@ -4,7 +4,7 @@
  */
 
 import { state, elements } from '../core/state.js';
-import { formatTime } from '../utils/format.js';
+import { formatTime } from '../utils/format';
 import { t } from '../utils/i18n.js';
 import { getRequesterForTrack, maybeAutoAdvance } from '../features/queue/index.js';
 

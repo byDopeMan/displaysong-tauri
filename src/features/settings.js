@@ -3,7 +3,7 @@
  */
 
 import { getItem, setItem } from '../utils/storage.js';
-import { hexToRgb } from '../utils/format.js';
+import { hexToRgb } from '../utils/format';
 import { getTauriInvoke, getTauriWebviewWindow } from '../core/tauri.js';
 import { showNotification } from '../ui/notifications.js';
 import { broadcastAccentColor } from './widgets.js';

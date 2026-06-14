@@ -7,7 +7,7 @@
  * this via registerPluginSettings / unregisterPluginSettings / updateSettingsInfo.
  */
 
-import { escapeAttr } from '../../utils/format.js';
+import { escapeAttr } from '../../utils/format';
 import { getLocalSetting, setLocalSetting } from './storage.js';
 
 // Registered settings configs, keyed by pluginId.

@@ -4,7 +4,7 @@
  */
 
 import { getString, setString } from '../../utils/storage.js';
-import { escapeAttr } from '../../utils/format.js';
+import { escapeAttr } from '../../utils/format';
 import { getTauriInvoke } from '../../core/tauri.js';
 
 // Known sources with their icons

@@ -4,7 +4,7 @@
 
 import { getTauriInvoke } from '../../core/tauri.js';
 import { state } from '../../core/state.js';
-import { escapeAttr } from '../../utils/format.js';
+import { escapeAttr } from '../../utils/format';
 import { prefetchYouTube } from './youtube-player.js';
 import {
   initYouTube,

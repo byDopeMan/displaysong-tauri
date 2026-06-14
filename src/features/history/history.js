@@ -4,7 +4,7 @@
 
 import { state } from '../../core/state.js';
 import { getTauriInvoke } from '../../core/tauri.js';
-import { escapeHtml, escapeAttr } from '../../utils/format.js';
+import { escapeHtml, escapeAttr } from '../../utils/format';
 import { openExternal } from '../../ui/navigation.js';
 import { settings } from '../settings.js';
 import { isBlocked, blockSong, unblockSong, getBlocklist, removeBlockAt } from './blocklist.js';
