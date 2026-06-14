@@ -141,12 +141,11 @@ export async function openExternal(url) {
       await window.__TAURI__.shell.open(url);
       return;
     }
-    
-    // Fallback: Try dynamic import
-    const { open } = await import('@tauri-apps/api/shell');
-    await open(url);
+
+    // No Tauri shell (e.g. plain browser preview): open normally.
+    window.open(url, '_blank');
   } catch (e) {
-    console.error('[Navigation] Shell error, using fallback:', e);
+    console.error('[Navigation] Shell open failed, using window.open:', e);
     window.open(url, '_blank');
   }
 }
