@@ -1,60 +1,26 @@
 /**
  * Track Display & Progress
- * Simple requestAnimationFrame-based progress interpolation
+ *
+ * Owns the now-playing polling/interpolation logic and publishes snapshots to
+ * the player stores (features/player/store). Player.svelte renders reactively;
+ * this module no longer touches the player DOM directly. Progress is advanced
+ * with a requestAnimationFrame loop between backend syncs.
  */
 
-import { state, elements } from '../core/state';
-import { formatTime } from '../utils/format';
+import { state } from '../core/state';
 import { t } from '../utils/i18n';
 import { getRequesterForTrack, maybeAutoAdvance } from '../features/queue/index';
+import { playerSnapshot, playerProgressMs, resetPlayer } from '../features/player/store';
 
 /**
- * Show "requested by X" in the player when the current track was a song request,
+ * Resolve the "requested by X" name for a track (when it was a song request),
  * and broadcast it to the widgets (which show it if their design enables it).
  */
-function updateRequester(track: any): void {
-  const el = document.getElementById('track-requester');
-  const nameEl = document.getElementById('track-requester-name');
+function resolveRequester(track: any): string | null {
   const req = track ? getRequesterForTrack(track) : null;
   const user = req?.user || null;
-  if (el) {
-    if (user) {
-      if (nameEl) nameEl.textContent = user;
-      el.classList.remove('hidden');
-    } else {
-      if (nameEl) nameEl.textContent = '';
-      el.classList.add('hidden');
-    }
-  }
   try { window.__TAURI__?.event?.emit('requester-update', { user }); } catch (e) { /* widgets optional */ }
-}
-
-/**
- * Set an element's text and, if it overflows, scroll it left-to-right (marquee).
- */
-export function setMarqueeText(el: HTMLElement | null, text: string): void {
-  if (!el) return;
-  el.classList.add('mq-host');
-  let span = el.querySelector('.mq-text') as HTMLElement | null;
-  if (!span) {
-    el.textContent = '';
-    span = document.createElement('span');
-    span.className = 'mq-text';
-    el.appendChild(span);
-  }
-  if (span.dataset.text === text) return; // unchanged
-  span.dataset.text = text;
-  span.textContent = text;
-  span.classList.remove('mq-run');
-  span.style.removeProperty('--mq-shift');
-  requestAnimationFrame(() => {
-    if (!span) return;
-    const overflow = span.scrollWidth - el.clientWidth;
-    if (overflow > 4) {
-      span.style.setProperty('--mq-shift', `-${overflow + 12}px`);
-      span.classList.add('mq-run');
-    }
-  });
+  return user;
 }
 
 let animationFrameId: number | null = null;
@@ -69,24 +35,12 @@ let isInterpolating = false;
  * @param syncProgress If true, sync progress from backend. If false, keep interpolated.
  */
 export function updateTrackDisplay(track: any, syncProgress = true): void {
-  if (!elements.trackTitle) return;
-
   if (!track || !track.track) {
-    setMarqueeText(elements.trackTitle, t('player.nothingPlaying', {}, 'Nichts läuft'));
-    if (elements.trackArtist) elements.trackArtist.textContent = '—';
-    if (elements.trackAlbum) elements.trackAlbum.textContent = '';
-    if (elements.statusBadge) {
-      elements.statusBadge.classList.add('paused');
-      const statusText = elements.statusBadge.querySelector('.status-text');
-      if (statusText) statusText.textContent = t('player.paused', {}, 'Pausiert');
-    }
-    // Reset progress bar
-    if (elements.progressBar) elements.progressBar.style.width = '0%';
-    if (elements.progressCurrent) elements.progressCurrent.textContent = '0:00';
-    if (elements.progressTotal) elements.progressTotal.textContent = '0:00';
+    resetPlayer();
     interpolatedProgress = 0;
+    isInterpolating = false;
     state.currentTrack = null;
-    updateRequester(null);
+    resolveRequester(null);
     return;
   }
 
@@ -94,11 +48,7 @@ export function updateTrackDisplay(track: any, syncProgress = true): void {
     state.currentTrack.track !== track.track ||
     state.currentTrack.artist !== track.artist;
 
-  setMarqueeText(elements.trackTitle, track.track);
-  if (elements.trackArtist) elements.trackArtist.textContent = track.artist;
-  if (elements.trackAlbum) elements.trackAlbum.textContent = track.album;
-
-  // Global Background immer updaten
+  // Global background (app-wide element, outside the player view).
   if (track.albumCover) {
     const globalBg = document.getElementById('global-cover-bg');
     if (globalBg && globalBg.style.backgroundImage !== `url("${track.albumCover}")`) {
@@ -106,41 +56,11 @@ export function updateTrackDisplay(track: any, syncProgress = true): void {
     }
   }
 
-  if (isNewTrack && track.albumCover && elements.coverImage) {
-    elements.coverImage.style.opacity = '0';
-    if (elements.coverBg) elements.coverBg.style.opacity = '0';
-
-    setTimeout(() => {
-      if (!elements.coverImage) return;
-      elements.coverImage.style.backgroundImage = `url('${track.albumCover}')`;
-      if (elements.coverBg) elements.coverBg.style.backgroundImage = `url('${track.albumCover}')`;
-      elements.coverImage.style.opacity = '1';
-      if (elements.coverBg) elements.coverBg.style.opacity = '0.35';
-    }, 150);
-  }
-
-  if (elements.statusBadge) {
-    elements.statusBadge.classList.toggle('paused', !track.isPlaying);
-    const statusText = elements.statusBadge.querySelector('.status-text');
-    if (statusText) {
-      statusText.textContent = track.isPlaying
-        ? t('player.nowPlaying', {}, 'Läuft jetzt')
-        : t('player.paused', {}, 'Pausiert');
-    }
-  }
-
   // Handle progress
   if (isNewTrack || syncProgress) {
     interpolatedProgress = track.progressMs || 0;
     lastFrameTime = performance.now();
-  }
-
-  // Update progress bar with interpolated value
-  if (track.durationMs > 0 && elements.progressBar) {
-    const progress = (interpolatedProgress / track.durationMs) * 100;
-    elements.progressBar.style.width = `${Math.min(100, progress)}%`;
-    if (elements.progressCurrent) elements.progressCurrent.textContent = formatTime(interpolatedProgress);
-    if (elements.progressTotal) elements.progressTotal.textContent = formatTime(track.durationMs);
+    playerProgressMs.set(interpolatedProgress);
   }
 
   // Store track metadata (but NOT progressMs - we track that separately)
@@ -155,7 +75,16 @@ export function updateTrackDisplay(track: any, syncProgress = true): void {
     trackId: track.trackId,
   };
 
-  updateRequester(track);
+  playerSnapshot.set({
+    hasTrack: true,
+    title: track.track,
+    artist: track.artist || '',
+    album: track.album || '',
+    albumCover: track.albumCover || '',
+    isPlaying: !!track.isPlaying,
+    requester: resolveRequester(track),
+    durationMs: track.durationMs || 0,
+  });
 
   isInterpolating = track.isPlaying;
 }
@@ -168,16 +97,11 @@ export function updateTrackMetadata(track: any): void {
   state.currentTrack.durationMs = track.durationMs;
   isInterpolating = track.isPlaying;
 
-  // Update status badge
-  if (elements.statusBadge) {
-    elements.statusBadge.classList.toggle('paused', !track.isPlaying);
-    const statusText = elements.statusBadge.querySelector('.status-text');
-    if (statusText) {
-      statusText.textContent = track.isPlaying
-        ? t('player.nowPlaying', {}, 'Läuft jetzt')
-        : t('player.paused', {}, 'Pausiert');
-    }
-  }
+  playerSnapshot.update((s) => ({
+    ...s,
+    isPlaying: !!track.isPlaying,
+    durationMs: track.durationMs || s.durationMs,
+  }));
 }
 
 /** Get current interpolated progress */
@@ -204,14 +128,7 @@ export function startProgressInterpolation(): void {
         interpolatedProgress = state.currentTrack.durationMs;
       }
 
-      // Update UI
-      if (elements.progressBar) {
-        const progress = (interpolatedProgress / state.currentTrack.durationMs) * 100;
-        elements.progressBar.style.width = `${Math.min(100, progress)}%`;
-      }
-      if (elements.progressCurrent) {
-        elements.progressCurrent.textContent = formatTime(interpolatedProgress);
-      }
+      playerProgressMs.set(interpolatedProgress);
 
       // Auto-Play: hand over to the queue near the end of the song.
       const remainingMs = state.currentTrack.durationMs - interpolatedProgress;

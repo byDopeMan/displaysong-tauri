@@ -12,6 +12,7 @@ import { setupEventListeners, setupDeepLinkHandler, setupTrackListener } from '.
 import { showView, updateHistoryTabVisibility } from './ui/navigation';
 import { updateTrackDisplay, updateTrackMetadata, startProgressInterpolation, getInterpolatedProgress } from './ui/track-display';
 import Titlebar from './components/Titlebar.svelte';
+import Player from './features/player/Player.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings';
@@ -194,6 +195,9 @@ async function init(): Promise<void> {
   // Titlebar is a Svelte component — mount it as the first child of .app.
   const appEl = document.querySelector('.app');
   if (appEl) new Titlebar({ target: appEl, anchor: appEl.firstElementChild ?? undefined });
+  // Now-playing player is a Svelte component — mount it into its placeholder.
+  const playerMount = document.getElementById('player-mount');
+  if (playerMount) new Player({ target: playerMount });
   setupEventListeners();
   setupSettingsListeners();
   setupAccessRequestListeners();

@@ -50,15 +50,8 @@ export function initElements(): void {
     credentialsForm: document.getElementById('credentials-form'),
     clientId: document.getElementById('client-id'),
     clientSecret: document.getElementById('client-secret'),
-    coverBg: document.getElementById('cover-bg'),
-    coverImage: document.getElementById('cover-image'),
-    statusBadge: document.getElementById('status-badge'),
-    trackTitle: document.getElementById('track-title'),
-    trackArtist: document.getElementById('track-artist'),
-    trackAlbum: document.getElementById('track-album'),
-    progressBar: document.getElementById('progress-bar'),
-    progressCurrent: document.getElementById('progress-current'),
-    progressTotal: document.getElementById('progress-total'),
+    // Player elements (cover/status/track/progress) now live in
+    // features/player/Player.svelte and are no longer cached here.
     widgetList: document.getElementById('widget-list'),
     spotifyStatusText: document.getElementById('spotify-status-text'),
     btnDisconnect: document.getElementById('btn-disconnect'),

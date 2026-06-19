@@ -208,6 +208,16 @@
 .track-info {
   margin-top: 20px;
   z-index: 1;
+  /* Bound the width so a long, no-wrap title (.mq-host) is clipped and scrolled
+     by the marquee instead of widening the layout. */
+  width: 100%;
+  max-width: 280px;
+}
+
+/* The marquee host must fill the bounded .track-info so its overflow (and the
+   marquee trigger) is measured against that width, not the title's content. */
+.track-title.mq-host {
+  width: 100%;
 }
 
 .status-badge {

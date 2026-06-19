@@ -105,6 +105,10 @@
 .content {
   flex: 1;
   overflow-y: auto;
+  /* Clip the blurred backgrounds (.cover-bg / .global-cover-bg are 200% wide,
+     left:-50%) at the window edge so they bleed full-width without making the
+     view horizontally scrollable. */
+  overflow-x: hidden;
   padding: 20px;
   padding-bottom: 40px;
   position: relative;

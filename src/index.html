@@ -180,38 +180,10 @@
       <!-- Player View -->
       <div id="player-view" class="view hidden">
         <div class="player-container">
-          <div class="cover-bg" id="cover-bg"></div>
-          <div class="cover-image" id="cover-image"></div>
-          
-          <div class="track-info">
-            <div class="status-badge" id="status-badge">
-              <span class="status-dot"></span>
-              <span class="status-text" data-i18n="player.nowPlaying">Läuft jetzt</span>
-            </div>
-            <h2 class="track-title" id="track-title">Nichts läuft</h2>
-            <p class="track-artist" id="track-artist">—</p>
-            <p class="track-album" id="track-album"></p>
-            <div class="track-requester hidden" id="track-requester">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              <span id="track-requester-name"></span>
-            </div>
-            <button id="btn-copy-song" class="btn-copy" title="Song-Info kopieren">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
-          </div>
-
-          <div class="progress-container">
-            <div class="progress-bar-bg">
-              <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <div class="progress-times">
-              <span id="progress-current">0:00</span>
-              <span id="progress-total">0:00</span>
-            </div>
-          </div>
+          <!-- Now-playing player rendered by features/player/Player.svelte.
+               display:contents so its children lay out as if direct children of
+               .player-container (the covers are absolutely positioned to it). -->
+          <div id="player-mount" style="display: contents;"></div>
 
           <!-- Queue UNTER Player -->
           <div id="player-queue-container" class="player-queue-container hidden">

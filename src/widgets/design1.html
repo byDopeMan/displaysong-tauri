@@ -458,9 +458,23 @@
         });
       }
 
+      // Preload an image URL so the crossfade reveals the real cover, not a
+      // blank layer that pops in once the download finishes.
+      function preloadImage(url) {
+        return new Promise((resolve) => {
+          if (!url) { resolve(); return; }
+          const img = new Image();
+          img.onload = img.onerror = () => resolve();
+          img.src = url;
+          setTimeout(resolve, 1500); // safety net for slow/broken URLs
+        });
+      }
+
       async function transitionToNewTrack(track) {
         if (isTransitioning) return;
         isTransitioning = true;
+
+        await preloadImage(track.albumCover);
 
         const cover = $('cover');
         const coverOld = $('cover-old');
@@ -470,14 +484,27 @@
         const artistOld = $('artist-old');
 
         if (currentTrack) {
+          // Back layer instantly shows the OLD cover (no fade).
+          coverOld.style.transition = 'none';
           coverOld.style.backgroundImage = cover.style.backgroundImage;
-          mqText(titleOld, title.textContent);
-          mqText(artistOld, artist.textContent);
-
           coverOld.classList.remove('old');
           coverOld.classList.add('new');
+
+          // Front layer instantly goes hidden, then receives the NEW cover so it
+          // can genuinely fade in from opacity 0 (instead of snapping in at full
+          // opacity, which looked like a hard cut).
+          cover.style.transition = 'none';
           cover.classList.remove('new');
           cover.classList.add('old');
+          cover.style.backgroundImage = `url('${track.albumCover}')`;
+
+          // Commit the instant state, then re-enable transitions for the fade.
+          void cover.offsetWidth;
+          coverOld.style.transition = '';
+          cover.style.transition = '';
+
+          mqText(titleOld, title.textContent);
+          mqText(artistOld, artist.textContent);
 
           titleOld.classList.remove('old');
           titleOld.classList.add('new');
@@ -488,9 +515,10 @@
           artistOld.classList.add('new');
           artist.classList.add('entering');
           artist.classList.remove('new');
+        } else {
+          cover.style.backgroundImage = `url('${track.albumCover}')`;
         }
 
-        cover.style.backgroundImage = `url('${track.albumCover}')`;
         mqText(title, track.track);
         mqText(artist, track.artist);
 
