@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { svelte, vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { cpSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -53,5 +53,5 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'esnext',
   },
-  plugins: [svelte(), copyRuntimeAssets()],
+  plugins: [svelte({ preprocess: vitePreprocess() }), copyRuntimeAssets()],
 });
