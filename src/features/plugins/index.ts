@@ -11,15 +11,11 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
-import { escapeAttr } from '../../utils/format';
 import { createPluginAPI } from './api';
 import { closePluginWindows } from './window';
-import {
-  openPluginSettings,
-  closePluginSettings,
-  dropPluginSettings,
-  setPluginSettingsStyle,
-} from './settings';
+import { closePluginSettings, dropPluginSettings, setPluginSettingsStyle } from './settings';
+import { pluginList, type PluginInfo } from './list-store';
+import PluginList from './PluginList.svelte';
 
 // Re-export the settings style setter (used by features/settings).
 export { setPluginSettingsStyle };
@@ -97,112 +93,65 @@ async function unloadPlugin(pluginId: string): Promise<void> {
 // ============================================================================
 
 export async function renderPluginList(): Promise<void> {
-  const container = document.getElementById('plugin-list');
-
   const invoke = getTauriInvoke();
   if (!invoke) {
-    if (container) container.innerHTML = '<p class="hint">Plugins nicht verfügbar</p>';
+    pluginList.set([]);
     return;
   }
-
   try {
     const plugins = await invoke('list_plugins');
+    pluginList.set(plugins || []);
+  } catch (e) {
+    console.error('Plugin list failed:', e);
+    pluginList.set([]);
+  }
+}
 
-    if (!container) return;
+// Mount the Svelte plugin list into its container exactly once.
+let pluginListMounted = false;
+function mountPluginList(): void {
+  if (pluginListMounted) return;
+  const el = document.getElementById('plugin-list');
+  if (el) {
+    pluginListMounted = true;
+    el.innerHTML = '';
+    new PluginList({ target: el });
+  }
+}
 
-    if (plugins.length === 0) {
-      container.innerHTML = `
-        <div class="plugins-empty">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 2v6M12 22v-6M4.93 4.93l4.24 4.24M14.83 14.83l4.24 4.24M2 12h6M22 12h-6M4.93 19.07l4.24-4.24M14.83 9.17l4.24-4.24"></path>
-          </svg>
-          <p>Keine Plugins installiert</p>
-          <p class="hint">Plugins in den Plugin-Ordner kopieren oder ZIP importieren</p>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = '';
-
-    for (const plugin of plugins) {
-      const card = document.createElement('div');
-      card.className = `plugin-card ${plugin.enabled ? 'enabled' : ''} ${plugin.has_error ? 'error' : ''}`;
-
-      card.innerHTML = `
-        <div class="plugin-main">
-          <div class="plugin-info">
-            <span class="plugin-name">${escapeAttr(plugin.name)}</span>
-            <span class="plugin-version">v${escapeAttr(plugin.version)}</span>
-          </div>
-          <div class="plugin-actions">
-            <button class="plugin-btn plugin-settings" title="Einstellungen" ${!plugin.enabled ? 'disabled' : ''}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </button>
-            <button class="plugin-btn plugin-delete" title="Löschen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </button>
-            <label class="toggle-switch">
-              <input type="checkbox" ${plugin.enabled ? 'checked' : ''} ${plugin.has_error ? 'disabled' : ''}>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-        ${plugin.author ? `<div class="plugin-meta"><span class="plugin-author">von ${escapeAttr(plugin.author)}</span></div>` : ''}
-        ${plugin.description ? `<div class="plugin-desc">${escapeAttr(plugin.description)}</div>` : ''}
-        ${plugin.has_error ? `<div class="plugin-error">${escapeAttr(plugin.error_message)}</div>` : ''}
-      `;
-
-      // Settings Button
-      card.querySelector('.plugin-settings')?.addEventListener('click', () => {
-        openPluginSettings(plugin.id, plugin.name);
-      });
-
-      // Toggle
-      const toggle = card.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
-      toggle?.addEventListener('change', async () => {
-        try {
-          await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled: toggle.checked });
-          if (toggle.checked) {
-            await loadPlugin(plugin.id, plugin.name);
-            showNotification(`${plugin.name} aktiviert`);
-          } else {
-            await unloadPlugin(plugin.id);
-            showNotification(`${plugin.name} deaktiviert`);
-          }
-          card.classList.toggle('enabled', toggle.checked);
-          const settingsBtn = card.querySelector('.plugin-settings') as HTMLButtonElement | null;
-          if (settingsBtn) settingsBtn.disabled = !toggle.checked;
-        } catch (e) {
-          toggle.checked = !toggle.checked;
-          showNotification('Fehler: ' + e);
-        }
-      });
-
-      // Delete
-      card.querySelector('.plugin-delete')?.addEventListener('click', async () => {
-        if (!confirm(`"${plugin.name}" wirklich löschen?`)) return;
-        try {
-          await unloadPlugin(plugin.id);
-          await invoke('uninstall_plugin', { pluginId: plugin.id });
-          showNotification(`${plugin.name} gelöscht`);
-          await renderPluginList();
-        } catch (e) {
-          showNotification('Fehler: ' + e);
-        }
-      });
-
-      container.appendChild(card);
+/** Enable/disable a plugin (called from the Svelte list). */
+export async function togglePlugin(plugin: PluginInfo, enabled: boolean): Promise<void> {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  try {
+    await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled });
+    if (enabled) {
+      await loadPlugin(plugin.id, plugin.name);
+      showNotification(`${plugin.name} aktiviert`);
+    } else {
+      await unloadPlugin(plugin.id);
+      showNotification(`${plugin.name} deaktiviert`);
     }
   } catch (e) {
-    if (container) container.innerHTML = `<p class="error-text">Fehler: ${escapeAttr(String(e))}</p>`;
+    showNotification('Fehler: ' + e);
   }
+  // Refresh the store (also reverts the checkbox if the toggle failed).
+  await renderPluginList();
+}
+
+/** Uninstall a plugin (called from the Svelte list). */
+export async function deletePlugin(plugin: PluginInfo): Promise<void> {
+  if (!confirm(`"${plugin.name}" wirklich löschen?`)) return;
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
+  try {
+    await unloadPlugin(plugin.id);
+    await invoke('uninstall_plugin', { pluginId: plugin.id });
+    showNotification(`${plugin.name} gelöscht`);
+  } catch (e) {
+    showNotification('Fehler: ' + e);
+  }
+  await renderPluginList();
 }
 
 // ============================================================================
@@ -210,6 +159,8 @@ export async function renderPluginList(): Promise<void> {
 // ============================================================================
 
 export function setupPluginListeners(): void {
+  mountPluginList();
+
   // Open Folder
   document.getElementById('btn-plugins-folder')?.addEventListener('click', async () => {
     const invoke = getTauriInvoke();
