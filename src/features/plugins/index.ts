@@ -141,7 +141,6 @@ export async function togglePlugin(plugin: PluginInfo, enabled: boolean): Promis
 
 /** Uninstall a plugin (called from the Svelte list). */
 export async function deletePlugin(plugin: PluginInfo): Promise<void> {
-  if (!confirm(`"${plugin.name}" wirklich löschen?`)) return;
   const invoke = getTauriInvoke();
   if (!invoke) return;
   try {

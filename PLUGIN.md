@@ -39,9 +39,12 @@ plugins/
 | `author` | | Dein Name |
 | `description` | | Kurze Beschreibung |
 | `main` | ✓ | Einstiegspunkt (normalerweise "index.js") |
-| `permissions` | | Array von Berechtigungen |
+| `permissions` | | Array von Berechtigungen (rein informativ) |
 
 ### Berechtigungen
+
+Die `permissions` dienen aktuell nur zur Dokumentation – sie schränken die API
+**nicht** technisch ein. Trag trotzdem ehrlich ein, was dein Plugin nutzt:
 
 - `track` - Zugriff auf Track-Daten
 - `storage` - Daten persistent speichern
@@ -49,6 +52,7 @@ plugins/
 - `http` - HTTP-Requests machen
 - `twitch` - Zugriff auf Twitch Integration
 - `window` - Eigene Plugin-Fenster erstellen
+- `python` - Python-Code ausführen (wenn Python installiert ist)
 
 ## index.js
 
@@ -160,9 +164,14 @@ try {
 
 ---
 
-## Plugin Window API 🆕
+## Plugin Window API
 
 Plugins können eigene Fenster erstellen, um benutzerdefinierte UIs anzuzeigen.
+
+> **Wichtig:** Ein Plugin-Fenster ist ein schwebendes, verschiebbares `<div>`
+> **innerhalb der DisplaySong-App** – kein echtes Betriebssystem-Fenster und
+> **keine OBS-Browserquelle**. Es ist nur sichtbar, solange die App offen ist,
+> und kann nicht als Quelle in OBS eingebunden werden.
 
 ### `api.createWindow(options)`
 
@@ -290,9 +299,15 @@ return { init, cleanup };
 
 ---
 
-## Twitch API 🆕
+## Twitch API
 
 Plugins können die Twitch-Integration nutzen (wenn verbunden).
+
+> **Einschränkungen:**
+> - Es gibt **keinen** allgemeinen Chat-Nachrichten-Listener. Plugins können nur
+>   auf **Channel-Point-Einlösungen** reagieren (`onTwitchRedemption`).
+> - Channel Points / Einlösungen setzen **Twitch Affiliate oder Partner** voraus.
+>   Ohne diesen Status liefert Twitch keine Redemption-Events.
 
 ### `api.getTwitchConnection()`
 
@@ -414,6 +429,39 @@ const response = await api.httpRequest('POST', 'https://api.example.com/data', {
   body: JSON.stringify({ message: 'Hello' })
 });
 ```
+
+---
+
+## Python API
+
+Plugins können Python-Code ausführen, wenn auf dem System Python installiert ist.
+Prüfe **immer** zuerst mit `pythonAvailable()`.
+
+```javascript
+if (await api.pythonAvailable()) {
+  const version = await api.pythonVersion();   // z.B. "Python 3.11.5"
+
+  // Code-Schnipsel ausführen
+  const result = await api.pythonRun('print(2 + 2)');
+
+  // Skript-Datei mit Argumenten ausführen
+  await api.pythonRunScript('C:/pfad/script.py', ['arg1', 'arg2']);
+
+  // Pakete prüfen/installieren (pip)
+  if (!(await api.pythonPackageInstalled('requests'))) {
+    await api.pythonInstall('requests');
+  }
+}
+```
+
+| Methode | Beschreibung |
+|---------|--------------|
+| `api.pythonAvailable()` | `true`/`false` ob Python gefunden wurde |
+| `api.pythonVersion()` | Versions-String oder `null` |
+| `api.pythonRun(code)` | Führt Python-Code aus, gibt das Ergebnis zurück |
+| `api.pythonRunScript(path, args)` | Führt eine `.py`-Datei aus |
+| `api.pythonPackageInstalled(name)` | Prüft ob ein pip-Paket installiert ist |
+| `api.pythonInstall(name)` | Installiert ein pip-Paket |
 
 ---
 
