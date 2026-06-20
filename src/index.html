@@ -895,36 +895,8 @@
         </div>
       </div>
       
-      <!-- Source Priority Modal -->
-      <div id="source-priority-modal" class="modal hidden">
-        <div class="modal-content">
-          <div class="modal-header">
-            <div class="modal-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-            </div>
-            <h3 data-i18n="settings.system.sourcePriorityTitle">Quellen-Priorität</h3>
-            <button class="modal-close" data-modal="source-priority-modal">×</button>
-          </div>
-          <div class="modal-body">
-            <p class="modal-intro" data-i18n="settings.system.sourcePriorityDesc">Ziehe die Quellen in die gewünschte Reihenfolge. Die oberste Quelle hat höchste Priorität.</p>
-            
-            <div id="source-priority-list" class="priority-list">
-              <div class="priority-empty">
-                <p data-i18n="settings.system.sourcePriorityEmpty">Noch keine Quellen erkannt. Spiele Musik ab um Quellen zu erkennen.</p>
-              </div>
-            </div>
-            
-            <div class="modal-footer">
-              <button id="btn-reset-priority" class="btn btn-secondary" data-i18n="common.reset">Zurücksetzen</button>
-              <button id="btn-save-priority" class="btn btn-primary" data-i18n="common.save">Speichern</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Source Priority Modal (features/provider/SourcePriorityModal.svelte) -->
+      <div id="source-priority-mount"></div>
     </div>
   </div>
 

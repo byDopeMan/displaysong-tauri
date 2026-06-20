@@ -3,8 +3,8 @@
  * Allows users to set priority order for Windows Audio sources
  */
 
+import { writable } from 'svelte/store';
 import { getString, setString } from '../../utils/storage';
-import { escapeAttr } from '../../utils/format';
 import { getTauriInvoke } from '../../core/tauri';
 
 // Known sources with their icons
@@ -25,6 +25,13 @@ const SOURCE_ICONS: Record<string, string> = {
 // Track seen sources (only real detected ones)
 let seenSources: string[] = [];
 
+// Reactive state for SourcePriorityModal.svelte.
+export const priorityModalOpen = writable(false);
+export const priorityList = writable<string[]>([]);
+function syncPriorityStore(): void {
+  priorityList.set([...seenSources]);
+}
+
 // Export for external update
 export function updatePriorityButtonVisibility(): void {
   const btn = document.getElementById('btn-source-priority');
@@ -35,13 +42,12 @@ export function updatePriorityButtonVisibility(): void {
   btn.style.display = provider === 'windows' ? '' : 'none';
 }
 
-/** Initialize source priority system */
+/**
+ * Initialize source priority system. The modal + drag&drop list is rendered by
+ * SourcePriorityModal.svelte now; here we only load the data, seed known sources
+ * and wire the (still id-based) open button in the System section.
+ */
 export function initSourcePriority(): void {
-  const btn = document.getElementById('btn-source-priority');
-  const modal = document.getElementById('source-priority-modal');
-
-  if (!btn || !modal) return;
-
   // Load seen sources from storage
   loadSeenSources();
 
@@ -49,38 +55,15 @@ export function initSourcePriority(): void {
   // isn't empty before anything has played. Best-effort, fire-and-forget.
   seedKnownSources();
 
+  syncPriorityStore();
+
   // Initial visibility based on saved provider
   updatePriorityButtonVisibility();
 
-  // Open modal
-  btn.addEventListener('click', () => {
-    modal.classList.remove('hidden');
-    renderPriorityList();
-  });
-
-  // Close modal
-  modal.querySelector('.modal-close')?.addEventListener('click', () => {
-    modal.classList.add('hidden');
-  });
-
-  // Save button
-  document.getElementById('btn-save-priority')?.addEventListener('click', () => {
-    savePriority();
-    modal.classList.add('hidden');
-  });
-
-  // Reset button - resets order to default (by name alphabetically)
-  document.getElementById('btn-reset-priority')?.addEventListener('click', () => {
-    seenSources.sort((a, b) => a.localeCompare(b));
-    saveSeenSources();
-    renderPriorityList();
-  });
-
-  // Close on backdrop click
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.add('hidden');
-    }
+  // The open button lives in SystemSettings.svelte (kept by id); open the
+  // Svelte modal via the store.
+  document.getElementById('btn-source-priority')?.addEventListener('click', () => {
+    priorityModalOpen.set(true);
   });
 }
 
@@ -121,6 +104,7 @@ export function addSeenSource(source: string): void {
   if (!seenSources.includes(normalized)) {
     seenSources.push(normalized);
     saveSeenSources();
+    syncPriorityStore();
   }
 }
 
@@ -145,18 +129,18 @@ async function seedKnownSources(): Promise<void> {
     }
     if (added) {
       saveSeenSources();
-      renderPriorityList();
+      syncPriorityStore();
     }
   } catch (e) {
     // detection is best-effort
   }
 }
 
-/** Remove a source from the list */
-function removeSource(source: string): void {
+/** Remove a source from the list (called from the modal). */
+export function removeSource(source: string): void {
   seenSources = seenSources.filter((s) => s !== source);
   saveSeenSources();
-  renderPriorityList();
+  syncPriorityStore();
 }
 
 /** Normalize source name for consistency */
@@ -191,7 +175,7 @@ function normalizeSourceName(source: string): string {
 }
 
 /** Get icon class for source */
-function getSourceIconClass(source: string): string {
+export function getSourceIconClass(source: string): string {
   const lower = source.toLowerCase();
 
   if (lower.includes('spotify')) return 'spotify';
@@ -209,7 +193,7 @@ function getSourceIconClass(source: string): string {
 }
 
 /** Get icon SVG for source */
-function getSourceIcon(source: string): string {
+export function getSourceIcon(source: string): string {
   const iconClass = getSourceIconClass(source);
   return SOURCE_ICONS[iconClass] || SOURCE_ICONS.default;
 }
@@ -219,200 +203,24 @@ export function getSourcePriority(): string[] {
   return [...seenSources];
 }
 
-/** Save priority order (reorder seenSources based on current DOM order) */
-function savePriority(): void {
-  const list = document.getElementById('source-priority-list');
-  if (!list) return;
-  const items = list.querySelectorAll<HTMLElement>('.priority-item');
-  seenSources = [...items].map((item) => item.dataset.source || '').filter(Boolean);
+/** Persist a new priority order (called from the modal's Save button). */
+export function savePriorityOrder(order: string[]): void {
+  seenSources = order.filter(Boolean);
   saveSeenSources();
+  syncPriorityStore();
 }
 
-/** Render the priority list */
-function renderPriorityList(): void {
-  const list = document.getElementById('source-priority-list');
-  if (!list) return;
-
-  if (seenSources.length === 0) {
-    list.innerHTML = `
-      <div class="priority-empty">
-        <p data-i18n="settings.system.sourcePriorityEmpty">Noch keine Quellen erkannt. Spiele Musik ab um Quellen zu erkennen.</p>
-      </div>
-    `;
-    return;
-  }
-
-  list.innerHTML = seenSources.map((source, index) => `
-    <div class="priority-item" data-source="${escapeAttr(source)}" data-index="${index}">
-      <span class="priority-rank">${index + 1}</span>
-      <span class="priority-icon ${getSourceIconClass(source)}">${getSourceIcon(source)}</span>
-      <span class="priority-name">${escapeAttr(source)}</span>
-      <button class="priority-remove" data-source="${escapeAttr(source)}" title="Entfernen">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-      <span class="priority-drag-handle">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
-        </svg>
-      </span>
-    </div>
-  `).join('');
-
-  // Setup remove buttons
-  list.querySelectorAll<HTMLElement>('.priority-remove').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      removeSource(btn.dataset.source || '');
-    });
-  });
-
-  // Setup drag and drop
-  setupDragAndDrop(list);
-}
-
-/** Setup smooth drag and drop functionality */
-function setupDragAndDrop(list: HTMLElement): void {
-  let draggedItem: HTMLElement | null = null;
-  let draggedClone: HTMLElement | null = null;
-  let startY = 0;
-  let offsetY = 0;
-
-  const items = list.querySelectorAll<HTMLElement>('.priority-item');
-
-  items.forEach((item) => {
-    item.addEventListener('mousedown', onMouseDown);
-    item.addEventListener('touchstart', onTouchStart, { passive: false });
-  });
-
-  function onMouseDown(e: MouseEvent): void {
-    // Don't drag if clicking remove button
-    if ((e.target as HTMLElement).closest('.priority-remove')) return;
-    e.preventDefault();
-    startDrag(e.currentTarget as HTMLElement, e.clientY);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }
-
-  function onTouchStart(e: TouchEvent): void {
-    if ((e.target as HTMLElement).closest('.priority-remove')) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    startDrag(e.currentTarget as HTMLElement, touch.clientY);
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    document.addEventListener('touchend', onTouchEnd);
-  }
-
-  function startDrag(item: HTMLElement, clientY: number): void {
-    draggedItem = item;
-    const rect = item.getBoundingClientRect();
-    startY = clientY;
-    offsetY = clientY - rect.top;
-
-    // Create a clone for dragging
-    draggedClone = item.cloneNode(true) as HTMLElement;
-    draggedClone.classList.add('priority-item-clone');
-    draggedClone.style.position = 'fixed';
-    draggedClone.style.left = rect.left + 'px';
-    draggedClone.style.top = rect.top + 'px';
-    draggedClone.style.width = rect.width + 'px';
-    draggedClone.style.zIndex = '1000';
-    draggedClone.style.pointerEvents = 'none';
-    document.body.appendChild(draggedClone);
-
-    // Hide original
-    draggedItem.classList.add('dragging');
-  }
-
-  function onMouseMove(e: MouseEvent): void {
-    if (!draggedItem) return;
-    moveDrag(e.clientY);
-  }
-
-  function onTouchMove(e: TouchEvent): void {
-    if (!draggedItem) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    moveDrag(touch.clientY);
-  }
-
-  function moveDrag(clientY: number): void {
-    // Move clone
-    if (draggedClone) {
-      draggedClone.style.top = (clientY - offsetY) + 'px';
-    }
-
-    // Find target position
-    const siblings = [...list.querySelectorAll<HTMLElement>('.priority-item:not(.dragging)')];
-    let targetIndex = siblings.length;
-
-    for (let i = 0; i < siblings.length; i++) {
-      const sibling = siblings[i];
-      const rect = sibling.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-
-      if (clientY < midY) {
-        targetIndex = i;
-        break;
-      }
-    }
-
-    // Move the actual item in DOM
-    if (!draggedItem) return;
-    const currentIndex = [...list.children].indexOf(draggedItem);
-    if (targetIndex !== currentIndex) {
-      if (targetIndex >= siblings.length) {
-        list.appendChild(draggedItem);
-      } else {
-        const targetElement = siblings[targetIndex];
-        if (targetElement) {
-          list.insertBefore(draggedItem, targetElement);
-        }
-      }
-    }
-  }
-
-  function onMouseUp(): void {
-    endDrag();
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
-  }
-
-  function onTouchEnd(): void {
-    endDrag();
-    document.removeEventListener('touchmove', onTouchMove);
-    document.removeEventListener('touchend', onTouchEnd);
-  }
-
-  function endDrag(): void {
-    if (!draggedItem) return;
-
-    // Remove clone
-    if (draggedClone && draggedClone.parentNode) {
-      draggedClone.parentNode.removeChild(draggedClone);
-    }
-
-    // Show original
-    draggedItem.classList.remove('dragging');
-
-    // Update ranks
-    updateRanks();
-
-    // Cleanup
-    draggedItem = null;
-    draggedClone = null;
-  }
-}
-
-/** Update rank numbers after reorder */
-function updateRanks(): void {
-  const items = document.querySelectorAll('#source-priority-list .priority-item');
-  items.forEach((item, index) => {
-    const rank = item.querySelector('.priority-rank');
-    if (rank) rank.textContent = String(index + 1);
-  });
+/**
+ * Reset (Reset button): re-detect the apps installed on the PC so removed
+ * defaults (browser, Spotify) come back, then sort alphabetically. Returns the
+ * new order.
+ */
+export async function resetPriorityOrder(): Promise<string[]> {
+  await seedKnownSources();
+  seenSources.sort((a, b) => a.localeCompare(b));
+  saveSeenSources();
+  syncPriorityStore();
+  return [...seenSources];
 }
 
 /** Get the highest priority source from multiple playing sources */
