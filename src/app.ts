@@ -22,6 +22,7 @@ import SpotifySetup from './features/provider/SpotifySetup.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
 import AccessRequestModal from './features/access/AccessRequestModal.svelte';
 import Connections from './features/provider/Connections.svelte';
+import TwitchSettings from './features/twitch/TwitchSettings.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners } from './features/settings';
@@ -223,6 +224,8 @@ async function init(): Promise<void> {
   if (accessRequestMount) new AccessRequestModal({ target: accessRequestMount });
   const connectionsMount = document.getElementById('connections-mount');
   if (connectionsMount) new Connections({ target: connectionsMount });
+  const twitchSettingsMount = document.getElementById('twitch-settings-mount');
+  if (twitchSettingsMount) new TwitchSettings({ target: twitchSettingsMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';
