@@ -8,6 +8,7 @@ import { showView } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
 import { setProvider, PROVIDER } from './provider';
 import { state } from '../../core/state';
+import { accessModalOpen } from '../access/store';
 
 // Secret code buffer for 420
 let secretBuffer = '';
@@ -120,11 +121,8 @@ function setupSecretCode(): void {
 
 /** Open 420 access request modal */
 function openAccessModal(): void {
-  const modal = document.getElementById('access-request-modal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    console.log('[Setup] 420 modal opened');
-  }
+  accessModalOpen.set(true);
+  console.log('[Setup] 420 modal opened');
 }
 
 /**

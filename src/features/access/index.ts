@@ -24,6 +24,7 @@ import {
   checkAccessStatus,
 } from './connection';
 import { autoLogin, handleApproved } from './session';
+import { accessModalOpen } from './store';
 
 // Re-export the public API surface other modules rely on.
 export { fetchDeveloperCredentials } from './api';
@@ -42,7 +43,7 @@ export { autoLogin } from './session';
 // Access Request Form
 // ============================================================================
 
-async function submitAccessRequest(): Promise<void> {
+export async function submitAccessRequest(): Promise<void> {
   const name = (document.getElementById('access-name') as HTMLInputElement | null)?.value?.trim();
   const email = (document.getElementById('access-email') as HTMLInputElement | null)?.value?.trim();
   const discord = (document.getElementById('access-discord') as HTMLInputElement | null)?.value?.trim();
@@ -175,20 +176,8 @@ export async function checkAccessStatusOnStartup(): Promise<void> {
 // ============================================================================
 
 export function setupAccessRequestListeners(): void {
-  const modal = document.getElementById('access-request-modal');
-  const form = document.getElementById('access-request-form');
-
-  modal?.querySelectorAll('[data-close-modal]').forEach((btn) => {
-    btn.addEventListener('click', () => modal.classList.add('hidden'));
-  });
-
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await submitAccessRequest();
-    });
-  }
-
+  // The modal itself (form submit + close) is AccessRequestModal.svelte; here we
+  // only handle the startup status check and the 420 key sequence that opens it.
   const requestId = getString('accessRequestId');
   if (requestId) {
     checkAccessStatusOnStartup();
@@ -209,7 +198,7 @@ export function setupAccessRequestListeners(): void {
 
       if (secretBuffer === '420') {
         secretBuffer = '';
-        modal?.classList.remove('hidden');
+        accessModalOpen.set(true);
         const reqId = getString('accessRequestId');
         if (reqId) checkAccessStatus();
       }

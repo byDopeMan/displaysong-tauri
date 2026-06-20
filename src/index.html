@@ -53,42 +53,8 @@
         <div id="spotify-setup-mount"></div>
       </div>
       
-      <!-- Access Request Modal (geheim - 420) -->
-      <div id="access-request-modal" class="modal hidden">
-        <div class="modal-content">
-          <div class="modal-header">
-            <span class="modal-title">🔑 Zugang anfragen</span>
-            <button class="modal-close" data-close-modal>&times;</button>
-          </div>
-          <div class="modal-body">
-            <p>Der Developer muss dich manuell freischalten. Gib deine Daten ein:</p>
-            
-            <form id="access-request-form" autocomplete="off">
-              <div class="form-group">
-                <label for="access-name">Name</label>
-                <input type="text" id="access-name" placeholder="Dein Name" required>
-              </div>
-              <div class="form-group">
-                <label for="access-email">Spotify E-Mail</label>
-                <input type="text" id="access-email" placeholder="name@example.com" inputmode="email" autocomplete="off" required>
-                <span class="hint">Die E-Mail deines Spotify Accounts!</span>
-              </div>
-              <div class="form-group">
-                <label for="access-discord">Discord (optional)</label>
-                <input type="text" id="access-discord" placeholder="username#1234">
-              </div>
-              
-              <div class="access-status hidden" id="access-status">
-              </div>
-              
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-close-modal>Abbrechen</button>
-                <button type="submit" class="btn btn-primary" id="btn-submit-access-a">Anfrage senden</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
+      <!-- Access Request Modal (geheim - 420) → features/access/AccessRequestModal.svelte -->
+      <div id="access-request-mount"></div>
 
       <!-- Auth View -->
       <div id="auth-view" class="view hidden">
