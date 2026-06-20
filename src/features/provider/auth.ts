@@ -2,7 +2,7 @@
  * Spotify Authentication
  */
 
-import { state, elements } from '../../core/state';
+import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { showView, openExternal } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
@@ -80,12 +80,15 @@ export async function disconnectSpotify(): Promise<void> {
 
 /** Update Spotify connection status in UI */
 export function updateSpotifyStatus(connected: boolean): void {
-  if (elements.spotifyStatusText) {
-    elements.spotifyStatusText.textContent = connected
+  // Resolved by id (the connection block is Connections.svelte, mounted after
+  // initElements runs).
+  const statusText = document.getElementById('spotify-status-text');
+  if (statusText) {
+    statusText.textContent = connected
       ? t('settings.connections.connected', {}, 'Verbunden')
       : t('settings.connections.notConnected', {}, 'Nicht verbunden');
-    elements.spotifyStatusText.style.color = connected ? 'var(--accent)' : '#888';
-    elements.spotifyStatusText.classList.toggle('connected', connected);
+    statusText.style.color = connected ? 'var(--accent)' : '#888';
+    statusText.classList.toggle('connected', connected);
   }
 }
 

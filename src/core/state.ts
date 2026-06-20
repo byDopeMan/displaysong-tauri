@@ -51,9 +51,9 @@ export function initElements(): void {
     // features/provider/SpotifySetup.svelte (accessed by id where needed).
     // Player elements (cover/status/track/progress) now live in
     // features/player/Player.svelte and are no longer cached here. The Designs
-    // widget-list lives in features/designs/Designs.svelte.
-    spotifyStatusText: document.getElementById('spotify-status-text'),
-    btnDisconnect: document.getElementById('btn-disconnect'),
+    // widget-list lives in features/designs/Designs.svelte. The connection block
+    // (Spotify/Twitch status + buttons) lives in features/provider/Connections.svelte
+    // and is resolved by id by provider-ui / twitch / events.
     btnCancelAuth: document.getElementById('btn-cancel-auth'),
   });
 }

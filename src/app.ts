@@ -21,6 +21,7 @@ import Setup from './features/provider/Setup.svelte';
 import SpotifySetup from './features/provider/SpotifySetup.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
 import AccessRequestModal from './features/access/AccessRequestModal.svelte';
+import Connections from './features/provider/Connections.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners } from './features/settings';
@@ -220,6 +221,8 @@ async function init(): Promise<void> {
   if (sourcePriorityMount) new SourcePriorityModal({ target: sourcePriorityMount });
   const accessRequestMount = document.getElementById('access-request-mount');
   if (accessRequestMount) new AccessRequestModal({ target: accessRequestMount });
+  const connectionsMount = document.getElementById('connections-mount');
+  if (connectionsMount) new Connections({ target: connectionsMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';

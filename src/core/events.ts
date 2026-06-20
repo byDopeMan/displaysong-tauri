@@ -22,9 +22,8 @@ export function setupEventListeners(): void {
   // NOTE: the Designs tab (.btn-show / folder / reload) is wired in
   // features/designs/Designs.svelte.
 
-  if (elements.btnDisconnect) {
-    elements.btnDisconnect.addEventListener('click', disconnectSpotify);
-  }
+  // Spotify disconnect lives in Connections.svelte (resolved by id post-mount).
+  document.getElementById('btn-disconnect')?.addEventListener('click', disconnectSpotify);
 
   if (elements.btnCancelAuth) {
     elements.btnCancelAuth.addEventListener('click', () => showView('setup'));
