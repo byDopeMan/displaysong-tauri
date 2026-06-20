@@ -13,113 +13,69 @@ import { state } from '../../core/state';
 let secretBuffer = '';
 let secretTimeout: ReturnType<typeof setTimeout> | null = null;
 
-/** Initialize setup flow */
+/**
+ * Initialize setup flow. The provider cards and the Spotify credentials form are
+ * Svelte components now (Setup.svelte / SpotifySetup.svelte) that call the
+ * exported helpers below; only the document-level 420 secret code stays here.
+ */
 export function initSetupFlow(): void {
-  setupProviderButtons();
-  setupSpotifyForm();
   setupSecretCode();
-  setupBackButton();
 }
 
-/** Setup provider selection buttons */
-function setupProviderButtons(): void {
-  // Windows Audio - Quick Start
-  document.getElementById('btn-use-windows-audio')?.addEventListener('click', async () => {
-    const invoke = getTauriInvoke();
+/** Windows Audio quick-start (provider card). */
+export async function useWindowsAudio(): Promise<void> {
+  const invoke = getTauriInvoke();
 
-    setProvider(PROVIDER.WINDOWS_AUDIO);
-    localStorage.setItem('setup-complete', 'true');
+  setProvider(PROVIDER.WINDOWS_AUDIO);
+  localStorage.setItem('setup-complete', 'true');
 
-    // App is ready (no Spotify auth needed)
-    state.isAuthenticated = true;
+  // App is ready (no Spotify auth needed)
+  state.isAuthenticated = true;
 
-    // Show player view
-    showView('player');
-    document.getElementById('nav-tabs')?.classList.remove('hidden');
+  // Show player view
+  showView('player');
+  document.getElementById('nav-tabs')?.classList.remove('hidden');
 
-    // Start Windows Audio polling (dynamic import to avoid circular dependency)
-    const { startWindowsAudioPolling } = await import('../../app');
-    startWindowsAudioPolling(invoke);
+  // Start Windows Audio polling (dynamic import to avoid circular dependency)
+  const { startWindowsAudioPolling } = await import('../../app');
+  startWindowsAudioPolling(invoke);
 
-    showNotification('Windows Audio aktiviert - Musik wird automatisch erkannt!');
-  });
-
-  // Spotify Setup
-  document.getElementById('btn-setup-spotify')?.addEventListener('click', () => {
-    showView('spotify-setup');
-  });
+  showNotification('Windows Audio aktiviert - Musik wird automatisch erkannt!');
 }
 
-/** Setup Spotify credentials form */
-function setupSpotifyForm(): void {
-  const form = document.getElementById('credentials-form');
+/**
+ * Save Spotify credentials and kick off the OAuth flow (switches to the auth
+ * view and opens the browser). Throws on failure so the caller can reset its UI.
+ */
+export async function connectSpotify(clientId: string, clientSecret: string): Promise<void> {
+  const invoke = getTauriInvoke();
+  if (!invoke) return;
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  // Save credentials
+  await invoke('save_credentials', { clientId, clientSecret });
 
-    const clientId = (document.getElementById('client-id') as HTMLInputElement | null)?.value?.trim();
-    const clientSecret = (document.getElementById('client-secret') as HTMLInputElement | null)?.value?.trim();
+  // Start auth server first
+  await invoke('start_auth_server');
 
-    if (!clientId || !clientSecret) {
-      showNotification('Bitte beide Felder ausfüllen', { type: 'error' });
-      return;
-    }
+  // Get auth URL
+  const authUrl = await invoke('get_auth_url');
 
-    const invoke = getTauriInvoke();
-    if (!invoke) return;
+  // Show auth view BEFORE opening browser
+  showView('auth');
 
-    const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
-    const originalText = btn?.textContent || 'Speichern & Verbinden';
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Verbinde...';
-    }
-
-    // Reset button function (used after auth or on error)
-    const resetButton = () => {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }
-    };
-
-    try {
-      // Save credentials
-      await invoke('save_credentials', { clientId, clientSecret });
-
-      // Start auth server first
-      await invoke('start_auth_server');
-
-      // Get auth URL
-      const authUrl = await invoke('get_auth_url');
-
-      // Show auth view BEFORE opening browser
-      showView('auth');
-
-      // Open in default browser
-      const { openExternal } = await import('../../ui/navigation');
-      await openExternal(authUrl);
-
-      // Reset button after a short delay
-      setTimeout(resetButton, 1500);
-    } catch (e) {
-      console.error('[Setup] Spotify setup error:', e);
-      showNotification('Fehler: ' + e, { type: 'error' });
-      resetButton();
-    }
-  });
+  // Open in default browser
+  const { openExternal } = await import('../../ui/navigation');
+  await openExternal(authUrl);
 }
 
-/** Setup back button */
-function setupBackButton(): void {
-  document.getElementById('btn-back-to-setup')?.addEventListener('click', () => {
-    // If already authenticated, go back to settings instead of setup
-    if (state.isAuthenticated) {
-      showView('settings');
-    } else {
-      showView('setup');
-    }
-  });
+/** Back button on the Spotify setup view. */
+export function goBackFromSpotifySetup(): void {
+  // If already authenticated, go back to settings instead of setup
+  if (state.isAuthenticated) {
+    showView('settings');
+  } else {
+    showView('setup');
+  }
 }
 
 /**

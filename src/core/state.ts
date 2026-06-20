@@ -47,9 +47,8 @@ export const elements: Record<string, HTMLElement | null> = {};
 export function initElements(): void {
   Object.assign(elements, {
     tabs: document.getElementById('nav-tabs'),
-    credentialsForm: document.getElementById('credentials-form'),
-    clientId: document.getElementById('client-id'),
-    clientSecret: document.getElementById('client-secret'),
+    // The Spotify credentials form + inputs live in
+    // features/provider/SpotifySetup.svelte (accessed by id where needed).
     // Player elements (cover/status/track/progress) now live in
     // features/player/Player.svelte and are no longer cached here. The Designs
     // widget-list lives in features/designs/Designs.svelte.

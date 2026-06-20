@@ -16,6 +16,8 @@ import Player from './features/player/Player.svelte';
 import WidgetBehavior from './features/settings/WidgetBehavior.svelte';
 import Appearance from './features/settings/Appearance.svelte';
 import Designs from './features/designs/Designs.svelte';
+import Setup from './features/provider/Setup.svelte';
+import SpotifySetup from './features/provider/SpotifySetup.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings';
@@ -204,6 +206,11 @@ async function init(): Promise<void> {
   // Designs tab.
   const designsMount = document.getElementById('designs-mount');
   if (designsMount) new Designs({ target: designsMount });
+  // Setup flow (provider selection + Spotify credentials).
+  const setupMount = document.getElementById('setup-mount');
+  if (setupMount) new Setup({ target: setupMount });
+  const spotifySetupMount = document.getElementById('spotify-setup-mount');
+  if (spotifySetupMount) new SpotifySetup({ target: spotifySetupMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';
