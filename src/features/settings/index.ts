@@ -128,41 +128,9 @@ export async function applyWidgetOpacity(): Promise<void> {
  * yet (connections, Twitch, System) plus the shared modal/close behaviour.
  */
 export function setupSettingsListeners(): void {
-  const autostartCheck = document.getElementById('autostart') as HTMLInputElement | null;
-  if (autostartCheck) {
-    autostartCheck.addEventListener('change', async () => {
-      const invoke = getTauriInvoke();
-      if (invoke) {
-        try {
-          await invoke('set_autostart', { enabled: autostartCheck.checked });
-          showNotification(autostartCheck.checked ? 'Autostart aktiviert' : 'Autostart deaktiviert');
-        } catch (e) {
-          autostartCheck.checked = !autostartCheck.checked;
-          showNotification('Autostart konnte nicht geändert werden');
-        }
-      }
-    });
-  }
-
-  const btnRemoveAutostart = document.getElementById('btn-remove-autostart');
-  if (btnRemoveAutostart) {
-    btnRemoveAutostart.addEventListener('click', async () => {
-      const invoke = getTauriInvoke();
-      if (invoke) {
-        try {
-          await invoke('remove_autostart_entry');
-          const checkbox = document.getElementById('autostart') as HTMLInputElement | null;
-          if (checkbox) checkbox.checked = false;
-          showNotification('Autostart-Eintrag entfernt');
-        } catch (e) {
-          showNotification('Fehler beim Entfernen');
-        }
-      }
-    });
-  }
-
-  // NOTE: the Designs-tab toggles (widget-accent-check, autohide-widgets,
-  // show-requester-widgets) are wired in features/designs/Designs.svelte.
+  // NOTE: the System section (provider select, source priority, autostart) is
+  // rendered by SystemSettings.svelte; the Designs-tab toggles are wired in
+  // features/designs/Designs.svelte.
 
   // Generic modal close (changelog / licenses / blocklist).
   document.querySelectorAll<HTMLElement>('.modal-close').forEach((btn) => {
@@ -193,17 +161,5 @@ export function setupSettingsListeners(): void {
         }
       }
     });
-  }
-}
-
-/** Load autostart status */
-export async function loadAutostartStatus(): Promise<void> {
-  const invoke = getTauriInvoke();
-  if (invoke) {
-    try {
-      const enabled = await invoke('get_autostart');
-      const checkbox = document.getElementById('autostart') as HTMLInputElement | null;
-      if (checkbox) checkbox.checked = enabled;
-    } catch (e) {}
   }
 }

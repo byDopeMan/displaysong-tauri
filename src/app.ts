@@ -15,12 +15,13 @@ import Titlebar from './components/Titlebar.svelte';
 import Player from './features/player/Player.svelte';
 import WidgetBehavior from './features/settings/WidgetBehavior.svelte';
 import Appearance from './features/settings/Appearance.svelte';
+import SystemSettings from './features/settings/SystemSettings.svelte';
 import Designs from './features/designs/Designs.svelte';
 import Setup from './features/provider/Setup.svelte';
 import SpotifySetup from './features/provider/SpotifySetup.svelte';
 
 // Features
-import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings';
+import { loadSettings, setupSettingsListeners } from './features/settings';
 import { loadWidgetPositions, autoShowWidgets, syncActiveWidgets } from './features/widgets';
 import { setupAccessRequestListeners, initAccessSystem } from './features/access/index';
 import { checkExistingCredentialsWithStatus } from './features/provider/auth';
@@ -203,6 +204,8 @@ async function init(): Promise<void> {
   if (settingsWidgetsMount) new WidgetBehavior({ target: settingsWidgetsMount });
   const settingsAppearanceMount = document.getElementById('settings-appearance-mount');
   if (settingsAppearanceMount) new Appearance({ target: settingsAppearanceMount });
+  const settingsSystemMount = document.getElementById('settings-system-mount');
+  if (settingsSystemMount) new SystemSettings({ target: settingsSystemMount });
   // Designs tab.
   const designsMount = document.getElementById('designs-mount');
   if (designsMount) new Designs({ target: designsMount });
@@ -240,7 +243,7 @@ async function init(): Promise<void> {
 
   setLoadingStatus('Prüfe Konfiguration...');
 
-  await loadAutostartStatus();
+  // Autostart status is loaded by SystemSettings.svelte on mount.
   await setupDeepLinkHandler();
   await setupTrackListener();
 
