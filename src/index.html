@@ -734,38 +734,8 @@
           </div><!-- /collapsible-section -->
         </div>
 
-        <!-- Widget-Verhalten -->
-        <div class="settings-section">
-          <h3 data-i18n="settings.widget.title">Widget-Verhalten</h3>
-          
-          <div class="setting-row">
-            <label for="polling-interval" data-i18n="settings.widget.pollingInterval">Aktualisierungsrate</label>
-            <select id="polling-interval" class="setting-select">
-              <option value="1000">1 Sekunde</option>
-              <option value="2000" selected>2 Sekunden</option>
-              <option value="5000">5 Sekunden</option>
-              <option value="10000">10 Sekunden</option>
-            </select>
-          </div>
-          
-          <div class="setting-row">
-            <label for="widget-opacity" data-i18n="settings.widget.opacity">Widget-Transparenz</label>
-            <div class="slider-row">
-              <input type="range" id="widget-opacity" class="setting-slider" min="50" max="100" value="100">
-              <span id="widget-opacity-value">100%</span>
-            </div>
-          </div>
-          
-          <div class="setting-row">
-            <label for="auto-show-widgets" data-i18n="settings.widget.autoShow">Widgets beim Start öffnen</label>
-            <input type="checkbox" id="auto-show-widgets" class="setting-checkbox">
-          </div>
-          
-          <div class="setting-row">
-            <label for="remember-positions" data-i18n="settings.widget.rememberPositions">Widget-Positionen merken</label>
-            <input type="checkbox" id="remember-positions" class="setting-checkbox">
-          </div>
-        </div>
+        <!-- Widget-Verhalten (features/settings/WidgetBehavior.svelte) -->
+        <div id="settings-widgets-mount"></div>
 
         <!-- System -->
         <div class="settings-section">
@@ -801,112 +771,8 @@
           <button id="btn-remove-autostart" class="btn btn-secondary btn-small" data-i18n="settings.system.removeAutostart">Autostart-Eintrag entfernen</button>
         </div>
 
-        <!-- Aussehen -->
-        <div class="settings-section">
-          <h3 data-i18n="settings.appearance.title">Aussehen</h3>
-          
-          <div class="setting-row">
-            <label for="theme-select" data-i18n="settings.appearance.theme">Theme</label>
-            <select id="theme-select" class="setting-select">
-              <option value="dark" selected data-i18n="settings.appearance.themeDark">Dunkel</option>
-              <option value="light" data-i18n="settings.appearance.themeLight">Hell</option>
-            </select>
-          </div>
-          
-          <div class="setting-row">
-            <label for="language-select" data-i18n="settings.appearance.language">Sprache</label>
-            <select id="language-select" class="setting-select">
-              <option value="de">Deutsch</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-          
-          <div class="setting-row" id="plugin-settings-style-row" style="display: none;">
-            <label for="plugin-settings-style" data-i18n="settings.appearance.pluginSettings">Plugin-Einstellungen</label>
-            <select id="plugin-settings-style" class="setting-select">
-              <option value="panel" selected data-i18n="settings.appearance.pluginPanel">Als Panel (im Tab)</option>
-              <option value="modal" data-i18n="settings.appearance.pluginModal">Als Fenster (Modal)</option>
-            </select>
-          </div>
-          
-          <div class="setting-row">
-            <label for="show-player-tab" data-i18n="settings.appearance.showPlayerTab">Player Tab anzeigen</label>
-            <input type="checkbox" id="show-player-tab" class="setting-checkbox" checked>
-          </div>
-          
-          <div class="setting-row">
-            <label for="show-history-tab" data-i18n="settings.appearance.showHistoryTab">Verlauf Tab anzeigen</label>
-            <input type="checkbox" id="show-history-tab" class="setting-checkbox" checked>
-          </div>
-          
-          <div class="setting-row setting-sub" id="history-length-setting">
-            <label for="history-length" data-i18n="settings.appearance.historyLength">Anzahl Songs im Verlauf</label>
-            <select id="history-length" class="setting-select">
-              <option value="10">10 Songs</option>
-              <option value="20" selected>20 Songs</option>
-              <option value="50">50 Songs</option>
-              <option value="100">100 Songs</option>
-            </select>
-          </div>
-          
-          <div class="setting-row">
-            <label data-i18n="settings.appearance.accentColor">Akzentfarbe</label>
-            <div class="color-options">
-              <button class="color-btn active" data-color="spotify" style="background: #1db954;" title="Spotify Grün"></button>
-              <button class="color-btn" data-color="blue" style="background: #3b82f6;" title="Blau"></button>
-              <button class="color-btn" data-color="purple" style="background: #8b5cf6;" title="Lila"></button>
-              <button class="color-btn" data-color="pink" style="background: #ec4899;" title="Pink"></button>
-              <button class="color-btn" data-color="orange" style="background: #f97316;" title="Orange"></button>
-              <button class="color-btn" data-color="red" style="background: #ef4444;" title="Rot"></button>
-              <label class="color-picker-label" title="Eigene Farbe auswählen">
-                <input type="color" id="custom-accent-color" class="color-picker-input" value="#1db954">
-                <span class="color-btn color-btn-custom" data-color="custom">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
-                    <circle cx="8" cy="12" r="1.5" fill="currentColor"></circle>
-                    <circle cx="16" cy="12" r="1.5" fill="currentColor"></circle>
-                    <circle cx="12" cy="16" r="1.5" fill="currentColor"></circle>
-                  </svg>
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Über -->
-        <div class="settings-section">
-          <h3 data-i18n="settings.about.title">Über</h3>
-          <div class="about-info">
-            <p class="app-name">DisplaySong</p>
-            <p class="app-version">Version 4.1.0</p>
-            <p class="app-desc" data-i18n="settings.about.description">Now Playing Widget für OBS</p>
-          </div>
-          <div class="about-links">
-            <button id="btn-changelog" class="btn btn-text">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-              </svg>
-              <span data-i18n="settings.about.changelog">Changelog</span>
-            </button>
-            <button id="btn-licenses" class="btn btn-text">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-              <span data-i18n="settings.about.licenses">Lizenzen</span>
-            </button>
-            <button id="btn-logs" class="btn btn-text">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <span data-i18n="settings.about.logs">Logs öffnen</span>
-            </button>
-          </div>
-        </div>
+        <!-- Aussehen + Über (features/settings/Appearance.svelte) -->
+        <div id="settings-appearance-mount"></div>
       </div>
       
       <!-- Changelog Modal -->

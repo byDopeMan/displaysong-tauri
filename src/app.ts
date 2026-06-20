@@ -13,6 +13,8 @@ import { showView, updateHistoryTabVisibility } from './ui/navigation';
 import { updateTrackDisplay, updateTrackMetadata, startProgressInterpolation, getInterpolatedProgress } from './ui/track-display';
 import Titlebar from './components/Titlebar.svelte';
 import Player from './features/player/Player.svelte';
+import WidgetBehavior from './features/settings/WidgetBehavior.svelte';
+import Appearance from './features/settings/Appearance.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings';
@@ -185,19 +187,26 @@ async function init(): Promise<void> {
   initViews();
   initElements();
 
+  // Mount the Svelte islands first so i18n (populateLanguageSelect /
+  // updatePageTranslations) and the rest of init can find their elements.
+  // Titlebar is mounted as the first child of .app.
+  const appEl = document.querySelector('.app');
+  if (appEl) new Titlebar({ target: appEl, anchor: appEl.firstElementChild ?? undefined });
+  // Now-playing player.
+  const playerMount = document.getElementById('player-mount');
+  if (playerMount) new Player({ target: playerMount });
+  // Settings sections (Widget-Verhalten, Aussehen + Über).
+  const settingsWidgetsMount = document.getElementById('settings-widgets-mount');
+  if (settingsWidgetsMount) new WidgetBehavior({ target: settingsWidgetsMount });
+  const settingsAppearanceMount = document.getElementById('settings-appearance-mount');
+  if (settingsAppearanceMount) new Appearance({ target: settingsAppearanceMount });
+
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';
   await loadLanguage(savedLang);
   await populateLanguageSelect();
   updatePageTranslations();
 
-  // Setup UI
-  // Titlebar is a Svelte component — mount it as the first child of .app.
-  const appEl = document.querySelector('.app');
-  if (appEl) new Titlebar({ target: appEl, anchor: appEl.firstElementChild ?? undefined });
-  // Now-playing player is a Svelte component — mount it into its placeholder.
-  const playerMount = document.getElementById('player-mount');
-  if (playerMount) new Player({ target: playerMount });
   setupEventListeners();
   setupSettingsListeners();
   setupAccessRequestListeners();
