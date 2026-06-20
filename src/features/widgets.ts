@@ -7,6 +7,7 @@ import { getTauriInvoke, getTauriWebviewWindow, getTauriPhysicalPosition, getTau
 import { getItem, setItem } from '../utils/storage';
 import { settings, getCurrentAccentColor } from './settings';
 import { showNotification } from '../ui/notifications';
+import { activeWidgets } from './designs/store';
 
 export const WIDGET_NAMES: Record<string, string> = {
   'widget-1': 'Compact Bar',
@@ -172,28 +173,10 @@ function saveActiveWidgets(): void {
   setItem('displaysong-active-widgets', Array.from(state.activeWidgets));
 }
 
-/** Update widget list in UI */
+/** Publish the active-widgets list to the store (rendered by Designs.svelte). */
 export function updateWidgetList(): void {
-  const widgetList = document.getElementById('widget-list');
-  if (!widgetList) return;
-
   if (settings.autoShowWidgets) saveActiveWidgets();
-
-  if (state.activeWidgets.size === 0) {
-    widgetList.innerHTML = '<span class="no-widgets">Keine aktiv</span>';
-    return;
-  }
-
-  widgetList.innerHTML = Array.from(state.activeWidgets).map((label) => `
-    <span class="widget-tag">
-      ${WIDGET_NAMES[label] || label}
-      <button class="close-widget" data-widget="${label}">×</button>
-    </span>
-  `).join('');
-
-  widgetList.querySelectorAll<HTMLElement>('.close-widget').forEach((btn) => {
-    btn.addEventListener('click', () => hideWidget(btn.dataset.widget || ''));
-  });
+  activeWidgets.set(Array.from(state.activeWidgets));
 }
 
 /** Send accent color to widget */

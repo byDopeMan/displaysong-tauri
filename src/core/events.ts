@@ -7,7 +7,6 @@ import { getTauriListen } from './tauri';
 import { updateTrackDisplay } from '../ui/track-display';
 import { switchTab, showView } from '../ui/navigation';
 import { showNotification } from '../ui/notifications';
-import { toggleWidget, openConfigFolder, reloadWidgets } from '../features/widgets';
 import { disconnectSpotify } from '../features/provider/auth';
 import { refreshHistory } from '../features/history/history';
 
@@ -20,10 +19,8 @@ export function setupEventListeners(): void {
   }
 
   // NOTE: credentials-form handler is in provider/setup.ts
-
-  document.querySelectorAll<HTMLElement>('.btn-show').forEach((btn) => {
-    btn.addEventListener('click', () => toggleWidget(btn.dataset.widget || ''));
-  });
+  // NOTE: the Designs tab (.btn-show / folder / reload) is wired in
+  // features/designs/Designs.svelte.
 
   if (elements.btnDisconnect) {
     elements.btnDisconnect.addEventListener('click', disconnectSpotify);
@@ -32,12 +29,6 @@ export function setupEventListeners(): void {
   if (elements.btnCancelAuth) {
     elements.btnCancelAuth.addEventListener('click', () => showView('setup'));
   }
-
-  const btnOpenFolder = document.getElementById('btn-open-folder');
-  if (btnOpenFolder) btnOpenFolder.addEventListener('click', openConfigFolder);
-
-  const btnReloadWidgets = document.getElementById('btn-reload-widgets');
-  if (btnReloadWidgets) btnReloadWidgets.addEventListener('click', reloadWidgets);
 
   setupExternalLinks();
 }

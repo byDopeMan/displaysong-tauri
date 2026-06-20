@@ -51,8 +51,8 @@ export function initElements(): void {
     clientId: document.getElementById('client-id'),
     clientSecret: document.getElementById('client-secret'),
     // Player elements (cover/status/track/progress) now live in
-    // features/player/Player.svelte and are no longer cached here.
-    widgetList: document.getElementById('widget-list'),
+    // features/player/Player.svelte and are no longer cached here. The Designs
+    // widget-list lives in features/designs/Designs.svelte.
     spotifyStatusText: document.getElementById('spotify-status-text'),
     btnDisconnect: document.getElementById('btn-disconnect'),
     btnCancelAuth: document.getElementById('btn-cancel-auth'),

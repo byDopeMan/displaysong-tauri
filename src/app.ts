@@ -15,6 +15,7 @@ import Titlebar from './components/Titlebar.svelte';
 import Player from './features/player/Player.svelte';
 import WidgetBehavior from './features/settings/WidgetBehavior.svelte';
 import Appearance from './features/settings/Appearance.svelte';
+import Designs from './features/designs/Designs.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners, loadAutostartStatus } from './features/settings';
@@ -200,6 +201,9 @@ async function init(): Promise<void> {
   if (settingsWidgetsMount) new WidgetBehavior({ target: settingsWidgetsMount });
   const settingsAppearanceMount = document.getElementById('settings-appearance-mount');
   if (settingsAppearanceMount) new Appearance({ target: settingsAppearanceMount });
+  // Designs tab.
+  const designsMount = document.getElementById('designs-mount');
+  if (designsMount) new Designs({ target: designsMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';

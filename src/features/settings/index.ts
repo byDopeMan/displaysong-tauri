@@ -76,26 +76,16 @@ export function applySettings(): void {
   // Plugin settings rendering style (panel vs modal).
   setPluginSettingsStyle(settings.pluginSettingsStyle || 'panel');
 
-  // Widget accent-color checkboxes live in the Designs view (not migrated yet).
-  document.querySelectorAll<HTMLInputElement>('.widget-accent-check').forEach((checkbox) => {
-    const widget = checkbox.dataset.widget || '';
-    checkbox.checked = settings.widgetAccentColors?.[widget] || false;
-  });
+  // The Designs-tab widget toggles are rendered by Designs.svelte now; still
+  // mirror the requester/auto-hide settings to localStorage + broadcast at load
+  // so the widget windows pick them up on startup.
+  const showRequester = settings.showRequesterWidgets || false;
+  localStorage.setItem('widget-show-requester', String(showRequester));
+  try { window.__TAURI__?.event?.emit('requester-visibility-change', { enabled: showRequester }); } catch (e) {}
 
-  // Global widget toggles (requester + auto-hide): mirror to localStorage and broadcast.
-  const showRequesterCheck = document.getElementById('show-requester-widgets') as HTMLInputElement | null;
-  if (showRequesterCheck) {
-    showRequesterCheck.checked = settings.showRequesterWidgets || false;
-    localStorage.setItem('widget-show-requester', String(showRequesterCheck.checked));
-    try { window.__TAURI__?.event?.emit('requester-visibility-change', { enabled: showRequesterCheck.checked }); } catch (e) {}
-  }
-
-  const autoHideCheck = document.getElementById('autohide-widgets') as HTMLInputElement | null;
-  if (autoHideCheck) {
-    autoHideCheck.checked = settings.autoHideWidgets || false;
-    localStorage.setItem('widget-autohide', String(autoHideCheck.checked));
-    try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHideCheck.checked }); } catch (e) {}
-  }
+  const autoHide = settings.autoHideWidgets || false;
+  localStorage.setItem('widget-autohide', String(autoHide));
+  try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHide }); } catch (e) {}
 
   updateTabVisibility();
   updateGlobalBackground();
@@ -171,51 +161,8 @@ export function setupSettingsListeners(): void {
     });
   }
 
-  // Widget accent-color checkboxes (Designs view).
-  document.querySelectorAll<HTMLInputElement>('.widget-accent-check').forEach((checkbox) => {
-    checkbox.addEventListener('change', async () => {
-      const widget = checkbox.dataset.widget || '';
-      if (!settings.widgetAccentColors) settings.widgetAccentColors = {};
-      settings.widgetAccentColors[widget] = checkbox.checked;
-      settingsStore.set(settings);
-      saveSettings();
-
-      const { state } = await import('../../core/state');
-      const { sendAccentColorToWidget, resetWidgetToTrackColor } = await import('../widgets');
-
-      if (state.activeWidgets.has(widget)) {
-        if (checkbox.checked) {
-          sendAccentColorToWidget(widget);
-        } else {
-          resetWidgetToTrackColor(widget);
-        }
-      }
-    });
-  });
-
-  // Widget: auto-hide globally (broadcast to all widget windows). Designs view.
-  const autoHideWidgets = document.getElementById('autohide-widgets') as HTMLInputElement | null;
-  if (autoHideWidgets) {
-    autoHideWidgets.addEventListener('change', () => {
-      settings.autoHideWidgets = autoHideWidgets.checked;
-      settingsStore.set(settings);
-      localStorage.setItem('widget-autohide', String(autoHideWidgets.checked));
-      saveSettings();
-      try { window.__TAURI__?.event?.emit('autohide-change', { enabled: autoHideWidgets.checked }); } catch (e) {}
-    });
-  }
-
-  // Widget: show requester globally (broadcast to all widget windows). Designs view.
-  const showRequesterWidgets = document.getElementById('show-requester-widgets') as HTMLInputElement | null;
-  if (showRequesterWidgets) {
-    showRequesterWidgets.addEventListener('change', () => {
-      settings.showRequesterWidgets = showRequesterWidgets.checked;
-      settingsStore.set(settings);
-      localStorage.setItem('widget-show-requester', String(showRequesterWidgets.checked));
-      saveSettings();
-      try { window.__TAURI__?.event?.emit('requester-visibility-change', { enabled: showRequesterWidgets.checked }); } catch (e) {}
-    });
-  }
+  // NOTE: the Designs-tab toggles (widget-accent-check, autohide-widgets,
+  // show-requester-widgets) are wired in features/designs/Designs.svelte.
 
   // Generic modal close (changelog / licenses / blocklist).
   document.querySelectorAll<HTMLElement>('.modal-close').forEach((btn) => {
