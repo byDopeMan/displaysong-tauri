@@ -9,21 +9,6 @@
   </style>
 </head>
 <body>
-  <script>
-    // Lädt Widget-Content aus AppData
-    (async () => {
-      try {
-        const { invoke } = window.__TAURI__.tauri;
-        const content = await invoke('get_custom_widget_content', { name: 'custom2' });
-        
-        // HTML parsen und einfügen
-        document.open();
-        document.write(content);
-        document.close();
-      } catch (e) {
-        document.body.innerHTML = '<div style="padding:20px;color:#f66;background:#111;font-family:system-ui;">Fehler: ' + e + '</div>';
-      }
-    })();
-  </script>
+  <script type="module" src="./custom2.ts"></script>
 </body>
 </html>
