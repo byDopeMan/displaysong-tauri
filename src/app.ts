@@ -15,6 +15,7 @@ import Titlebar from './components/Titlebar.svelte';
 import Player from './features/player/Player.svelte';
 import Settings from './features/settings/Settings.svelte';
 import Designs from './features/designs/Designs.svelte';
+import PluginsView from './features/plugins/PluginsView.svelte';
 import Setup from './features/provider/Setup.svelte';
 import SpotifySetup from './features/provider/SpotifySetup.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
@@ -208,6 +209,9 @@ async function init(): Promise<void> {
   // Designs tab.
   const designsMount = document.getElementById('designs-mount');
   if (designsMount) new Designs({ target: designsMount });
+  // Plugins tab.
+  const pluginsMount = document.getElementById('plugins-mount');
+  if (pluginsMount) new PluginsView({ target: pluginsMount });
   // Setup flow (provider selection + Spotify credentials).
   const setupMount = document.getElementById('setup-mount');
   if (setupMount) new Setup({ target: setupMount });
