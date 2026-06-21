@@ -55,7 +55,6 @@
         "signingIdentity": null
       },
       "resources": [
-        "../dist/widgets/*",
         "../dist/templates/*"
       ],
       "shortDescription": "Spotify Now Playing Widget",
