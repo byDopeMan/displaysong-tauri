@@ -2,7 +2,7 @@
   Twitch song-request settings section (markup only). All controls are wired by
   the twitch module + provider-ui by id after this island mounts.
 -->
-        <div class="settings-section hidden" id="twitch-settings-section">
+        <div class="settings-section" id="twitch-settings-section">
           <h3 data-i18n="settings.twitch.title">Twitch</h3>
           
           <div class="setting-row">

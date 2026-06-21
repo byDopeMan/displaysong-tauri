@@ -93,29 +93,11 @@
     broadcastAccentColor();
   }
 
-  function openModal(id: string) {
-    document.getElementById(id)?.classList.remove('hidden');
-  }
-
-  async function openLogs() {
-    const invoke = getTauriInvoke();
-    if (invoke) {
-      try {
-        await invoke('open_logs_folder');
-        showNotification('Logs-Ordner geöffnet');
-      } catch (e) {
-        showNotification('Fehler: ' + e);
-      }
-    }
-  }
 </script>
 
-<!-- Aussehen -->
-<div class="settings-section">
-  <h3 data-i18n="settings.appearance.title">Aussehen</h3>
-
-  <div class="setting-row">
-    <label for="theme-select" data-i18n="settings.appearance.theme">Theme</label>
+<!-- Aussehen (content only; Settings.svelte provides the "Appearance & System" section) -->
+<div class="setting-row">
+  <label for="theme-select" data-i18n="settings.appearance.theme">Theme</label>
     <select id="theme-select" class="setting-select" value={$settingsStore.theme} on:change={onTheme}>
       <option value="dark" data-i18n="settings.appearance.themeDark">Dunkel</option>
       <option value="light" data-i18n="settings.appearance.themeLight">Hell</option>
@@ -186,38 +168,3 @@
       </label>
     </div>
   </div>
-</div>
-
-<!-- Über -->
-<div class="settings-section">
-  <h3 data-i18n="settings.about.title">Über</h3>
-  <div class="about-info">
-    <p class="app-name">DisplaySong</p>
-    <p class="app-version">Version 4.1.0</p>
-    <p class="app-desc" data-i18n="settings.about.description">Now Playing Widget für OBS</p>
-  </div>
-  <div class="about-links">
-    <button id="btn-changelog" class="btn btn-text" on:click={() => openModal('changelog-modal')}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-        <line x1="16" y1="13" x2="8" y2="13"></line>
-        <line x1="16" y1="17" x2="8" y2="17"></line>
-      </svg>
-      <span data-i18n="settings.about.changelog">Changelog</span>
-    </button>
-    <button id="btn-licenses" class="btn btn-text" on:click={() => openModal('licenses-modal')}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-      </svg>
-      <span data-i18n="settings.about.licenses">Lizenzen</span>
-    </button>
-    <button id="btn-logs" class="btn btn-text" on:click={openLogs}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-      </svg>
-      <span data-i18n="settings.about.logs">Logs öffnen</span>
-    </button>
-  </div>
-</div>

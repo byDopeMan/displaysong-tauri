@@ -112,12 +112,16 @@
       "duplicateCheckHint": "Prevents the same song from being added multiple times"
     },
     "widget": {
-      "title": "Widget Behavior",
+      "title": "Design Behavior",
       "pollingInterval": "Update interval",
-      "opacity": "Widget opacity",
-      "autoShow": "Open widgets on startup",
-      "rememberPositions": "Remember widget positions"
+      "opacity": "Design opacity",
+      "autoShow": "Open designs on startup",
+      "rememberPositions": "Remember design positions"
     },
+    "appearanceSystem": {
+      "title": "Appearance & System"
+    },
+    "twitchOpenSettings": "Twitch settings",
     "system": {
       "title": "System",
       "autostart": "Start with Windows",
@@ -162,6 +166,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "reset": "Reset",
+    "back": "Back",
     "close": "Close",
     "error": "Error",
     "success": "Success",

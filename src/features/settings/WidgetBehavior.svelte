@@ -38,11 +38,8 @@
   }
 </script>
 
-<div class="settings-section">
-  <h3 data-i18n="settings.widget.title">Widget-Verhalten</h3>
-
-  <div class="setting-row">
-    <label for="polling-interval" data-i18n="settings.widget.pollingInterval">Aktualisierungsrate</label>
+<div class="setting-row">
+  <label for="polling-interval" data-i18n="settings.widget.pollingInterval">Aktualisierungsrate</label>
     <select id="polling-interval" class="setting-select" value={String($settingsStore.pollingInterval)} on:change={onPolling}>
       <option value="1000">1 Sekunde</option>
       <option value="2000">2 Sekunden</option>
@@ -52,7 +49,7 @@
   </div>
 
   <div class="setting-row">
-    <label for="widget-opacity" data-i18n="settings.widget.opacity">Widget-Transparenz</label>
+    <label for="widget-opacity" data-i18n="settings.widget.opacity">Design-Transparenz</label>
     <div class="slider-row">
       <input
         type="range"
@@ -69,12 +66,11 @@
   </div>
 
   <div class="setting-row">
-    <label for="auto-show-widgets" data-i18n="settings.widget.autoShow">Widgets beim Start öffnen</label>
+    <label for="auto-show-widgets" data-i18n="settings.widget.autoShow">Designs beim Start öffnen</label>
     <input type="checkbox" id="auto-show-widgets" class="setting-checkbox" checked={$settingsStore.autoShowWidgets} on:change={onAutoShow} />
   </div>
 
   <div class="setting-row">
-    <label for="remember-positions" data-i18n="settings.widget.rememberPositions">Widget-Positionen merken</label>
+    <label for="remember-positions" data-i18n="settings.widget.rememberPositions">Design-Positionen merken</label>
     <input type="checkbox" id="remember-positions" class="setting-checkbox" checked={$settingsStore.rememberPositions} on:change={onRemember} />
   </div>
-</div>

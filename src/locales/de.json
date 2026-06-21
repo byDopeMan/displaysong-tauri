@@ -112,12 +112,16 @@
       "duplicateCheckHint": "Verhindert, dass der gleiche Song mehrfach in der Queue ist"
     },
     "widget": {
-      "title": "Widget-Verhalten",
+      "title": "Design-Verhalten",
       "pollingInterval": "Aktualisierungsrate",
-      "opacity": "Widget-Transparenz",
-      "autoShow": "Widgets beim Start öffnen",
-      "rememberPositions": "Widget-Positionen merken"
+      "opacity": "Design-Transparenz",
+      "autoShow": "Designs beim Start öffnen",
+      "rememberPositions": "Design-Positionen merken"
     },
+    "appearanceSystem": {
+      "title": "Aussehen und System"
+    },
+    "twitchOpenSettings": "Twitch-Einstellungen",
     "system": {
       "title": "System",
       "autostart": "Mit Windows starten",
@@ -162,6 +166,7 @@
     "cancel": "Abbrechen",
     "save": "Speichern",
     "reset": "Zurücksetzen",
+    "back": "Zurück",
     "close": "Schließen",
     "error": "Fehler",
     "success": "Erfolg",

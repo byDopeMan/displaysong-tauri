@@ -3,10 +3,14 @@
  */
 
 import { state, views, elements } from '../core/state';
+import { twitchPanelOpen } from '../features/twitch/store';
 
 /** Switch between tabs */
 export function switchTab(tabName: string): void {
   if (!elements.tabs) return;
+
+  // Always return to the main settings view (not the Twitch sub-panel) on a tab switch.
+  twitchPanelOpen.set(false);
 
   elements.tabs.querySelectorAll<HTMLElement>('.tab').forEach((tab) => {
     tab.classList.toggle('active', tab.dataset.tab === tabName);

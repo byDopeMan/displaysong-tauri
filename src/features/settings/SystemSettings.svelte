@@ -44,12 +44,10 @@
   }
 </script>
 
-<div class="settings-section">
-  <h3 data-i18n="settings.system.title">System</h3>
-
-  <!-- Musik-Quelle (Provider-Auswahl, gewired von provider-ui) -->
-  <div class="setting-row">
-    <label for="music-provider-select" data-i18n="settings.system.activeProvider">Aktiver Provider</label>
+<!-- Content only; Settings.svelte provides the "Appearance & System" section. -->
+<!-- Musik-Quelle (Provider-Auswahl, gewired von provider-ui) -->
+<div class="setting-row">
+  <label for="music-provider-select" data-i18n="settings.system.activeProvider">Aktiver Provider</label>
     <div class="provider-select-wrapper">
       <button id="btn-source-priority" class="btn-icon-inline" title="Quellen-Priorität">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -71,8 +69,18 @@
 
   <div class="setting-row">
     <label for="autostart" data-i18n="settings.system.autostart">Mit Windows starten</label>
-    <input type="checkbox" id="autostart" class="setting-checkbox" checked={autostartChecked} on:change={onAutostart} />
+    <div class="autostart-controls">
+      {#if autostartChecked}
+        <button id="btn-remove-autostart" class="btn btn-secondary btn-small" data-i18n="settings.system.removeAutostart" on:click={removeAutostartEntry}>Autostart-Eintrag entfernen</button>
+      {/if}
+      <input type="checkbox" id="autostart" class="setting-checkbox" checked={autostartChecked} on:change={onAutostart} />
+    </div>
   </div>
 
-  <button id="btn-remove-autostart" class="btn btn-secondary btn-small" data-i18n="settings.system.removeAutostart" on:click={removeAutostartEntry}>Autostart-Eintrag entfernen</button>
-</div>
+<style>
+  .autostart-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+</style>

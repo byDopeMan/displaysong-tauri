@@ -22,10 +22,10 @@ export function updateTwitchUI(): void {
   if (btnConnect) btnConnect.classList.toggle('hidden', connected);
   if (btnDisconnect) btnDisconnect.classList.toggle('hidden', !connected);
 
-  const settingsSection = document.getElementById('twitch-settings-section');
-  if (settingsSection) {
-    settingsSection.classList.toggle('hidden', !connected);
-  }
+  // The Twitch settings live in a separate panel now (opened via the gear button
+  // in the connection row); only show that button when connected.
+  const settingsBtn = document.getElementById('btn-twitch-settings');
+  if (settingsBtn) settingsBtn.classList.toggle('hidden', !connected);
 
   const channelDisplay = document.getElementById('twitch-channel-display');
   if (channelDisplay && user) {

@@ -13,16 +13,12 @@ import { showView, updateHistoryTabVisibility } from './ui/navigation';
 import { updateTrackDisplay, updateTrackMetadata, startProgressInterpolation, getInterpolatedProgress } from './ui/track-display';
 import Titlebar from './components/Titlebar.svelte';
 import Player from './features/player/Player.svelte';
-import WidgetBehavior from './features/settings/WidgetBehavior.svelte';
-import Appearance from './features/settings/Appearance.svelte';
-import SystemSettings from './features/settings/SystemSettings.svelte';
+import Settings from './features/settings/Settings.svelte';
 import Designs from './features/designs/Designs.svelte';
 import Setup from './features/provider/Setup.svelte';
 import SpotifySetup from './features/provider/SpotifySetup.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
 import AccessRequestModal from './features/access/AccessRequestModal.svelte';
-import Connections from './features/provider/Connections.svelte';
-import TwitchSettings from './features/twitch/TwitchSettings.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners } from './features/settings';
@@ -203,13 +199,10 @@ async function init(): Promise<void> {
   // Now-playing player.
   const playerMount = document.getElementById('player-mount');
   if (playerMount) new Player({ target: playerMount });
-  // Settings sections (Widget-Verhalten, Aussehen + Über).
-  const settingsWidgetsMount = document.getElementById('settings-widgets-mount');
-  if (settingsWidgetsMount) new WidgetBehavior({ target: settingsWidgetsMount });
-  const settingsAppearanceMount = document.getElementById('settings-appearance-mount');
-  if (settingsAppearanceMount) new Appearance({ target: settingsAppearanceMount });
-  const settingsSystemMount = document.getElementById('settings-system-mount');
-  if (settingsSystemMount) new SystemSettings({ target: settingsSystemMount });
+  // Settings tab (composes Connections, Twitch panel, Design Behavior,
+  // Appearance & System, About).
+  const settingsMount = document.getElementById('settings-mount');
+  if (settingsMount) new Settings({ target: settingsMount });
   // Designs tab.
   const designsMount = document.getElementById('designs-mount');
   if (designsMount) new Designs({ target: designsMount });
@@ -222,10 +215,6 @@ async function init(): Promise<void> {
   if (sourcePriorityMount) new SourcePriorityModal({ target: sourcePriorityMount });
   const accessRequestMount = document.getElementById('access-request-mount');
   if (accessRequestMount) new AccessRequestModal({ target: accessRequestMount });
-  const connectionsMount = document.getElementById('connections-mount');
-  if (connectionsMount) new Connections({ target: connectionsMount });
-  const twitchSettingsMount = document.getElementById('twitch-settings-mount');
-  if (twitchSettingsMount) new TwitchSettings({ target: twitchSettingsMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';
