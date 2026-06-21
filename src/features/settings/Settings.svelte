@@ -124,6 +124,8 @@
 <style>
   .settings-switch {
     position: relative;
+    /* Clip the absolutely-positioned inactive pane so it can't add scroll height. */
+    overflow: hidden;
   }
   .settings-pane {
     transition: opacity 0.2s ease;

@@ -173,11 +173,13 @@
 }
 
 .cover-bg {
+  /* Absolute + height:100% so the blur fills the player area without adding
+     phantom scroll height and stays clipped to the rounded window corners. */
   position: absolute;
-  top: -50%;
+  top: 0;
   left: -50%;
   width: 200%;
-  height: 200%;
+  height: 100%;
   background-size: cover;
   background-position: center;
   filter: blur(80px);
@@ -185,7 +187,6 @@
   transition: opacity 0.5s;
   z-index: 0;
   will-change: opacity;
-  transform: translateZ(0);
   /* Decorative blur background — must never intercept clicks. As a positioned
      z-index:0 element it otherwise paints ABOVE the non-positioned queue block
      and swallowed all clicks on play/remove/clear in the player view. */

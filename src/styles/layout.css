@@ -114,13 +114,15 @@
   position: relative;
 }
 
-/* Global Cover Background - extends further down for settings view */
+/* Global Cover Background. Absolute + height:100% (not 500%) so it doesn't add
+   phantom scroll height, and stays clipped to the rounded window corners (a
+   fixed backdrop would escape that clip and show square corners). */
 .global-cover-bg {
   position: absolute;
-  top: -100px;
+  top: 0;
   left: -50%;
   width: 200%;
-  height: 500%; /* Extended height for long scrollable pages like Settings */
+  height: 100%;
   background-size: cover;
   background-position: center top;
   filter: blur(80px);
@@ -128,7 +130,6 @@
   z-index: 0;
   pointer-events: none;
   transition: opacity 0.5s;
-  transform: translateZ(0);
 }
 
 .global-cover-bg.visible {
