@@ -1,0 +1,357 @@
+use super::*;
+use serde::Deserialize;
+use log::{debug, info, warn};
+
+/// Odesli API Response
+#[derive(Debug, Deserialize)]
+struct OdesliResponse {
+    #[serde(rename = "linksByPlatform")]
+    links_by_platform: Option<LinksByPlatform>,
+    #[serde(rename = "entitiesByUniqueId")]
+    entities_by_unique_id: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+struct LinksByPlatform {
+    spotify: Option<PlatformLink>,
+    youtube: Option<PlatformLink>,
+    #[serde(rename = "youtubeMusic")]
+    youtube_music: Option<PlatformLink>,
+    #[serde(rename = "appleMusic")]
+    apple_music: Option<PlatformLink>,
+    soundcloud: Option<PlatformLink>,
+    deezer: Option<PlatformLink>,
+    tidal: Option<PlatformLink>,
+    #[serde(rename = "amazonMusic")]
+    amazon_music: Option<PlatformLink>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PlatformLink {
+    url: String,
+    #[serde(rename = "entityUniqueId")]
+    entity_unique_id: Option<String>,
+}
+
+/// Result of a YouTube oEmbed lookup: whether the video can be embedded, plus
+/// best-effort title/author. oEmbed returns 401 when the owner disabled
+/// embedding and 200 otherwise — a reliable pre-check before we try to play.
+struct YtOembed {
+    embeddable: bool,
+    title: Option<String>,
+    author: Option<String>,
+}
+
+/// Convert any streaming link to Spotify using Odesli API
+pub async fn convert_to_spotify(url: &str) -> Result<OdesliTrackInfo, String> {
+    let platform = detect_platform(url);
+    
+    // If already Spotify, just extract the track ID
+    if platform == StreamingPlatform::Spotify {
+        if let Some(track_id) = extract_spotify_track_id(url) {
+            return Ok(OdesliTrackInfo {
+                spotify_url: Some(format!("https://open.spotify.com/track/{}", track_id)),
+                spotify_uri: Some(format!("spotify:track:{}", track_id)),
+                track_id: Some(track_id),
+                title: None,
+                artist: None,
+            });
+        }
+    }
+    
+    info!("Converting {:?} link to Spotify via Odesli: {}", platform, url);
+    
+    let client = reqwest::Client::new();
+    
+    let response = client.get(ODESLI_API)
+        .query(&[("url", url)])
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Odesli request failed: {}", e))?;
+    
+    if !response.status().is_success() {
+        let status = response.status();
+        let error = response.text().await.unwrap_or_default();
+        warn!("Odesli API error: {} - {}", status, error);
+        return Err(format!("Song nicht auf Spotify gefunden (Odesli: {})", status));
+    }
+    
+    let data: OdesliResponse = response.json().await
+        .map_err(|e| format!("Failed to parse Odesli response: {}", e))?;
+    
+    // Extract Spotify link
+    let spotify = data.links_by_platform
+        .and_then(|l| l.spotify)
+        .ok_or("Song nicht auf Spotify verfügbar")?;
+    
+    let track_id = extract_spotify_track_id(&spotify.url);
+    let spotify_uri = track_id.as_ref().map(|id| format!("spotify:track:{}", id));
+    
+    // Try to get track info from entities
+    let (title, artist) = extract_track_info_from_entities(&data.entities_by_unique_id, &spotify.entity_unique_id);
+    
+    debug!("Odesli conversion successful: {:?} -> {:?}", url, spotify_uri);
+    
+    Ok(OdesliTrackInfo {
+        spotify_url: Some(spotify.url),
+        spotify_uri,
+        track_id,
+        title,
+        artist,
+    })
+}
+
+/// Extract track info from Odesli entities
+fn extract_track_info_from_entities(
+    entities: &Option<serde_json::Value>, 
+    entity_id: &Option<String>
+) -> (Option<String>, Option<String>) {
+    if let (Some(entities), Some(id)) = (entities, entity_id) {
+        if let Some(entity) = entities.get(id) {
+            let title = entity.get("title").and_then(|v| v.as_str()).map(String::from);
+            let artist = entity.get("artistName").and_then(|v| v.as_str()).map(String::from);
+            return (title, artist);
+        }
+    }
+    (None, None)
+}
+
+/// Get links for all platforms from a song search query or existing link
+pub async fn get_all_platform_links(query: &str) -> Result<AllPlatformLinks, String> {
+    // If it's a Spotify track ID, construct the URL
+    let search_url = if query.len() == 22 && query.chars().all(|c| c.is_alphanumeric()) {
+        format!("https://open.spotify.com/track/{}", query)
+    } else if query.starts_with("spotify:track:") {
+        let id = query.replace("spotify:track:", "");
+        format!("https://open.spotify.com/track/{}", id)
+    } else if is_url(query) {
+        query.to_string()
+    } else {
+        // Search query - use Spotify URL format
+        return Err("Search queries not supported, need a URL or track ID".to_string());
+    };
+    
+    info!("Getting all platform links for: {}", search_url);
+    
+    let client = reqwest::Client::new();
+    
+    let response = client.get(ODESLI_API)
+        .query(&[("url", &search_url)])
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Odesli request failed: {}", e))?;
+    
+    if !response.status().is_success() {
+        let status = response.status();
+        return Err(format!("Odesli API error: {}", status));
+    }
+    
+    let data: OdesliResponse = response.json().await
+        .map_err(|e| format!("Failed to parse Odesli response: {}", e))?;
+    
+    let links = data.links_by_platform.unwrap_or(LinksByPlatform {
+        spotify: None,
+        youtube: None,
+        youtube_music: None,
+        apple_music: None,
+        soundcloud: None,
+        deezer: None,
+        tidal: None,
+        amazon_music: None,
+    });
+    
+    Ok(AllPlatformLinks {
+        spotify: links.spotify.map(|l| l.url),
+        youtube: links.youtube.map(|l| l.url),
+        youtube_music: links.youtube_music.map(|l| l.url),
+        apple_music: links.apple_music.map(|l| l.url),
+        soundcloud: links.soundcloud.map(|l| l.url),
+        deezer: links.deezer.map(|l| l.url),
+        tidal: links.tidal.map(|l| l.url),
+        amazon_music: links.amazon_music.map(|l| l.url),
+    })
+}
+
+/// Extract (title, artist, thumbnail) for a given Odesli entity id.
+fn extract_entity_meta(
+    entities: &Option<serde_json::Value>,
+    entity_id: &Option<String>,
+) -> (Option<String>, Option<String>, Option<String>) {
+    if let (Some(entities), Some(id)) = (entities, entity_id) {
+        if let Some(entity) = entities.get(id) {
+            let title = entity.get("title").and_then(|v| v.as_str()).map(String::from);
+            let artist = entity.get("artistName").and_then(|v| v.as_str()).map(String::from);
+            let thumb = entity.get("thumbnailUrl").and_then(|v| v.as_str()).map(String::from);
+            return (title, artist, thumb);
+        }
+    }
+    (None, None, None)
+}
+
+async fn youtube_oembed(video_id: &str) -> YtOembed {
+    let watch = format!("https://www.youtube.com/watch?v={}", video_id);
+    let client = reqwest::Client::new();
+    let resp = client.get("https://www.youtube.com/oembed")
+        .query(&[("format", "json"), ("url", watch.as_str())])
+        .timeout(std::time::Duration::from_secs(6))
+        .send()
+        .await;
+    match resp {
+        Ok(r) if r.status().is_success() => {
+            if let Ok(v) = r.json::<serde_json::Value>().await {
+                return YtOembed {
+                    embeddable: true,
+                    title: v.get("title").and_then(|x| x.as_str()).map(String::from),
+                    author: v.get("author_name").and_then(|x| x.as_str()).map(String::from),
+                };
+            }
+            YtOembed { embeddable: true, title: None, author: None }
+        }
+        // 401 = embedding disabled; 404/other/network = treat as not playable.
+        _ => YtOembed { embeddable: false, title: None, author: None },
+    }
+}
+
+/// Build a YouTube-only result (no Spotify match) from a known video id.
+fn youtube_only_result(
+    video_id: &str,
+    platform: &str,
+    title: Option<String>,
+    artist: Option<String>,
+    embeddable: bool,
+) -> ResolvedRequest {
+    ResolvedRequest {
+        spotify_uri: None,
+        track_id: None,
+        youtube_url: Some(format!("https://www.youtube.com/watch?v={}", video_id)),
+        youtube_video_id: Some(video_id.to_string()),
+        title,
+        artist,
+        thumbnail: Some(format!("https://i.ytimg.com/vi/{}/hqdefault.jpg", video_id)),
+        platform: platform.to_string(),
+        embeddable,
+    }
+}
+
+pub async fn resolve_request(input: &str) -> Result<ResolvedRequest, String> {
+    let platform = detect_platform(input);
+    let platform_str = format!("{:?}", platform);
+
+    // For YouTube links, work from the bare video id: build a clean watch URL for
+    // Odesli (playlist/index params like &list=LL make Odesli return 400) and keep
+    // the id so we can still accept the song if Odesli can't resolve it.
+    let input_yt_id = if matches!(platform, StreamingPlatform::YouTube | StreamingPlatform::YouTubeMusic) {
+        extract_youtube_video_id(input)
+    } else {
+        None
+    };
+
+    // Build the URL Odesli should look up.
+    let lookup_url = if let Some(ref vid) = input_yt_id {
+        format!("https://www.youtube.com/watch?v={}", vid)
+    } else if is_spotify_input(input) {
+        match extract_spotify_track_id(input) {
+            Some(id) => format!("https://open.spotify.com/track/{}", id),
+            None => input.to_string(),
+        }
+    } else if input.len() == 22 && input.chars().all(|c| c.is_alphanumeric()) {
+        format!("https://open.spotify.com/track/{}", input)
+    } else if is_url(input) {
+        input.to_string()
+    } else {
+        return Err("Kein unterstützter Link".to_string());
+    };
+
+    let client = reqwest::Client::new();
+    let send_result = client.get(ODESLI_API)
+        .query(&[("url", &lookup_url)])
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await;
+
+    // If Odesli is unreachable or unhappy but we know it's a YouTube video,
+    // accept it anyway (metadata via oEmbed, thumbnail from the video id).
+    let response = match send_result {
+        Ok(r) if r.status().is_success() => r,
+        other => {
+            if let Some(ref vid) = input_yt_id {
+                let o = youtube_oembed(vid).await;
+                return Ok(youtube_only_result(vid, &platform_str, o.title, o.author, o.embeddable));
+            }
+            return Err(match other {
+                Ok(r) => format!("Odesli API error: {}", r.status()),
+                Err(e) => format!("Odesli request failed: {}", e),
+            });
+        }
+    };
+
+    let data: OdesliResponse = match response.json().await {
+        Ok(d) => d,
+        Err(e) => {
+            if let Some(ref vid) = input_yt_id {
+                let o = youtube_oembed(vid).await;
+                return Ok(youtube_only_result(vid, &platform_str, o.title, o.author, o.embeddable));
+            }
+            return Err(format!("Failed to parse Odesli response: {}", e));
+        }
+    };
+
+    let entities = data.entities_by_unique_id;
+    let links = data.links_by_platform;
+
+    let spotify_link = links.as_ref().and_then(|l| l.spotify.as_ref());
+    // Prefer plain YouTube, fall back to YouTube Music.
+    let youtube_link = links.as_ref()
+        .and_then(|l| l.youtube.as_ref().or(l.youtube_music.as_ref()));
+
+    let track_id = spotify_link.and_then(|l| extract_spotify_track_id(&l.url));
+    let spotify_uri = track_id.as_ref().map(|id| format!("spotify:track:{}", id));
+    let youtube_url = youtube_link.map(|l| l.url.clone())
+        .or_else(|| input_yt_id.as_ref().map(|v| format!("https://www.youtube.com/watch?v={}", v)));
+    let youtube_video_id = youtube_url.as_deref().and_then(extract_youtube_video_id)
+        .or_else(|| input_yt_id.clone());
+
+    // Display metadata: prefer the Spotify entity, fall back to the YouTube one.
+    let (mut title, mut artist, mut thumbnail) =
+        extract_entity_meta(&entities, &spotify_link.and_then(|l| l.entity_unique_id.clone()));
+    if title.is_none() || artist.is_none() {
+        let (yt_t, yt_a, yt_th) =
+            extract_entity_meta(&entities, &youtube_link.and_then(|l| l.entity_unique_id.clone()));
+        title = title.or(yt_t);
+        artist = artist.or(yt_a);
+        thumbnail = thumbnail.or(yt_th);
+    }
+    // Last resort thumbnail: derive from the YouTube video id.
+    if thumbnail.is_none() {
+        if let Some(vid) = &youtube_video_id {
+            thumbnail = Some(format!("https://i.ytimg.com/vi/{}/hqdefault.jpg", vid));
+        }
+    }
+
+    // For a YouTube-only result (no Spotify version), check embeddability up front
+    // via oEmbed so non-embeddable videos are rejected at request time instead of
+    // failing only when playback starts. Also backfills missing title/artist.
+    let mut embeddable = true;
+    if spotify_uri.is_none() {
+        if let Some(vid) = &youtube_video_id {
+            let o = youtube_oembed(vid).await;
+            embeddable = o.embeddable;
+            if title.is_none() { title = o.title; }
+            if artist.is_none() { artist = o.author; }
+        }
+    }
+
+    Ok(ResolvedRequest {
+        spotify_uri,
+        track_id,
+        youtube_url,
+        youtube_video_id,
+        title,
+        artist,
+        thumbnail,
+        platform: platform_str,
+        embeddable,
+    })
+}
