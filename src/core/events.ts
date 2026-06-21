@@ -24,10 +24,7 @@ export function setupEventListeners(): void {
 
   // Spotify disconnect lives in Connections.svelte (resolved by id post-mount).
   document.getElementById('btn-disconnect')?.addEventListener('click', disconnectSpotify);
-
-  if (elements.btnCancelAuth) {
-    elements.btnCancelAuth.addEventListener('click', () => showView('setup'));
-  }
+  // The auth-view cancel button lives in features/provider/AuthView.svelte.
 
   setupExternalLinks();
 }

@@ -18,12 +18,16 @@ import Designs from './features/designs/Designs.svelte';
 import PluginsView from './features/plugins/PluginsView.svelte';
 import HistoryView from './features/history/HistoryView.svelte';
 import QueueView from './features/queue/QueueView.svelte';
+import PlayerQueue from './features/queue/PlayerQueue.svelte';
+import YouTubeControls from './features/queue/YouTubeControls.svelte';
 import Setup from './features/provider/Setup.svelte';
 import SpotifySetup from './features/provider/SpotifySetup.svelte';
+import AuthView from './features/provider/AuthView.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
 import AccessRequestModal from './features/access/AccessRequestModal.svelte';
 import BlocklistModal from './features/history/BlocklistModal.svelte';
 import InfoModals from './features/settings/InfoModals.svelte';
+import Modals from './ui/Modals.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners } from './features/settings';
@@ -219,11 +223,17 @@ async function init(): Promise<void> {
   if (historyMount) new HistoryView({ target: historyMount });
   const queueViewMount = document.getElementById('queue-view-mount');
   if (queueViewMount) new QueueView({ target: queueViewMount });
+  const playerQueueMount = document.getElementById('player-queue-mount');
+  if (playerQueueMount) new PlayerQueue({ target: playerQueueMount });
+  const youtubeControlsMount = document.getElementById('youtube-controls-mount');
+  if (youtubeControlsMount) new YouTubeControls({ target: youtubeControlsMount });
   // Setup flow (provider selection + Spotify credentials).
   const setupMount = document.getElementById('setup-mount');
   if (setupMount) new Setup({ target: setupMount });
   const spotifySetupMount = document.getElementById('spotify-setup-mount');
   if (spotifySetupMount) new SpotifySetup({ target: spotifySetupMount });
+  const authMount = document.getElementById('auth-mount');
+  if (authMount) new AuthView({ target: authMount });
   const sourcePriorityMount = document.getElementById('source-priority-mount');
   if (sourcePriorityMount) new SourcePriorityModal({ target: sourcePriorityMount });
   const accessRequestMount = document.getElementById('access-request-mount');
@@ -232,6 +242,8 @@ async function init(): Promise<void> {
   if (blocklistMount) new BlocklistModal({ target: blocklistMount });
   const infoModalsMount = document.getElementById('info-modals-mount');
   if (infoModalsMount) new InfoModals({ target: infoModalsMount });
+  const modalsMount = document.getElementById('modals-mount');
+  if (modalsMount) new Modals({ target: modalsMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';

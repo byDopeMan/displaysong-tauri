@@ -47,14 +47,8 @@ export const elements: Record<string, HTMLElement | null> = {};
 export function initElements(): void {
   Object.assign(elements, {
     tabs: document.getElementById('nav-tabs'),
-    // The Spotify credentials form + inputs live in
-    // features/provider/SpotifySetup.svelte (accessed by id where needed).
-    // Player elements (cover/status/track/progress) now live in
-    // features/player/Player.svelte and are no longer cached here. The Designs
-    // widget-list lives in features/designs/Designs.svelte. The connection block
-    // (Spotify/Twitch status + buttons) lives in features/provider/Connections.svelte
-    // and is resolved by id by provider-ui / twitch / events.
-    btnCancelAuth: document.getElementById('btn-cancel-auth'),
+    // Everything else moved into Svelte components and is resolved by id where a
+    // module still needs it (player, connections, setup, designs, auth, …).
   });
 }
 
