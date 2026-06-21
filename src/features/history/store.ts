@@ -15,3 +15,6 @@ export interface HistoryItem {
 }
 
 export const historyDisplay = writable<HistoryItem[]>([]);
+
+/** Whether the blocklist management modal is open (BlocklistModal.svelte). */
+export const blocklistModalOpen = writable(false);

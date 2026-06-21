@@ -8,10 +8,8 @@
 
 import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
-import { escapeHtml } from '../../utils/format';
 import { settings } from '../settings';
-import { getBlocklist, removeBlockAt } from './blocklist';
-import { historyDisplay, type HistoryItem } from './store';
+import { historyDisplay, blocklistModalOpen, type HistoryItem } from './store';
 import History from './History.svelte';
 
 // Listen for history filter changes
@@ -100,44 +98,8 @@ function mountHistoryView(): void {
 export function setupBlocklistUI(): void {
   mountHistoryView();
 
-  const btn = document.getElementById('btn-open-blocklist');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      renderBlocklistModal();
-      document.getElementById('blocklist-modal')?.classList.remove('hidden');
-    });
-  }
-  // Keep the modal in sync if the list changes while it's open.
-  window.addEventListener('blocklist-change', () => {
-    const modal = document.getElementById('blocklist-modal');
-    if (modal && !modal.classList.contains('hidden')) renderBlocklistModal();
-  });
-}
-
-/** Render the blocklist management modal contents and wire its buttons. */
-export function renderBlocklistModal(): void {
-  const listEl = document.getElementById('blocklist-items');
-  if (!listEl) return;
-  const list = getBlocklist();
-  if (list.length === 0) {
-    listEl.innerHTML = `<p class="blocklist-empty">Keine blockierten Songs.</p>`;
-    return;
-  }
-  listEl.innerHTML = list.map((e, i) => `
-    <div class="blocklist-row">
-      <div class="blocklist-info">
-        <span class="blocklist-title">${escapeHtml(e.title || '—')}</span>
-        <span class="blocklist-artist">${escapeHtml(e.artist || '')}</span>
-      </div>
-      <button class="blocklist-remove" data-index="${i}" title="Entsperren">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-    </div>
-  `).join('');
-  listEl.querySelectorAll<HTMLElement>('.blocklist-remove').forEach((b) => {
-    b.addEventListener('click', () => {
-      removeBlockAt(parseInt(b.dataset.index || '0'));
-      renderBlocklistModal();
-    });
+  // The modal itself is BlocklistModal.svelte; just open it via the store.
+  document.getElementById('btn-open-blocklist')?.addEventListener('click', () => {
+    blocklistModalOpen.set(true);
   });
 }
