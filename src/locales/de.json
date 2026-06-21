@@ -71,6 +71,22 @@
     "settingsTitle": "Plugin Einstellungen",
     "noSettings": "Dieses Plugin hat keine Einstellungen"
   },
+  "setup": {
+    "tagline": "Now Playing Widget für OBS",
+    "chooseSource": "Musik-Quelle wählen",
+    "windowsAudioDesc": "Erkennt automatisch Musik von Spotify, YouTube, VLC, Browser und mehr.",
+    "recommended": "Empfohlen",
+    "startNow": "Sofort starten",
+    "spotifyDesc": "Für Auto-Queue, Playlist-Sync und erweiterte Song Request Features.",
+    "optional": "Optional",
+    "configure": "Einrichten",
+    "spotifyConnectTitle": "Spotify verbinden",
+    "spotifyConnectDesc": "Für Auto-Queue und erweiterte Features benötigst du eine Spotify App.",
+    "clientIdPlaceholder": "Deine Spotify Client ID",
+    "clientSecretPlaceholder": "Dein Spotify Client Secret",
+    "saveConnect": "Speichern & Verbinden",
+    "howToCreate": "So erstellst du eine Spotify App:"
+  },
   "settings": {
     "title": "Einstellungen",
     "connections": {

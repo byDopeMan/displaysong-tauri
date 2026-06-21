@@ -13,11 +13,11 @@
     </svg>
   </div>
   <h1>DisplaySong</h1>
-  <p>Now Playing Widget für OBS</p>
+  <p data-i18n="setup.tagline">Now Playing Widget für OBS</p>
 
   <!-- Provider Auswahl -->
   <div class="setup-providers">
-    <h3>Musik-Quelle wählen</h3>
+    <h3 data-i18n="setup.chooseSource">Musik-Quelle wählen</h3>
 
     <!-- Windows Audio - Default, kein Setup -->
     <div class="provider-card" id="provider-windows">
@@ -28,10 +28,10 @@
       </div>
       <div class="provider-info">
         <h4>Windows Audio</h4>
-        <p>Erkennt automatisch Musik von Spotify, YouTube, VLC, Browser und mehr.</p>
-        <span class="provider-badge recommended">Empfohlen</span>
+        <p data-i18n="setup.windowsAudioDesc">Erkennt automatisch Musik von Spotify, YouTube, VLC, Browser und mehr.</p>
+        <span class="provider-badge recommended" data-i18n="setup.recommended">Empfohlen</span>
       </div>
-      <button id="btn-use-windows-audio" class="btn btn-primary" on:click={useWindowsAudio}>Sofort starten</button>
+      <button id="btn-use-windows-audio" class="btn btn-primary" data-i18n="setup.startNow" on:click={useWindowsAudio}>Sofort starten</button>
     </div>
 
     <!-- Spotify API - Erweiterte Features -->
@@ -43,10 +43,10 @@
       </div>
       <div class="provider-info">
         <h4>Spotify API</h4>
-        <p>Für Auto-Queue, Playlist-Sync und erweiterte Song Request Features.</p>
-        <span class="provider-badge optional">Optional</span>
+        <p data-i18n="setup.spotifyDesc">Für Auto-Queue, Playlist-Sync und erweiterte Song Request Features.</p>
+        <span class="provider-badge optional" data-i18n="setup.optional">Optional</span>
       </div>
-      <button id="btn-setup-spotify" class="btn btn-secondary" on:click={() => showView('spotify-setup')}>Einrichten</button>
+      <button id="btn-setup-spotify" class="btn btn-secondary" data-i18n="setup.configure" on:click={() => showView('spotify-setup')}>Einrichten</button>
     </div>
   </div>
 
