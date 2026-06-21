@@ -68,6 +68,7 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "settings": "Settings",
+    "settingsTitle": "Plugin Settings",
     "noSettings": "This plugin has no settings"
   },
   "settings": {
@@ -82,7 +83,10 @@
       "connect": "Connect",
       "disconnect": "Disconnect",
       "disconnectAll": "Disconnect all",
-      "connecting": "Connecting..."
+      "connecting": "Connecting...",
+      "spotifyAuthTitle": "Spotify authorization",
+      "spotifyAuthOpening": "Opening browser...",
+      "spotifyAuthHint": "You'll be redirected automatically after logging in."
     },
     "twitch": {
       "title": "Twitch",
@@ -142,7 +146,25 @@
       "activePlaylist": "Active playlist",
       "autoAdd": "Add automatically",
       "openInSpotify": "Open in Spotify",
-      "deletePlaylist": "Delete playlist"
+      "deletePlaylist": "Delete playlist",
+      "connectTwitchTitle": "Connect with Twitch",
+      "oauthOpening": "Opening browser...",
+      "oauthTwitchHint": "Sign in to Twitch and allow access.",
+      "setupPlaylistTitle": "Set up Spotify playlist",
+      "playlistSetupIntro": "Create a playlist where all song requests are saved automatically.",
+      "playlistName": "Playlist name",
+      "playlistNamePlaceholder": "Playlist name",
+      "playlistDescription": "Description (optional)",
+      "playlistDescriptionPlaceholder": "Song requests from Twitch chat",
+      "playlistPublic": "Public playlist",
+      "createPlaylist": "Create playlist"
+    },
+    "reauth": {
+      "title": "Re-authentication required",
+      "text": "This feature needs additional permissions.",
+      "hint": "You'll be redirected to Spotify to grant the permissions.",
+      "later": "Later",
+      "now": "Sign in now"
     },
     "widget": {
       "title": "Design Behavior",

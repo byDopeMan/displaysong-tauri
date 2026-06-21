@@ -13,7 +13,7 @@
                 <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
               </svg>
             </div>
-            <h3 id="plugin-modal-title">Plugin Einstellungen</h3>
+            <h3 id="plugin-modal-title" data-i18n="plugins.settingsTitle">Plugin Einstellungen</h3>
             <button class="modal-close" data-modal="plugin-settings-modal">×</button>
           </div>
           <div class="modal-body" id="plugin-modal-body">
@@ -22,7 +22,7 @@
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 16v-4M12 8h.01"></path>
               </svg>
-              <p>Dieses Plugin hat keine Einstellungen</p>
+              <p data-i18n="plugins.noSettings">Dieses Plugin hat keine Einstellungen</p>
             </div>
           </div>
         </div>
@@ -37,18 +37,18 @@
                 <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
               </svg>
             </div>
-            <h3>Mit Twitch verbinden</h3>
+            <h3 data-i18n="settings.twitch.connectTwitchTitle">Mit Twitch verbinden</h3>
             <button class="modal-close" data-modal="twitch-oauth-modal">&times;</button>
           </div>
           <div class="modal-body oauth-modal-body">
             <div class="oauth-status" id="twitch-oauth-status">
               <div class="spinner"></div>
-              <p>Browser öffnet sich...</p>
-              <p class="hint">Melde dich bei Twitch an und erlaube den Zugriff.</p>
+              <p data-i18n="settings.twitch.oauthOpening">Browser öffnet sich...</p>
+              <p class="hint" data-i18n="settings.twitch.oauthTwitchHint">Melde dich bei Twitch an und erlaube den Zugriff.</p>
             </div>
           </div>
           <div class="modal-footer">
-            <button id="btn-cancel-twitch-auth" class="btn btn-secondary">Abbrechen</button>
+            <button id="btn-cancel-twitch-auth" class="btn btn-secondary" data-i18n="common.cancel">Abbrechen</button>
           </div>
         </div>
       </div>
@@ -64,39 +64,39 @@
                 <circle cx="18" cy="16" r="3"></circle>
               </svg>
             </div>
-            <h3>Spotify Playlist einrichten</h3>
+            <h3 data-i18n="settings.twitch.setupPlaylistTitle">Spotify Playlist einrichten</h3>
             <button class="modal-close" data-modal="playlist-setup-modal">&times;</button>
           </div>
           <div class="modal-body">
-            <p class="modal-intro">Erstelle eine Playlist, in der alle Song Requests automatisch gespeichert werden.</p>
-            
+            <p class="modal-intro" data-i18n="settings.twitch.playlistSetupIntro">Erstelle eine Playlist, in der alle Song Requests automatisch gespeichert werden.</p>
+
             <div class="form-group">
-              <label for="playlist-name">Playlist Name</label>
-              <input type="text" id="playlist-name" class="setting-input" value="DisplaySong Requests" placeholder="Name der Playlist">
+              <label for="playlist-name" data-i18n="settings.twitch.playlistName">Playlist Name</label>
+              <input type="text" id="playlist-name" class="setting-input" value="DisplaySong Requests" placeholder="Name der Playlist" data-i18n-placeholder="settings.twitch.playlistNamePlaceholder">
             </div>
-            
+
             <div class="form-group">
-              <label for="playlist-description">Beschreibung (optional)</label>
-              <input type="text" id="playlist-description" class="setting-input" placeholder="Song Requests von Twitch Chat">
+              <label for="playlist-description" data-i18n="settings.twitch.playlistDescription">Beschreibung (optional)</label>
+              <input type="text" id="playlist-description" class="setting-input" placeholder="Song Requests von Twitch Chat" data-i18n-placeholder="settings.twitch.playlistDescriptionPlaceholder">
             </div>
-            
+
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" id="playlist-public" class="setting-checkbox">
-                <span>Öffentliche Playlist</span>
+                <span data-i18n="settings.twitch.playlistPublic">Öffentliche Playlist</span>
               </label>
             </div>
-            
+
             <div id="playlist-setup-error" class="error-message hidden"></div>
           </div>
           <div class="modal-footer">
-            <button id="btn-cancel-playlist" class="btn btn-secondary" data-close-modal>Abbrechen</button>
+            <button id="btn-cancel-playlist" class="btn btn-secondary" data-close-modal data-i18n="common.cancel">Abbrechen</button>
             <button id="btn-create-playlist" class="btn btn-primary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              <span>Playlist erstellen</span>
+              <span data-i18n="settings.twitch.createPlaylist">Playlist erstellen</span>
             </button>
           </div>
         </div>
@@ -113,16 +113,16 @@
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
               </svg>
             </div>
-            <h3>Erneute Anmeldung erforderlich</h3>
+            <h3 data-i18n="settings.reauth.title">Erneute Anmeldung erforderlich</h3>
             <button class="modal-close" data-modal="reauth-modal">&times;</button>
           </div>
           <div class="modal-body">
-            <p>Für diese Funktion werden zusätzliche Berechtigungen benötigt.</p>
-            <p class="hint">Du wirst zu Spotify weitergeleitet, um die Berechtigungen zu erteilen.</p>
+            <p data-i18n="settings.reauth.text">Für diese Funktion werden zusätzliche Berechtigungen benötigt.</p>
+            <p class="hint" data-i18n="settings.reauth.hint">Du wirst zu Spotify weitergeleitet, um die Berechtigungen zu erteilen.</p>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" data-close-modal>Später</button>
-            <button id="btn-reauth" class="btn btn-primary">Jetzt anmelden</button>
+            <button class="btn btn-secondary" data-close-modal data-i18n="settings.reauth.later">Später</button>
+            <button id="btn-reauth" class="btn btn-primary" data-i18n="settings.reauth.now">Jetzt anmelden</button>
           </div>
         </div>
       </div>

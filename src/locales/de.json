@@ -68,6 +68,7 @@
     "enabled": "Aktiviert",
     "disabled": "Deaktiviert",
     "settings": "Einstellungen",
+    "settingsTitle": "Plugin Einstellungen",
     "noSettings": "Dieses Plugin hat keine Einstellungen"
   },
   "settings": {
@@ -82,7 +83,10 @@
       "connect": "Verbinden",
       "disconnect": "Trennen",
       "disconnectAll": "Alle Verbindungen trennen",
-      "connecting": "Verbinde..."
+      "connecting": "Verbinde...",
+      "spotifyAuthTitle": "Spotify Autorisierung",
+      "spotifyAuthOpening": "Browser öffnet sich...",
+      "spotifyAuthHint": "Nach dem Login wirst du automatisch zurückgeleitet."
     },
     "twitch": {
       "title": "Twitch",
@@ -142,7 +146,25 @@
       "activePlaylist": "Aktive Playlist",
       "autoAdd": "Automatisch hinzufügen",
       "openInSpotify": "In Spotify öffnen",
-      "deletePlaylist": "Playlist löschen"
+      "deletePlaylist": "Playlist löschen",
+      "connectTwitchTitle": "Mit Twitch verbinden",
+      "oauthOpening": "Browser öffnet sich...",
+      "oauthTwitchHint": "Melde dich bei Twitch an und erlaube den Zugriff.",
+      "setupPlaylistTitle": "Spotify Playlist einrichten",
+      "playlistSetupIntro": "Erstelle eine Playlist, in der alle Song Requests automatisch gespeichert werden.",
+      "playlistName": "Playlist Name",
+      "playlistNamePlaceholder": "Name der Playlist",
+      "playlistDescription": "Beschreibung (optional)",
+      "playlistDescriptionPlaceholder": "Song Requests von Twitch Chat",
+      "playlistPublic": "Öffentliche Playlist",
+      "createPlaylist": "Playlist erstellen"
+    },
+    "reauth": {
+      "title": "Erneute Anmeldung erforderlich",
+      "text": "Für diese Funktion werden zusätzliche Berechtigungen benötigt.",
+      "hint": "Du wirst zu Spotify weitergeleitet, um die Berechtigungen zu erteilen.",
+      "later": "Später",
+      "now": "Jetzt anmelden"
     },
     "widget": {
       "title": "Design-Verhalten",
