@@ -33,28 +33,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # ===== Debug Secrets =====
-      - name: Debug Secrets
-        shell: bash
-        run: |
-          echo "Checking secrets..."
-          if [ -z "$TAURI_PRIVATE_KEY" ]; then
-            echo "❌ TAURI_PRIVATE_KEY ist leer!"
-          else
-            echo "✅ TAURI_PRIVATE_KEY gesetzt (Länge: ${#TAURI_PRIVATE_KEY})"
-            echo "Erste 50 Zeichen: ${TAURI_PRIVATE_KEY:0:50}"
-          fi
-          
-          if [ -z "$TAURI_KEY_PASSWORD" ]; then
-            echo "❌ TAURI_KEY_PASSWORD ist leer!"
-          else
-            echo "✅ TAURI_KEY_PASSWORD gesetzt"
-          fi
-        env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-
-      # ===== Jetzt der Build =====
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
