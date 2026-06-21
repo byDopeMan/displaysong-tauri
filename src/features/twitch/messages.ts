@@ -6,6 +6,7 @@
  */
 
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 
 export const DEFAULT_MESSAGES: Record<string, string> = {
   nowPlaying: 'Jetzt laeuft: {artist} - {title}',
@@ -59,7 +60,7 @@ export function saveMessagesToStorage(): void {
       if (input) messages[key] = input.value;
     }
     localStorage.setItem('twitch-messages', JSON.stringify(messages));
-    showNotification('Nachrichten gespeichert');
+    showNotification(t('notifications.messagesSaved', {}, 'Nachrichten gespeichert'));
   } catch (e) {
     console.error('[Twitch] Save messages error:', e);
   }
@@ -70,5 +71,5 @@ export function resetMessagesToDefault(): void {
   messages = { ...DEFAULT_MESSAGES };
   localStorage.removeItem('twitch-messages');
   loadMessagesFromStorage();
-  showNotification('Nachrichten zurueckgesetzt');
+  showNotification(t('notifications.messagesReset', {}, 'Nachrichten zurückgesetzt'));
 }

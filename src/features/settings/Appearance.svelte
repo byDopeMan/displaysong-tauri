@@ -9,6 +9,7 @@
   import { updateTabVisibility } from '../../ui/navigation';
   import { setPluginSettingsStyle } from '../plugins/index';
   import { broadcastAccentColor } from '../widgets';
+  import { t } from '../../utils/i18n';
   import { settingsStore, updateSettings, saveSettings, applySettings, updateGlobalBackground } from './index';
 
   const PRESETS = [
@@ -34,7 +35,7 @@
     updatePageTranslations();
     const { updateTwitchUI } = await import('../twitch/index');
     updateTwitchUI();
-    showNotification('Sprache gewechselt');
+    showNotification(t('notifications.languageChanged', {}, 'Sprache gewechselt'));
   }
 
   function onPluginStyle(e: Event) {
@@ -70,7 +71,7 @@
     if (invoke) {
       try { await invoke('set_history_length', { length: v }); } catch (err) {}
     }
-    showNotification(`Verlauf: ${v} Songs`);
+    showNotification(t('notifications.historyLength', { n: v }, `Verlauf: ${v} Songs`));
   }
 
   function selectAccent(color: string) {

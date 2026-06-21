@@ -11,6 +11,7 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { createPluginAPI } from './api';
 import { closePluginWindows } from './window';
 import { closePluginSettings, dropPluginSettings, setPluginSettingsStyle } from './settings';
@@ -127,13 +128,13 @@ export async function togglePlugin(plugin: PluginInfo, enabled: boolean): Promis
     await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled });
     if (enabled) {
       await loadPlugin(plugin.id, plugin.name);
-      showNotification(`${plugin.name} aktiviert`);
+      showNotification(t('notifications.pluginEnabled', { name: plugin.name }, `${plugin.name} aktiviert`));
     } else {
       await unloadPlugin(plugin.id);
-      showNotification(`${plugin.name} deaktiviert`);
+      showNotification(t('notifications.pluginDisabled', { name: plugin.name }, `${plugin.name} deaktiviert`));
     }
   } catch (e) {
-    showNotification('Fehler: ' + e);
+    showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e));
   }
   // Refresh the store (also reverts the checkbox if the toggle failed).
   await renderPluginList();
@@ -146,9 +147,9 @@ export async function deletePlugin(plugin: PluginInfo): Promise<void> {
   try {
     await unloadPlugin(plugin.id);
     await invoke('uninstall_plugin', { pluginId: plugin.id });
-    showNotification(`${plugin.name} gelöscht`);
+    showNotification(t('notifications.pluginDeleted', { name: plugin.name }, `${plugin.name} gelöscht`));
   } catch (e) {
-    showNotification('Fehler: ' + e);
+    showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e));
   }
   await renderPluginList();
 }
@@ -166,15 +167,15 @@ export function setupPluginListeners(): void {
     if (invoke) {
       try {
         await invoke('open_plugins_folder');
-        showNotification('Plugin-Ordner geöffnet');
-      } catch (e) { showNotification('Fehler: ' + e); }
+        showNotification(t('notifications.pluginFolderOpened', {}, 'Plugin-Ordner geöffnet'));
+      } catch (e) { showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e)); }
     }
   });
 
   // Import ZIP
   document.getElementById('btn-import-plugin')?.addEventListener('click', async () => {
     if (!window.__TAURI__?.dialog) {
-      showNotification('Dialog nicht verfügbar');
+      showNotification(t('errors.dialogUnavailable', {}, 'Dialog nicht verfügbar'));
       return;
     }
     try {
@@ -185,16 +186,16 @@ export function setupPluginListeners(): void {
       if (path) {
         const invoke = getTauriInvoke();
         await invoke('install_plugin_from_zip', { zipPath: path });
-        showNotification('Plugin installiert!');
+        showNotification(t('notifications.pluginInstalled', {}, 'Plugin installiert!'));
         await renderPluginList();
       }
-    } catch (e) { showNotification('Import fehlgeschlagen: ' + e); }
+    } catch (e) { showNotification(t('notifications.pluginImportFailed', { error: String(e) }, 'Import fehlgeschlagen: ' + e)); }
   });
 
   // Refresh
   document.getElementById('btn-refresh-plugins')?.addEventListener('click', async () => {
     await renderPluginList();
-    showNotification('Liste aktualisiert');
+    showNotification(t('notifications.listRefreshed', {}, 'Liste aktualisiert'));
   });
 
   // Modal Close

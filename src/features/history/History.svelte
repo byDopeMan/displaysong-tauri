@@ -5,6 +5,7 @@
   import { getTauriInvoke } from '../../core/tauri';
   import { openExternal } from '../../ui/navigation';
   import { showNotification } from '../../ui/notifications';
+  import { t } from '../../utils/i18n';
   import { isBlocked, blockSong, unblockSong } from './blocklist';
   import type { SongRef } from './blocklist';
   import { historyDisplay } from './store';
@@ -83,10 +84,10 @@
     if (!ctx) return;
     if (ctx.blocked) {
       unblockSong(ctx.song);
-      showNotification('Song entsperrt');
+      showNotification(t('notifications.songUnblocked', {}, 'Song entsperrt'));
     } else {
       blockSong(ctx.song);
-      showNotification('Song blockiert – kann nicht mehr angefragt werden');
+      showNotification(t('notifications.songBlocked', {}, 'Song blockiert – kann nicht mehr angefragt werden'));
     }
     ctx = null;
   }

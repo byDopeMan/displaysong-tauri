@@ -14,6 +14,7 @@ import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { ACCESS_API_URL } from './api';
 import {
   startSSEConnection,
@@ -51,7 +52,7 @@ export async function submitAccessRequest(): Promise<void> {
   const statusDiv = document.getElementById('access-status');
 
   if (!name || !email) {
-    showNotification('Name und E-Mail sind erforderlich!');
+    showNotification(t('notifications.nameEmailRequired', {}, 'Name und E-Mail sind erforderlich!'));
     return;
   }
 
@@ -102,7 +103,7 @@ export async function submitAccessRequest(): Promise<void> {
           statusDiv.classList.remove('hidden');
           statusDiv.innerHTML = '<div class="status-pending">📡 Anfrage gesendet! Live-Updates aktiviert...</div>';
         }
-        showNotification('Anfrage gesendet!');
+        showNotification(t('notifications.requestSent', {}, 'Anfrage gesendet!'));
 
         startSSEConnection();
         startStatusPolling();
@@ -111,7 +112,7 @@ export async function submitAccessRequest(): Promise<void> {
       throw new Error('Server error');
     }
   } catch (e) {
-    showNotification('Fehler beim Senden. Versuche es später.');
+    showNotification(t('notifications.sendError', {}, 'Fehler beim Senden. Versuche es später.'));
     console.error('Access request failed:', e);
   } finally {
     if (submitBtn) {

@@ -9,6 +9,7 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { escapeHtml } from './parse';
 import { isTwitchConnected } from './state';
 import { updateTwitchSettings } from './index';
@@ -67,7 +68,7 @@ export async function loadRewards(selectedId?: string): Promise<void> {
         { type: 'warning', duration: 9000 }
       );
     } else {
-      showNotification('Belohnungen konnten nicht geladen werden: ' + e, { type: 'error' });
+      showNotification(t('notifications.rewardsLoadFailed', { error: String(e) }, 'Belohnungen konnten nicht geladen werden: ' + e), { type: 'error' });
     }
   }
 }
@@ -81,7 +82,7 @@ export async function simulateRedemption(): Promise<void> {
   const input = document.getElementById('twitch-test-link') as HTMLInputElement | null;
   const link = input?.value?.trim();
   if (!link) {
-    showNotification('Bitte einen Test-Link eingeben (Spotify, YouTube, …).', { type: 'warning' });
+    showNotification(t('notifications.testLinkRequired', {}, 'Bitte einen Test-Link eingeben (Spotify, YouTube, …).'), { type: 'warning' });
     return;
   }
   if (!window.__TAURI__?.event) return;
@@ -94,10 +95,10 @@ export async function simulateRedemption(): Promise<void> {
       user_name: 'TestUser',
       user_input: link,
     });
-    showNotification('Test-Einlösung ausgelöst — siehe Queue. (Tipp: bei „nichts passiert" prüfe Duplikate-Schutz / ob der Song schon in der Queue ist.)', { type: 'info', duration: 7000 });
+    showNotification(t('notifications.testRedemptionTriggered', {}, 'Test-Einlösung ausgelöst — siehe Queue. (Tipp: bei „nichts passiert" prüfe Duplikate-Schutz / ob der Song schon in der Queue ist.)'), { type: 'info', duration: 7000 });
   } catch (e) {
     console.error('[Twitch] Test redemption error:', e);
-    showNotification('Test-Einlösung fehlgeschlagen: ' + e, { type: 'error' });
+    showNotification(t('notifications.testRedemptionFailed', { error: String(e) }, 'Test-Einlösung fehlgeschlagen: ' + e), { type: 'error' });
   }
 }
 
@@ -125,12 +126,12 @@ export async function createReward(): Promise<void> {
 
   try {
     const reward: any = await invoke('twitch_create_reward', { title, cost });
-    showNotification(`Belohnung "${reward.title}" erstellt!`);
+    showNotification(t('notifications.rewardCreated', { title: reward.title }, `Belohnung "${reward.title}" erstellt!`));
     document.getElementById('twitch-create-reward-form')?.classList.add('hidden');
     await loadRewards(reward.id);
     await setReward(reward.id);
   } catch (e) {
     console.error('[Twitch] Create reward error:', e);
-    showNotification('Belohnung konnte nicht erstellt werden: ' + e, { type: 'error' });
+    showNotification(t('notifications.rewardCreateFailed', { error: String(e) }, 'Belohnung konnte nicht erstellt werden: ' + e), { type: 'error' });
   }
 }

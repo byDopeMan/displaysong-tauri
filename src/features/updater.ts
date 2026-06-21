@@ -3,6 +3,7 @@
  */
 
 import { showNotification } from '../ui/notifications';
+import { t } from '../utils/i18n';
 
 /** Check for updates */
 export async function checkForUpdates(): Promise<void> {
@@ -30,7 +31,7 @@ export async function checkForUpdates(): Promise<void> {
       const shouldInstall = await showUpdateDialog(update.manifest);
 
       if (shouldInstall && installUpdate) {
-        showNotification('Update wird heruntergeladen...');
+        showNotification(t('notifications.updateDownloading', {}, 'Update wird heruntergeladen...'));
         await installUpdate();
       }
     } else {

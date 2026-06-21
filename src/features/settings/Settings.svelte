@@ -6,6 +6,7 @@
   // animated; the child content stays in the DOM so the by-id wiring keeps working.
   import { getTauriInvoke } from '../../core/tauri';
   import { showNotification } from '../../ui/notifications';
+  import { t } from '../../utils/i18n';
   import { twitchPanelOpen } from '../twitch/store';
   import { infoModal } from './info-modal';
   import Connections from '../provider/Connections.svelte';
@@ -36,9 +37,9 @@
     if (invoke) {
       try {
         await invoke('open_logs_folder');
-        showNotification('Logs-Ordner geöffnet');
+        showNotification(t('notifications.logsOpened', {}, 'Logs-Ordner geöffnet'));
       } catch (e) {
-        showNotification('Fehler: ' + e);
+        showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e));
       }
     }
   }

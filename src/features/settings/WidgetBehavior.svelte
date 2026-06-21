@@ -4,6 +4,7 @@
   // `settings` object + store in sync; saveSettings persists to localStorage).
   import { getTauriInvoke } from '../../core/tauri';
   import { showNotification } from '../../ui/notifications';
+  import { t } from '../../utils/i18n';
   import { settingsStore, updateSettings, saveSettings, applyWidgetOpacity } from './index';
 
   async function onPolling(e: Event) {
@@ -14,7 +15,7 @@
     if (invoke) {
       try { await invoke('set_polling_interval', { interval: v }); } catch (err) {}
     }
-    showNotification('Aktualisierungsrate geändert');
+    showNotification(t('notifications.pollingChanged', {}, 'Aktualisierungsrate geändert'));
   }
 
   function onOpacityInput(e: Event) {
@@ -24,7 +25,7 @@
   function onOpacityCommit() {
     saveSettings();
     applyWidgetOpacity();
-    showNotification(`Widget-Transparenz: ${$settingsStore.widgetOpacity}%`);
+    showNotification(t('notifications.widgetOpacity', { value: $settingsStore.widgetOpacity }, `Design-Transparenz: ${$settingsStore.widgetOpacity}%`));
   }
 
   function onAutoShow(e: Event) {

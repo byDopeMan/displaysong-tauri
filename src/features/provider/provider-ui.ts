@@ -104,10 +104,10 @@ function setupProviderSelect(): void {
         updateProviderHint(newProvider, hint);
         updatePriorityButtonVisibility();
         startWindowsAudioPolling(invoke);
-        showNotification('Windows Audio aktiviert');
+        showNotification(t('notifications.windowsAudioEnabled', {}, 'Windows Audio aktiviert'));
       } else if (newProvider === PROVIDER.SPOTIFY) {
         if (!isSpotifyConnected) {
-          showNotification('Spotify nicht verbunden - bitte zuerst verbinden', { type: 'warning' });
+          showNotification(t('notifications.spotifyNotConnectedFirst', {}, 'Spotify nicht verbunden - bitte zuerst verbinden'), { type: 'warning' });
           select.value = PROVIDER.WINDOWS_AUDIO;
           return;
         }
@@ -121,10 +121,10 @@ function setupProviderSelect(): void {
 
         try {
           await invoke('start_spotify_polling');
-          showNotification('Spotify API aktiviert');
+          showNotification(t('notifications.spotifyApiEnabled', {}, 'Spotify API aktiviert'));
         } catch (e) {
           console.error('Failed to start Spotify polling:', e);
-          showNotification('Fehler beim Starten von Spotify', { type: 'error' });
+          showNotification(t('notifications.spotifyStartError', {}, 'Fehler beim Starten von Spotify'), { type: 'error' });
         }
       }
     }
@@ -183,7 +183,7 @@ function setupHistoryStorageToggle(): void {
     const storage = btn.dataset.storage;
 
     if (storage === 'spotify' && !isSpotifyConnected) {
-      showNotification('Spotify nicht verbunden', { type: 'warning' });
+      showNotification(t('notifications.spotifyNotConnected', {}, 'Spotify nicht verbunden'), { type: 'warning' });
       return;
     }
 

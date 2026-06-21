@@ -4,6 +4,7 @@
   // access flow writes into them via getElementById; the submit reads them at
   // submit time, like the original setup.ts did.
   import { showNotification } from '../../ui/notifications';
+  import { t } from '../../utils/i18n';
   import { connectSpotify, goBackFromSpotifySetup } from './setup';
 
   let clientIdEl: HTMLInputElement;
@@ -17,14 +18,14 @@
     const clientSecret = clientSecretEl?.value?.trim();
 
     if (!clientId || !clientSecret) {
-      showNotification('Bitte beide Felder ausfüllen', { type: 'error' });
+      showNotification(t('notifications.bothFieldsRequired', {}, 'Bitte beide Felder ausfüllen'), { type: 'error' });
       return;
     }
 
     const originalText = submitBtn?.textContent || 'Speichern & Verbinden';
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Verbinde...';
+      submitBtn.textContent = t('settings.connections.connecting', {}, 'Verbinde...');
     }
     const resetButton = () => {
       if (submitBtn) {
@@ -38,7 +39,7 @@
       setTimeout(resetButton, 1500);
     } catch (err) {
       console.error('[Setup] Spotify setup error:', err);
-      showNotification('Fehler: ' + err, { type: 'error' });
+      showNotification(t('errors.generic', { error: String(err) }, 'Fehler: ' + err), { type: 'error' });
       resetButton();
     }
   }

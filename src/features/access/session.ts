@@ -12,6 +12,7 @@ import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { showView, openExternal } from '../../ui/navigation';
 import { fetchDeveloperCredentials } from './api';
 import { stopSSEConnection, stopStatusPolling, startBlockCheckSSE } from './connection';
@@ -24,19 +25,19 @@ export async function autoLoginAfterUnblock(): Promise<void> {
   const email = getString('user_email');
 
   if (!email) {
-    showNotification('❌ Keine E-Mail gefunden');
+    showNotification(t('notifications.noEmail', {}, 'Keine E-Mail gefunden'));
     return;
   }
 
   // ✅ Status auf approved setzen (wurde unblocked!)
   setString('accessRequestStatus', 'approved');
 
-  showNotification('✅ Verbinde mit Spotify...');
+  showNotification(t('notifications.connectingSpotify', {}, 'Verbinde mit Spotify...'));
 
   const { clientId, clientSecret } = await fetchDeveloperCredentials(email);
 
   if (!clientId || !clientSecret) {
-    showNotification('❌ Keine Developer Credentials verfügbar');
+    showNotification(t('notifications.noDevCredentials', {}, 'Keine Developer Credentials verfügbar'));
     return;
   }
 
@@ -56,7 +57,7 @@ export async function autoLoginAfterUnblock(): Promise<void> {
     }
   } catch (e) {
     console.error('Auto-login after unblock failed:', e);
-    showNotification('Fehler beim Login: ' + e);
+    showNotification(t('notifications.loginError', { error: String(e) }, 'Fehler beim Login: ' + e));
   }
 }
 
@@ -64,11 +65,11 @@ export async function autoLogin(): Promise<void> {
   const userEmail = getString('accessRequestEmail') || getString('user_email');
 
   if (!userEmail) {
-    showNotification('❌ Keine E-Mail gefunden - bitte erneut anmelden');
+    showNotification(t('notifications.noEmailReauth', {}, 'Keine E-Mail gefunden - bitte erneut anmelden'));
     return;
   }
 
-  showNotification('✅ Zugang genehmigt! Verbinde mit Spotify...');
+  showNotification(t('notifications.accessApprovedConnecting', {}, 'Zugang genehmigt! Verbinde mit Spotify...'));
 
   const invoke = getTauriInvoke();
   if (!invoke) return;
@@ -76,7 +77,7 @@ export async function autoLogin(): Promise<void> {
   const { clientId, clientSecret } = await fetchDeveloperCredentials(userEmail);
 
   if (!clientId || !clientSecret) {
-    showNotification('❌ Keine Developer Credentials verfügbar');
+    showNotification(t('notifications.noDevCredentials', {}, 'Keine Developer Credentials verfügbar'));
     return;
   }
 
@@ -95,7 +96,7 @@ export async function autoLogin(): Promise<void> {
     }
   } catch (e) {
     console.error('Auto-login failed:', e);
-    showNotification('Fehler beim Auto-Login: ' + e);
+    showNotification(t('notifications.autoLoginError', { error: String(e) }, 'Fehler beim Auto-Login: ' + e));
   }
 }
 
@@ -143,7 +144,7 @@ export async function handleBlocked(): Promise<void> {
   // ✅ Status auf blocked setzen (Daten bleiben!)
   setString('accessRequestStatus', 'blocked');
 
-  showNotification('❌ Dein Zugang wurde blockiert!');
+  showNotification(t('notifications.accessBlocked', {}, 'Dein Zugang wurde blockiert!'));
 
   if (state.isAuthenticated) {
     await forceLogout('Du wurdest blockiert');

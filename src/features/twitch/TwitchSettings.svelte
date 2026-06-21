@@ -185,7 +185,7 @@
             </div>
             <div class="setting-hint-box" id="twitch-chat-preview">
               <span class="chat-preview-label" data-i18n="settings.twitch.preview">Vorschau:</span>
-              <span class="chat-preview-msg"><strong id="chat-sender-name" class="chat-sender-name bot-name">DisplaySong</strong>: <span class="preview-icon"></span> Jetzt läuft: Artist - Song</span>
+              <span class="chat-preview-msg"><strong id="chat-sender-name" class="chat-sender-name bot-name">DisplaySong</strong>: <span class="preview-icon"></span> <span data-i18n="settings.twitch.previewExample">Jetzt läuft: Artist - Song</span></span>
             </div>
           </div>
           

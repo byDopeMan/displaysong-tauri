@@ -7,6 +7,7 @@ import { getTauriInvoke, getTauriWebviewWindow, getTauriPhysicalPosition, getTau
 import { getItem, setItem } from '../utils/storage';
 import { settings, getCurrentAccentColor } from './settings';
 import { showNotification } from '../ui/notifications';
+import { t } from '../utils/i18n';
 import { activeWidgets } from './designs/store';
 
 export const WIDGET_NAMES: Record<string, string> = {
@@ -96,7 +97,7 @@ export async function showWidget(widgetLabel: string): Promise<void> {
     setTimeout(() => sendAccentColorToWidget(widgetLabel), 100);
   } catch (e) {
     console.error('Show widget error:', e);
-    showNotification('Widget konnte nicht geöffnet werden');
+    showNotification(t('notifications.widgetOpenFailed', {}, 'Widget konnte nicht geöffnet werden'));
   }
 }
 
@@ -234,14 +235,14 @@ export async function openConfigFolder(): Promise<void> {
   try {
     const invoke = getTauriInvoke();
     if (!invoke) {
-      showNotification('Tauri nicht verfügbar');
+      showNotification(t('errors.tauriUnavailable', {}, 'Tauri nicht verfügbar'));
       return;
     }
     await invoke('open_config_folder');
-    showNotification('Ordner geöffnet');
+    showNotification(t('notifications.folderOpened', {}, 'Ordner geöffnet'));
   } catch (e) {
     console.error('Open folder failed:', e);
-    showNotification('Fehler: ' + e);
+    showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e));
   }
 }
 
@@ -250,14 +251,14 @@ export async function reloadWidgets(): Promise<void> {
   try {
     const invoke = getTauriInvoke();
     if (!invoke) {
-      showNotification('Tauri nicht verfügbar');
+      showNotification(t('errors.tauriUnavailable', {}, 'Tauri nicht verfügbar'));
       return;
     }
     await invoke('reload_widgets');
-    showNotification('Widgets neu geladen!');
+    showNotification(t('notifications.widgetsReloaded', {}, 'Widgets neu geladen!'));
   } catch (e) {
     console.error('Reload widgets failed:', e);
-    showNotification('Fehler: ' + e);
+    showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e));
   }
 }
 

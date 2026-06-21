@@ -12,6 +12,7 @@ import { getItem, setItem } from '../../utils/storage';
 import { hexToRgb, type Rgb } from '../../utils/format';
 import { getTauriInvoke, getTauriWebviewWindow } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { broadcastAccentColor } from '../widgets';
 import { updateTabVisibility } from '../../ui/navigation';
 import { setPluginSettingsStyle } from '../plugins/index';
@@ -157,7 +158,7 @@ export function setupSettingsListeners(): void {
           await invoke('twitch_set_use_bot', { useBot });
           showNotification(useBot ? 'Bot-Account aktiviert' : 'Eigener Account aktiviert');
         } catch (e) {
-          showNotification('Fehler: ' + e, { type: 'error' });
+          showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e), { type: 'error' });
         }
       }
     });

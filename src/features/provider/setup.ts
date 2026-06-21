@@ -6,6 +6,7 @@
 import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { setProvider, PROVIDER } from './provider';
 import { state } from '../../core/state';
 import { accessModalOpen } from '../access/store';
@@ -41,7 +42,7 @@ export async function useWindowsAudio(): Promise<void> {
   const { startWindowsAudioPolling } = await import('../../app');
   startWindowsAudioPolling(invoke);
 
-  showNotification('Windows Audio aktiviert - Musik wird automatisch erkannt!');
+  showNotification(t('notifications.windowsAudioEnabledFull', {}, 'Windows Audio aktiviert - Musik wird automatisch erkannt!'));
 }
 
 /**

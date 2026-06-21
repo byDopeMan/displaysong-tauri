@@ -12,6 +12,7 @@ import { state } from '../../core/state';
 import { getTauriInvoke } from '../../core/tauri';
 import { getString, setString, removeItem } from '../../utils/storage';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { ACCESS_API_URL } from './api';
 import {
   handleApproved,
@@ -89,7 +90,7 @@ async function handleSSEUpdate(data: any): Promise<void> {
 
   switch (status) {
     case 'approved':
-      showNotification('🎉 Dein Zugang wurde genehmigt!');
+      showNotification(t('notifications.accessApproved', {}, 'Dein Zugang wurde genehmigt!'));
       stopSSEConnection();
       setString('accessRequestStatus', 'approved');
       if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'approved' });
@@ -98,7 +99,7 @@ async function handleSSEUpdate(data: any): Promise<void> {
 
     case 'blocked':
       console.warn('🚫 BLOCKED via SSE!');
-      showNotification('⛔ Dein Zugang wurde blockiert!');
+      showNotification(t('notifications.accessBlocked', {}, 'Dein Zugang wurde blockiert!'));
       stopSSEConnection();
       setString('accessRequestStatus', 'blocked');
       if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'blocked' });
@@ -106,7 +107,7 @@ async function handleSSEUpdate(data: any): Promise<void> {
       break;
 
     case 'unblocked':
-      showNotification('🎉 Du wurdest entsperrt - automatisches Login...');
+      showNotification(t('notifications.accessUnblocked', {}, 'Du wurdest entsperrt - automatisches Login...'));
       stopSSEConnection();
       setString('accessRequestStatus', 'approved');
       if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'approved' });
@@ -114,14 +115,14 @@ async function handleSSEUpdate(data: any): Promise<void> {
       break;
 
     case 'denied':
-      showNotification('❌ Anfrage abgelehnt');
+      showNotification(t('notifications.accessDenied', {}, 'Anfrage abgelehnt'));
       stopSSEConnection();
       setString('accessRequestStatus', 'denied');
       if (invoke && email) await invoke('save_access_data', { email, requestId: requestId || '', status: 'denied' });
       break;
 
     case 'deleted':
-      showNotification('🗑️ Anfrage wurde gelöscht');
+      showNotification(t('notifications.accessDeleted', {}, 'Anfrage wurde gelöscht'));
       stopSSEConnection();
       removeItem('accessRequestId');
       removeItem('accessRequestEmail');
@@ -210,7 +211,7 @@ export function startBlockCheckSSE(): void {
         await forceLogout('Du wurdest vom Developer blockiert.');
       } else if (data.type === 'unblock' && !data.blocked) {
         state.blockCheckSSE.close();
-        showNotification('🎉 Du wurdest entsperrt! Anmeldung läuft...');
+        showNotification(t('notifications.accessUnblockedLogin', {}, 'Du wurdest entsperrt! Anmeldung läuft...'));
         await autoLoginAfterUnblock();
       }
     } catch (e) {

@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import { getTauriInvoke } from '../../core/tauri';
   import { showNotification } from '../../ui/notifications';
+  import { t } from '../../utils/i18n';
 
   let autostartChecked = false;
 
@@ -24,10 +25,10 @@
     try {
       await invoke('set_autostart', { enabled: checked });
       autostartChecked = checked;
-      showNotification(checked ? 'Autostart aktiviert' : 'Autostart deaktiviert');
+      showNotification(checked ? t('notifications.autostartEnabled', {}, 'Autostart aktiviert') : t('notifications.autostartDisabled', {}, 'Autostart deaktiviert'));
     } catch (e) {
       autostartChecked = !checked; // revert
-      showNotification('Autostart konnte nicht geändert werden');
+      showNotification(t('notifications.autostartError', {}, 'Autostart konnte nicht geändert werden'));
     }
   }
 
@@ -37,9 +38,9 @@
     try {
       await invoke('remove_autostart_entry');
       autostartChecked = false;
-      showNotification('Autostart-Eintrag entfernt');
+      showNotification(t('notifications.autostartRemoved', {}, 'Autostart-Eintrag entfernt'));
     } catch (e) {
-      showNotification('Fehler beim Entfernen');
+      showNotification(t('notifications.removeError', {}, 'Fehler beim Entfernen'));
     }
   }
 </script>

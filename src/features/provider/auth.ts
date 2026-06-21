@@ -16,7 +16,7 @@ export async function saveCredentials(clientId: string, clientSecret: string): P
   try {
     const invoke = getTauriInvoke();
     if (!invoke) {
-      showNotification('Tauri API nicht verfügbar');
+      showNotification(t('errors.tauriUnavailable', {}, 'Tauri API nicht verfügbar'));
       return;
     }
 
@@ -30,7 +30,7 @@ export async function saveCredentials(clientId: string, clientSecret: string): P
       await openExternal(authUrl);
     }
   } catch (e) {
-    showNotification('Fehler: ' + e);
+    showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e));
   }
 }
 
@@ -65,7 +65,7 @@ export async function disconnectSpotify(): Promise<void> {
       const { startWindowsAudioPolling } = await import('../../app');
       startWindowsAudioPolling(invoke);
 
-      showNotification('Zu Windows Audio gewechselt');
+      showNotification(t('notifications.switchedWindowsAudio', {}, 'Zu Windows Audio gewechselt'));
     }
 
     // Stop access request polling

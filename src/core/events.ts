@@ -7,6 +7,7 @@ import { getTauriListen } from './tauri';
 import { updateTrackDisplay } from '../ui/track-display';
 import { switchTab, showView } from '../ui/navigation';
 import { showNotification } from '../ui/notifications';
+import { t } from '../utils/i18n';
 import { disconnectSpotify } from '../features/provider/auth';
 import { refreshHistory } from '../features/history/history';
 
@@ -55,7 +56,7 @@ export async function setupDeepLinkHandler(): Promise<void> {
 
     updateSpotifyStatus(true);
     setSpotifyConnected(true);
-    showNotification('Spotify verbunden!');
+    showNotification(t('notifications.spotifyConnected', {}, 'Spotify verbunden!'));
 
     // Show nav tabs
     document.getElementById('nav-tabs')?.classList.remove('hidden');
@@ -69,7 +70,7 @@ export async function setupDeepLinkHandler(): Promise<void> {
   });
 
   await listen('auth-error', () => {
-    showNotification('Authentifizierung fehlgeschlagen');
+    showNotification(t('notifications.authFailed', {}, 'Authentifizierung fehlgeschlagen'));
     showView('setup');
   });
 }

@@ -5,6 +5,7 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { state } from '../../core/state';
 
 // Provider types
@@ -144,16 +145,16 @@ export async function initProvider(): Promise<void> {
 /** Switch to Windows Audio provider */
 export function useWindowsAudio(): void {
   setProvider(PROVIDER.WINDOWS_AUDIO);
-  showNotification('Windows Audio aktiviert');
+  showNotification(t('notifications.windowsAudioEnabled', {}, 'Windows Audio aktiviert'));
 }
 
 /** Switch to Spotify provider */
 export function useSpotify(): boolean {
   if (!isSpotifyConnected()) {
-    showNotification('Bitte zuerst mit Spotify verbinden', { type: 'warning' });
+    showNotification(t('notifications.connectSpotifyFirst', {}, 'Bitte zuerst mit Spotify verbinden'), { type: 'warning' });
     return false;
   }
   setProvider(PROVIDER.SPOTIFY);
-  showNotification('Spotify API aktiviert');
+  showNotification(t('notifications.spotifyApiEnabled', {}, 'Spotify API aktiviert'));
   return true;
 }

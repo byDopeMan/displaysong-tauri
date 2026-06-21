@@ -43,7 +43,7 @@ import { initRequestHistory } from './features/history/request-history';
 import { initSetupFlow, isSetupComplete } from './features/provider/setup';
 import { initProvider, loadSavedProvider, PROVIDER } from './features/provider/provider';
 import { initProviderUI, setSpotifyConnected } from './features/provider/provider-ui';
-import { loadLanguage, updatePageTranslations, populateLanguageSelect } from './utils/i18n';
+import { loadLanguage, updatePageTranslations, populateLanguageSelect, t } from './utils/i18n';
 import { initSourcePriority, addSeenSource, getSourcePriority } from './features/provider/source-priority';
 
 /**
@@ -187,14 +187,14 @@ async function init(): Promise<void> {
     if (loadingStatus) loadingStatus.textContent = text;
   }
 
-  setLoadingStatus('Initialisiere...');
+  setLoadingStatus(t('loading.initializing', {}, 'Initialisiere...'));
 
   // Wait for Tauri
   await waitForTauri();
 
   const invoke = getTauriInvoke();
 
-  setLoadingStatus('Lade Komponenten...');
+  setLoadingStatus(t('loading.components', {}, 'Lade Komponenten...'));
 
   // Initialize DOM references
   initViews();
@@ -271,7 +271,7 @@ async function init(): Promise<void> {
   loadWidgetPositions();
   updateHistoryTabVisibility();
 
-  setLoadingStatus('Prüfe Konfiguration...');
+  setLoadingStatus(t('loading.checkingConfig', {}, 'Prüfe Konfiguration...'));
 
   // Autostart status is loaded by SystemSettings.svelte on mount.
   await setupDeepLinkHandler();
@@ -293,7 +293,7 @@ async function init(): Promise<void> {
   // Restore the Spotify connection whenever credentials exist — song requests,
   // queue track info and playback all need the Spotify API client, even when the
   // now-playing source is Windows Audio.
-  setLoadingStatus('Verbinde mit Spotify...');
+  setLoadingStatus(t('loading.connectingSpotify', {}, 'Verbinde mit Spotify...'));
   const spotifyConnected = await checkExistingCredentialsWithStatus(setLoadingStatus);
   setSpotifyConnected(spotifyConnected);
   if (savedProvider === PROVIDER.WINDOWS_AUDIO) {

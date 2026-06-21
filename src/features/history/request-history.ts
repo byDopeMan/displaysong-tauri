@@ -4,6 +4,7 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 
 // State
 let playlistConfig: any = null;
@@ -161,7 +162,7 @@ async function checkScopesAndSetup(): Promise<boolean> {
     return true;
   } catch (e) {
     console.error('[RequestHistory] Scope check error:', e);
-    showNotification('Fehler beim Prüfen der Berechtigungen', { type: 'error' });
+    showNotification(t('notifications.permissionsCheckError', {}, 'Fehler beim Prüfen der Berechtigungen'), { type: 'error' });
     return false;
   }
 }
@@ -234,7 +235,7 @@ async function createPlaylist(): Promise<void> {
     // Update UI
     updateUI();
 
-    showNotification(`Playlist "${name}" erstellt!`);
+    showNotification(t('notifications.playlistCreated', { name }, `Playlist "${name}" erstellt!`));
   } catch (e) {
     console.error('[RequestHistory] Create playlist error:', e);
 
@@ -279,7 +280,7 @@ async function deletePlaylist(): Promise<void> {
   try {
     await invoke('delete_spotify_playlist', { playlistId: playlistConfig.id });
 
-    showNotification(`Playlist "${playlistConfig.name}" gelöscht`);
+    showNotification(t('notifications.playlistDeleted', { name: playlistConfig.name }, `Playlist "${playlistConfig.name}" gelöscht`));
 
     // Clear config
     playlistConfig = null;
@@ -287,7 +288,7 @@ async function deletePlaylist(): Promise<void> {
     updateUI();
   } catch (e) {
     console.error('[RequestHistory] Delete playlist error:', e);
-    showNotification('Fehler beim Löschen: ' + e, { type: 'error' });
+    showNotification(t('notifications.deleteError', { error: String(e) }, 'Fehler beim Löschen: ' + e), { type: 'error' });
   }
 }
 
@@ -300,7 +301,7 @@ async function triggerReauth(): Promise<void> {
     // Close modal
     document.getElementById('reauth-modal')?.classList.add('hidden');
 
-    showNotification('Browser öffnet sich...', { type: 'info' });
+    showNotification(t('settings.connections.spotifyAuthOpening', {}, 'Browser öffnet sich...'), { type: 'info' });
 
     // Get auth URL and open
     const authUrl = await invoke('get_auth_url');
@@ -310,13 +311,13 @@ async function triggerReauth(): Promise<void> {
     await invoke('start_auth_server');
 
     // If we get here, auth was successful
-    showNotification('Spotify erfolgreich verbunden!', { type: 'success' });
+    showNotification(t('notifications.spotifyConnected', {}, 'Spotify erfolgreich verbunden!'), { type: 'success' });
 
     // Now open the playlist setup since we have the scopes
     setTimeout(() => openPlaylistSetup(), 500);
   } catch (e) {
     console.error('[RequestHistory] Re-auth error:', e);
-    showNotification('Fehler: ' + e, { type: 'error' });
+    showNotification(t('errors.generic', { error: String(e) }, 'Fehler: ' + e), { type: 'error' });
   }
 }
 

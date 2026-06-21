@@ -7,6 +7,7 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import {
   applyTwitchMode,
   setTwitchMode,
@@ -104,7 +105,7 @@ async function startEventSub(): Promise<void> {
     await invoke('twitch_connect_eventsub');
   } catch (e) {
     console.error('[Twitch] EventSub error:', e);
-    showNotification('EventSub Fehler: ' + e, { type: 'error' });
+    showNotification(t('notifications.eventSubError', { error: String(e) }, 'EventSub Fehler: ' + e), { type: 'error' });
   }
 }
 
@@ -126,10 +127,10 @@ export async function connectTwitch(): Promise<void> {
 
     if (btnConnect) {
       btnConnect.disabled = true;
-      btnConnect.textContent = 'Verbinde...';
+      btnConnect.textContent = t('settings.connections.connecting', {}, 'Verbinde...');
     }
     if (statusText) {
-      statusText.textContent = 'Verbinde...';
+      statusText.textContent = t('settings.connections.connecting', {}, 'Verbinde...');
     }
 
     // This will open browser and wait for callback
@@ -140,7 +141,7 @@ export async function connectTwitch(): Promise<void> {
     setUser(info.user);
 
     if (isTwitchConnected()) {
-      showNotification(`Mit Twitch verbunden als ${getTwitchUser()?.display_name || 'User'}`);
+      showNotification(t('notifications.twitchConnected', { name: getTwitchUser()?.display_name || 'User' }, `Mit Twitch verbunden als ${getTwitchUser()?.display_name || 'User'}`));
       closeOAuthModal();
       startEventSub();
     } else {
@@ -154,7 +155,7 @@ export async function connectTwitch(): Promise<void> {
     setConnecting(false);
     if (btnConnect) {
       btnConnect.disabled = false;
-      btnConnect.textContent = 'Verbinden';
+      btnConnect.textContent = t('settings.connections.connect', {}, 'Verbinden');
     }
     updateTwitchUI();
   }
@@ -178,11 +179,11 @@ export async function disconnectTwitch(): Promise<void> {
     setConnected(false);
     setUser(null);
 
-    showNotification('Twitch getrennt');
+    showNotification(t('notifications.twitchDisconnected', {}, 'Twitch getrennt'));
     updateTwitchUI();
   } catch (e) {
     console.error('[Twitch] Disconnect error:', e);
-    showNotification('Fehler beim Trennen', { type: 'error' });
+    showNotification(t('notifications.disconnectError', {}, 'Fehler beim Trennen'), { type: 'error' });
   }
 }
 
@@ -196,7 +197,7 @@ export async function sendTestMessage(): Promise<void> {
     const message = `DisplaySong Song Requests sind aktiv! Nutze ${settings.command} <link> (Spotify, YouTube, Apple Music, SoundCloud...)`;
 
     await invoke('twitch_send_chat', { message });
-    showNotification('Test-Nachricht gesendet');
+    showNotification(t('notifications.testMessageSent', {}, 'Test-Nachricht gesendet'));
   } catch (e: any) {
     console.error('[Twitch] Send test error:', e);
     showNotification(e.toString(), { type: 'error' });
@@ -242,7 +243,7 @@ export function setupTwitchListeners(): void {
   document.getElementById('twitch-command')?.addEventListener('change', async (e) => {
     const value = (e.target as HTMLInputElement).value;
     await updateTwitchSettings({ command: value });
-    showNotification(`Command: ${value}`);
+    showNotification(t('notifications.commandSet', { cmd: value }, `Command: ${value}`));
   });
 
   document.getElementById('twitch-cooldown')?.addEventListener('change', async (e) => {
