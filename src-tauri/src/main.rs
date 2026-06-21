@@ -121,8 +121,6 @@ fn main() {
             commands::reset_widget_accent,
             // Custom Widgets
             commands::get_custom_widget_content,
-            commands::load_custom_design,
-            commands::save_custom_design,
             // Settings
             commands::open_config_folder,
             commands::open_logs_folder,
