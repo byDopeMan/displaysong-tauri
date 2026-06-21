@@ -20,6 +20,7 @@ import SpotifySetup from './features/provider/SpotifySetup.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
 import AccessRequestModal from './features/access/AccessRequestModal.svelte';
 import BlocklistModal from './features/history/BlocklistModal.svelte';
+import InfoModals from './features/settings/InfoModals.svelte';
 
 // Features
 import { loadSettings, setupSettingsListeners } from './features/settings';
@@ -218,6 +219,8 @@ async function init(): Promise<void> {
   if (accessRequestMount) new AccessRequestModal({ target: accessRequestMount });
   const blocklistMount = document.getElementById('blocklist-mount');
   if (blocklistMount) new BlocklistModal({ target: blocklistMount });
+  const infoModalsMount = document.getElementById('info-modals-mount');
+  if (infoModalsMount) new InfoModals({ target: infoModalsMount });
 
   // Load language EARLY so all UI text is translated
   const savedLang = localStorage.getItem('language') || 'de';

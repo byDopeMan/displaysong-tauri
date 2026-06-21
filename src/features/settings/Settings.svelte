@@ -7,6 +7,7 @@
   import { getTauriInvoke } from '../../core/tauri';
   import { showNotification } from '../../ui/notifications';
   import { twitchPanelOpen } from '../twitch/store';
+  import { infoModal } from './info-modal';
   import Connections from '../provider/Connections.svelte';
   import TwitchSettings from '../twitch/TwitchSettings.svelte';
   import WidgetBehavior from './WidgetBehavior.svelte';
@@ -28,10 +29,6 @@
     collapsed[key] = !collapsed[key];
     collapsed = collapsed; // trigger reactivity
     try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed)); } catch (e) { /* ignore */ }
-  }
-
-  function openModal(id: string) {
-    document.getElementById(id)?.classList.remove('hidden');
   }
 
   async function openLogs() {
@@ -86,7 +83,7 @@
         <p class="app-desc" data-i18n="settings.about.description">Now Playing Widget für OBS</p>
       </div>
       <div class="about-links">
-        <button id="btn-changelog" class="btn btn-text" on:click={() => openModal('changelog-modal')}>
+        <button id="btn-changelog" class="btn btn-text" on:click={() => infoModal.set('changelog')}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
@@ -95,7 +92,7 @@
           </svg>
           <span data-i18n="settings.about.changelog">Changelog</span>
         </button>
-        <button id="btn-licenses" class="btn btn-text" on:click={() => openModal('licenses-modal')}>
+        <button id="btn-licenses" class="btn btn-text" on:click={() => infoModal.set('licenses')}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
