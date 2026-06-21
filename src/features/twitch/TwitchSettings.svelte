@@ -14,7 +14,7 @@
           <!-- Song Requests Toggle Section -->
           <div class="collapsible-section">
             <div class="collapsible-header">
-              <h4 class="collapsible-title">Song Requests</h4>
+              <h4 class="collapsible-title" data-i18n="settings.twitch.songRequests">Song Requests</h4>
               <label class="toggle-switch">
                 <input type="checkbox" id="song-requests-toggle" checked>
                 <span class="toggle-slider"></span>
@@ -32,8 +32,8 @@
               </svg>
             </div>
             <div class="notice-content">
-              <strong>Berechtigungen veraltet</strong>
-              <p>Bitte trenne und verbinde Twitch neu, damit alle Funktionen (Channel Points, Chat) verfügbar sind.</p>
+              <strong data-i18n="settings.twitch.scopeWarningTitle">Berechtigungen veraltet</strong>
+              <p data-i18n="settings.twitch.scopeWarningText">Bitte trenne und verbinde Twitch neu, damit alle Funktionen (Channel Points, Chat) verfügbar sind.</p>
             </div>
           </div>
 
@@ -58,8 +58,8 @@
                 </svg>
               </div>
               <div class="notice-content">
-                <strong>Channel Points Modus</strong>
-                <p>Zuschauer lösen Songs über eine Kanalpunkte-Belohnung ein. Cooldown & Zugriffsbeschränkung steuerst du direkt an der Belohnung auf Twitch.</p>
+                <strong data-i18n="settings.twitch.pointsModeTitle">Channel Points Modus</strong>
+                <p data-i18n="settings.twitch.pointsModeText">Zuschauer lösen Songs über eine Kanalpunkte-Belohnung ein. Cooldown & Zugriffsbeschränkung steuerst du direkt an der Belohnung auf Twitch.</p>
               </div>
             </div>
             <div class="setting-row setting-row-vertical">
@@ -110,8 +110,8 @@
                 </svg>
               </div>
               <div class="notice-content">
-                <strong>Ohne Affiliate/Partner testen</strong>
-                <p>Die Channel-Points-API von Twitch benötigt Affiliate- oder Partner-Status. Du kannst den kompletten Ablauf (Link → Spotify → Queue) hier simulieren, ohne eine echte Belohnung.</p>
+                <strong data-i18n="settings.twitch.testTitle">Ohne Affiliate/Partner testen</strong>
+                <p data-i18n="settings.twitch.testText">Die Channel-Points-API von Twitch benötigt Affiliate- oder Partner-Status. Du kannst den kompletten Ablauf (Link → Spotify → Queue) hier simulieren, ohne eine echte Belohnung.</p>
               </div>
             </div>
             <div class="setting-row setting-row-vertical">
@@ -140,9 +140,9 @@
               </svg>
             </div>
             <div class="notice-content">
-              <strong>Link-Schutz aktiv</strong>
-              <p>Wenn dein Chat Links blockiert, können User <code>!sr</code> ohne Link schreiben. Der Bot gibt dann automatisch eine 60-Sekunden Link-Erlaubnis.</p>
-              <p class="notice-requirement">Voraussetzung: Der Bot muss <strong>Moderator</strong> in deinem Channel sein.</p>
+              <strong data-i18n="settings.twitch.linkProtectTitle">Link-Schutz aktiv</strong>
+              <p data-i18n="settings.twitch.linkProtectText">Wenn dein Chat Links blockiert, können User !sr ohne Link schreiben. Der Bot gibt dann automatisch eine 60-Sekunden Link-Erlaubnis.</p>
+              <p class="notice-requirement" data-i18n="settings.twitch.linkProtectReq">Voraussetzung: Der Bot muss Moderator in deinem Channel sein.</p>
             </div>
           </div>
           
@@ -208,34 +208,34 @@
           
           <!-- Request Historie (innerhalb Song Requests) -->
           <div class="subsection-divider"></div>
-          <h4 class="subsection-title">Request Historie</h4>
+          <h4 class="subsection-title" data-i18n="settings.twitch.requestHistory">Request Historie</h4>
           
           <div class="setting-row">
             <!-- svelte-ignore a11y-label-has-associated-control -->
-            <label>Speicherort</label>
+            <label data-i18n="settings.twitch.storageLocation">Speicherort</label>
             <div class="toggle-group" id="history-storage-toggle">
-              <button class="toggle-btn active" data-storage="local">Lokal</button>
-              <button class="toggle-btn" data-storage="spotify">Spotify Playlist</button>
+              <button class="toggle-btn active" data-storage="local" data-i18n="settings.twitch.storageLocal">Lokal</button>
+              <button class="toggle-btn" data-storage="spotify" data-i18n="settings.twitch.storageSpotify">Spotify Playlist</button>
             </div>
           </div>
           
           <!-- Lokale DB Einstellungen -->
           <div id="local-history-settings">
-            <p class="setting-hint">Songs werden in einer lokalen Datenbank gespeichert.</p>
+            <p class="setting-hint" data-i18n="settings.twitch.localStorageHint">Songs werden in einer lokalen Datenbank gespeichert.</p>
           </div>
           
           <!-- Spotify Playlist Einstellungen -->
           <div id="spotify-playlist-settings" class="hidden">
             <!-- Wenn noch nicht eingerichtet -->
             <div id="playlist-setup-container">
-              <p class="setting-hint">Songs werden automatisch zu einer Spotify Playlist hinzugefügt.</p>
+              <p class="setting-hint" data-i18n="settings.twitch.playlistStorageHint">Songs werden automatisch zu einer Spotify Playlist hinzugefügt.</p>
               <button id="btn-setup-playlist" class="btn btn-secondary btn-small">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="16"></line>
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
-                <span>Playlist einrichten</span>
+                <span data-i18n="settings.twitch.setupPlaylist">Playlist einrichten</span>
               </button>
             </div>
             
@@ -243,11 +243,11 @@
             <div id="playlist-configured-container" class="hidden">
               <div class="setting-row">
                 <!-- svelte-ignore a11y-label-has-associated-control -->
-                <label>Aktive Playlist</label>
+                <label data-i18n="settings.twitch.activePlaylist">Aktive Playlist</label>
                 <span id="playlist-name-display" class="setting-value">-</span>
               </div>
               <div class="setting-row">
-                <label for="playlist-auto-add">Automatisch hinzufügen</label>
+                <label for="playlist-auto-add" data-i18n="settings.twitch.autoAdd">Automatisch hinzufügen</label>
                 <input type="checkbox" id="playlist-auto-add" class="setting-checkbox" checked>
               </div>
               <div class="setting-row-buttons">
@@ -257,14 +257,14 @@
                     <polyline points="15 3 21 3 21 9"></polyline>
                     <line x1="10" y1="14" x2="21" y2="3"></line>
                   </svg>
-                  <span>In Spotify öffnen</span>
+                  <span data-i18n="settings.twitch.openInSpotify">In Spotify öffnen</span>
                 </button>
                 <button id="btn-delete-playlist" class="btn btn-danger btn-small">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
-                  <span>Playlist löschen</span>
+                  <span data-i18n="settings.twitch.deletePlaylist">Playlist löschen</span>
                 </button>
               </div>
             </div>
