@@ -111,7 +111,7 @@ fn cleanup_old_crash_logs(log_dir: &PathBuf, keep_count: usize) {
                 e.path()
                     .file_name()
                     .and_then(|n| n.to_str())
-                    .map_or(false, |n| n.starts_with("crash_") && n.ends_with(".log"))
+                    .is_some_and(|n| n.starts_with("crash_") && n.ends_with(".log"))
             })
             .collect();
         

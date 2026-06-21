@@ -373,7 +373,7 @@ impl WindowsMediaProvider {
     fn clean_app_name(app_id: &str) -> String {
         // Common app ID patterns to clean names
         let name = app_id
-            .split('\\').last()
+            .split('\\').next_back()
             .unwrap_or(app_id)
             .split('!').next()
             .unwrap_or(app_id)
@@ -405,7 +405,7 @@ impl WindowsMediaProvider {
         // Skip long IDs like "OperaSoftware.OperaGXWebBrowser.1670061414"
         if name.len() > 20 || name.contains('.') {
             // Try to extract first meaningful part
-            let parts: Vec<&str> = name.split(|c| c == '.' || c == ' ').collect();
+            let parts: Vec<&str> = name.split(['.', ' ']).collect();
             if let Some(first) = parts.first() {
                 if first.len() > 2 {
                     return first.to_string();

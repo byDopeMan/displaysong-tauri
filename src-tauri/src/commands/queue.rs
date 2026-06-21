@@ -2,7 +2,7 @@
 // SONG REQUEST QUEUE - SQLite Persistence
 // ============================================================================
 
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Mutex;
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
@@ -29,7 +29,7 @@ pub struct QueueSongRequest {
 
 /// Initialize the database (creates both song_requests and track_history tables)
 /// Clears track_history on each app start for fresh session
-pub fn init_queue_db(app_data_dir: &PathBuf) -> Result<(), String> {
+pub fn init_queue_db(app_data_dir: &Path) -> Result<(), String> {
     let db_path = app_data_dir.join("songrequests.db");
     
     let conn = Connection::open(&db_path)
@@ -208,7 +208,7 @@ pub struct TrackHistoryEntry {
 /// Initialize track history table (DEPRECATED - now done in init_queue_db)
 /// Kept for backwards compatibility, does nothing if table already exists
 #[allow(dead_code)]
-pub fn init_track_history_db(_app_data_dir: &PathBuf) -> Result<(), String> {
+pub fn init_track_history_db(_app_data_dir: &Path) -> Result<(), String> {
     // Table is now created in init_queue_db
     // This function is kept for backwards compatibility
     Ok(())

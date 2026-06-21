@@ -219,7 +219,7 @@ fn main() {
             if let Err(e) = logging::setup_logging(data_dir.clone()) {
                 eprintln!("Logging setup failed: {}", e);
             } else {
-                info!("=== DisplaySong v4.1.0 gestartet ===");
+                info!("=== DisplaySong v{} gestartet ===", env!("CARGO_PKG_VERSION"));
                 info!("Lazy Loading: Widgets werden bei Bedarf erstellt");
                 if let Some(ref dir) = data_dir {
                     info!("App-Daten: {}", dir.display());
@@ -265,7 +265,7 @@ fn main() {
                 let crash_msg = format!(
                     "╔══════════════════════════════════════════════════════════════════════╗\n\
 ║  DisplaySong Crash Report                                          ║\n\
-║  Version: 2.2.0                                                     ║\n\
+║  Version: {:<59}║\n\
 ║  Time: {:>50}  ║\n\
 ╚══════════════════════════════════════════════════════════════════════╝\n\n\
 ━━━ ERROR ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\
@@ -276,6 +276,7 @@ fn main() {
 {}\n\n\
 ━━━ TRACEBACK ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\
 {}",
+                    env!("CARGO_PKG_VERSION"),
                     chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
                     payload,
                     location,

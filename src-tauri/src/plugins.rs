@@ -3,7 +3,7 @@
 // ============================================================================
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use log::info;
@@ -74,23 +74,23 @@ pub fn is_command_allowed(command: &str) -> bool {
 }
 
 /// Hole den Plugins-Ordner Pfad
-pub fn get_plugins_dir(app_data_dir: &PathBuf) -> PathBuf {
+pub fn get_plugins_dir(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("plugins")
 }
 
 /// Hole den Plugin-Data Ordner (für ein spezifisches Plugin)
-pub fn get_plugin_data_dir(app_data_dir: &PathBuf, plugin_id: &str) -> PathBuf {
+pub fn get_plugin_data_dir(app_data_dir: &Path, plugin_id: &str) -> PathBuf {
     // Daten werden im Plugin-Ordner unter /data/ gespeichert
     app_data_dir.join("plugins").join(plugin_id).join("data")
 }
 
 /// Hole den Plugin-Settings Pfad
-fn get_settings_path(app_data_dir: &PathBuf) -> PathBuf {
+fn get_settings_path(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("plugin-settings.json")
 }
 
 /// Lade Plugin-Settings
-pub fn load_settings(app_data_dir: &PathBuf) -> PluginSettings {
+pub fn load_settings(app_data_dir: &Path) -> PluginSettings {
     let path = get_settings_path(app_data_dir);
     
     if path.exists() {
@@ -105,7 +105,7 @@ pub fn load_settings(app_data_dir: &PathBuf) -> PluginSettings {
 }
 
 /// Speichere Plugin-Settings
-pub fn save_settings(app_data_dir: &PathBuf, settings: &PluginSettings) -> Result<(), String> {
+pub fn save_settings(app_data_dir: &Path, settings: &PluginSettings) -> Result<(), String> {
     let path = get_settings_path(app_data_dir);
     
     let content = serde_json::to_string_pretty(settings)
@@ -118,7 +118,7 @@ pub fn save_settings(app_data_dir: &PathBuf, settings: &PluginSettings) -> Resul
 }
 
 /// Entdecke alle Plugins
-pub fn discover_plugins(app_data_dir: &PathBuf) -> Vec<PluginInfo> {
+pub fn discover_plugins(app_data_dir: &Path) -> Vec<PluginInfo> {
     let plugins_dir = get_plugins_dir(app_data_dir);
     let settings = load_settings(app_data_dir);
     
@@ -187,7 +187,7 @@ pub fn discover_plugins(app_data_dir: &PathBuf) -> Vec<PluginInfo> {
 }
 
 /// Lade ein Plugin-Manifest
-fn load_manifest(path: &PathBuf) -> Result<PluginManifest, String> {
+fn load_manifest(path: &Path) -> Result<PluginManifest, String> {
     let content = fs::read_to_string(path)
         .map_err(|e| format!("Read failed: {}", e))?;
     
@@ -210,7 +210,7 @@ fn load_manifest(path: &PathBuf) -> Result<PluginManifest, String> {
 }
 
 /// Lade den Plugin-Code
-pub fn load_plugin_code(app_data_dir: &PathBuf, plugin_id: &str) -> Result<String, String> {
+pub fn load_plugin_code(app_data_dir: &Path, plugin_id: &str) -> Result<String, String> {
     let plugins_dir = get_plugins_dir(app_data_dir);
     
     if let Ok(entries) = fs::read_dir(&plugins_dir) {
@@ -239,7 +239,7 @@ pub fn load_plugin_code(app_data_dir: &PathBuf, plugin_id: &str) -> Result<Strin
 }
 
 /// Aktiviere/Deaktiviere ein Plugin
-pub fn set_plugin_enabled(app_data_dir: &PathBuf, plugin_id: &str, enabled: bool) -> Result<(), String> {
+pub fn set_plugin_enabled(app_data_dir: &Path, plugin_id: &str, enabled: bool) -> Result<(), String> {
     let mut settings = load_settings(app_data_dir);
     
     if enabled {
@@ -256,7 +256,7 @@ pub fn set_plugin_enabled(app_data_dir: &PathBuf, plugin_id: &str, enabled: bool
 }
 
 /// Importiere Plugin aus ZIP
-pub fn import_plugin_zip(app_data_dir: &PathBuf, zip_path: &PathBuf) -> Result<String, String> {
+pub fn import_plugin_zip(app_data_dir: &Path, zip_path: &Path) -> Result<String, String> {
     use std::io::{Read, Write};
     
     let plugins_dir = get_plugins_dir(app_data_dir);
@@ -348,7 +348,7 @@ pub fn import_plugin_zip(app_data_dir: &PathBuf, zip_path: &PathBuf) -> Result<S
 }
 
 /// Lösche ein Plugin
-pub fn delete_plugin(app_data_dir: &PathBuf, plugin_id: &str) -> Result<(), String> {
+pub fn delete_plugin(app_data_dir: &Path, plugin_id: &str) -> Result<(), String> {
     let plugins_dir = get_plugins_dir(app_data_dir);
     
     // Plugin deaktivieren
@@ -387,7 +387,7 @@ pub fn delete_plugin(app_data_dir: &PathBuf, plugin_id: &str) -> Result<(), Stri
 // ============================================================================
 
 /// Speichert Plugin-Daten (JSON)
-pub fn store_plugin_data(app_data_dir: &PathBuf, plugin_id: &str, key: &str, value: &serde_json::Value) -> Result<(), String> {
+pub fn store_plugin_data(app_data_dir: &Path, plugin_id: &str, key: &str, value: &serde_json::Value) -> Result<(), String> {
     let data_dir = get_plugin_data_dir(app_data_dir, plugin_id);
     fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
     
@@ -399,7 +399,7 @@ pub fn store_plugin_data(app_data_dir: &PathBuf, plugin_id: &str, key: &str, val
 }
 
 /// Lädt Plugin-Daten
-pub fn get_plugin_data(app_data_dir: &PathBuf, plugin_id: &str, key: &str) -> Result<serde_json::Value, String> {
+pub fn get_plugin_data(app_data_dir: &Path, plugin_id: &str, key: &str) -> Result<serde_json::Value, String> {
     let data_dir = get_plugin_data_dir(app_data_dir, plugin_id);
     let file_path = data_dir.join(format!("{}.json", sanitize_filename(key)));
     
@@ -412,7 +412,7 @@ pub fn get_plugin_data(app_data_dir: &PathBuf, plugin_id: &str, key: &str) -> Re
 }
 
 /// Löscht Plugin-Daten
-pub fn delete_plugin_data(app_data_dir: &PathBuf, plugin_id: &str, key: &str) -> Result<(), String> {
+pub fn delete_plugin_data(app_data_dir: &Path, plugin_id: &str, key: &str) -> Result<(), String> {
     let data_dir = get_plugin_data_dir(app_data_dir, plugin_id);
     let file_path = data_dir.join(format!("{}.json", sanitize_filename(key)));
     

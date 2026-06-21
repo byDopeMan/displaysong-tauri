@@ -148,7 +148,7 @@ pub async fn convert_to_spotify(url: &str) -> Result<OdesliTrackInfo, String> {
         }
     }
     
-    info!("Converting {} link to Spotify via Odesli: {}", format!("{:?}", platform), url);
+    info!("Converting {:?} link to Spotify via Odesli: {}", platform, url);
     
     let client = reqwest::Client::new();
     
@@ -298,19 +298,19 @@ pub async fn get_all_platform_links(query: &str) -> Result<AllPlatformLinks, Str
 /// Extract the YouTube video id from a watch/share/embed URL.
 pub fn extract_youtube_video_id(url: &str) -> Option<String> {
     // youtube.com/watch?v=ID
-    if let Some(re) = regex_lite::Regex::new(r"[?&]v=([^&]+)").ok() {
+    if let Ok(re) = regex_lite::Regex::new(r"[?&]v=([^&]+)") {
         if let Some(c) = re.captures(url) {
             return c.get(1).map(|m| m.as_str().to_string());
         }
     }
     // youtu.be/ID
-    if let Some(re) = regex_lite::Regex::new(r"youtu\.be/([^?&/]+)").ok() {
+    if let Ok(re) = regex_lite::Regex::new(r"youtu\.be/([^?&/]+)") {
         if let Some(c) = re.captures(url) {
             return c.get(1).map(|m| m.as_str().to_string());
         }
     }
     // youtube.com/embed/ID
-    if let Some(re) = regex_lite::Regex::new(r"embed/([^?&/]+)").ok() {
+    if let Ok(re) = regex_lite::Regex::new(r"embed/([^?&/]+)") {
         if let Some(c) = re.captures(url) {
             return c.get(1).map(|m| m.as_str().to_string());
         }

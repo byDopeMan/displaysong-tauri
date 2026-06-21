@@ -76,7 +76,7 @@ pub fn get_autostart() -> Result<bool, String> {
             .output()
             .map_err(|e| e.to_string())?;
         
-        return Ok(output.status.success());
+        Ok(output.status.success())
     }
     
     #[cfg(not(target_os = "windows"))]
