@@ -16,6 +16,8 @@ import Player from './features/player/Player.svelte';
 import Settings from './features/settings/Settings.svelte';
 import Designs from './features/designs/Designs.svelte';
 import PluginsView from './features/plugins/PluginsView.svelte';
+import HistoryView from './features/history/HistoryView.svelte';
+import QueueView from './features/queue/QueueView.svelte';
 import Setup from './features/provider/Setup.svelte';
 import SpotifySetup from './features/provider/SpotifySetup.svelte';
 import SourcePriorityModal from './features/provider/SourcePriorityModal.svelte';
@@ -212,6 +214,11 @@ async function init(): Promise<void> {
   // Plugins tab.
   const pluginsMount = document.getElementById('plugins-mount');
   if (pluginsMount) new PluginsView({ target: pluginsMount });
+  // History + standalone Queue view shells.
+  const historyMount = document.getElementById('history-mount');
+  if (historyMount) new HistoryView({ target: historyMount });
+  const queueViewMount = document.getElementById('queue-view-mount');
+  if (queueViewMount) new QueueView({ target: queueViewMount });
   // Setup flow (provider selection + Spotify credentials).
   const setupMount = document.getElementById('setup-mount');
   if (setupMount) new Setup({ target: setupMount });
