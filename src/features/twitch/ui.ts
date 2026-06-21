@@ -4,6 +4,7 @@
  */
 
 import { isTwitchConnected, getTwitchUser } from './state';
+import { t } from '../../utils/i18n';
 
 /** Update the Twitch status text, connect/disconnect buttons and settings section. */
 export function updateTwitchUI(): void {
@@ -12,7 +13,9 @@ export function updateTwitchUI(): void {
 
   const statusText = document.getElementById('twitch-status-text');
   if (statusText) {
-    statusText.textContent = connected ? `Verbunden als ${user?.display_name || 'User'}` : 'Nicht verbunden';
+    statusText.textContent = connected
+      ? t('settings.connections.connectedAs', { name: user?.display_name || 'User' })
+      : t('settings.connections.notConnected', {}, 'Nicht verbunden');
     statusText.classList.toggle('connected', connected);
   }
 

@@ -6,6 +6,7 @@
 import { getTauriInvoke } from '../../core/tauri';
 import { showView } from '../../ui/navigation';
 import { showNotification } from '../../ui/notifications';
+import { t } from '../../utils/i18n';
 import { PROVIDER, loadSavedProvider, setProvider } from './provider';
 import { state } from '../../core/state';
 import { updatePriorityButtonVisibility } from './source-priority';
@@ -43,10 +44,12 @@ function updateSpotifyUI(): void {
   const spotifyConnection = document.getElementById('spotify-connection');
 
   if (statusText) {
-    statusText.textContent = isSpotifyConnected ? 'Verbunden' : 'Nicht verbunden';
     statusText.setAttribute('data-i18n', isSpotifyConnected
       ? 'settings.connections.connected'
       : 'settings.connections.notConnected');
+    statusText.textContent = isSpotifyConnected
+      ? t('settings.connections.connected', {}, 'Verbunden')
+      : t('settings.connections.notConnected', {}, 'Nicht verbunden');
   }
 
   if (disconnectBtn) {
