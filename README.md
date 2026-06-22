@@ -8,7 +8,7 @@
 
 ---
 
-## 🆕 Was ist neu in v3.0?
+## 🆕 Highlights
 
 - 🎧 **Universelle Musik-Erkennung** - Erkennt automatisch Musik von Spotify, YouTube, VLC, Browser, und mehr!
 - 🚀 **Kein Spotify-Zwang** - Die App funktioniert sofort ohne Spotify-API Setup
@@ -192,7 +192,7 @@ window.addEventListener('autohide-change', (e) => {
 - Windows Audio erkennt nur aktiv spielende Musik
 
 ### Twitch/Browser wird erkannt statt Musik
-- v3.0 filtert automatisch Twitch-Streams und URLs
+- Die App filtert automatisch Twitch-Streams und reine Browser-URLs heraus
 - Stelle sicher du nutzt die neueste Version
 
 ### Song Requests funktionieren nicht
@@ -225,47 +225,44 @@ npm run tauri dev
 ### Projektstruktur
 
 ```
-src/                    # Frontend (JavaScript)
+src/                    # Frontend (TypeScript + Svelte)
+├── app.ts              # Entry point
 ├── core/               # State, Events, Timer
-├── features/           # Provider, Auth, History, Twitch
-├── ui/                 # Navigation, Notifications
-├── widgets/            # Widget HTML-Dateien
+├── features/           # player, settings, designs, provider, twitch,
+│                       #   history, queue, plugins, access (Svelte + Stores)
+├── components/         # Titlebar.svelte
+├── ui/                 # Modals, Notifications
+├── widgets/            # OBS-Widget-Seiten (design1/2, custom1/2)
+├── templates/          # Default-Vorlagen für Custom-Widgets
 └── locales/            # i18n (de, en)
 
-src-tauri/              # Backend (Rust)
-├── commands/           # Tauri Commands
-│   ├── windows_media.rs    # Windows Audio API
-│   ├── spotify.rs          # Spotify API
-│   ├── twitch.rs           # Twitch Integration
-│   └── queue.rs            # SQLite Queue/History
-├── windows_media.rs    # Media Session Provider
+src-tauri/src/          # Backend (Rust, modular)
+├── main.rs             # Entry, Fenster-/Tray-Setup
 ├── polling.rs          # Spotify Polling
-└── songlink.rs         # Link Conversion
+├── state.rs · events.rs · logging.rs · tray.rs · color.rs · credentials.rs · python.rs
+├── spotify/            # OAuth · Playback · Playlist  (+ spotify.rs)
+├── twitch/             # Client · Credentials · EventSub · OAuth · Types
+├── songlink/           # Detect · Odesli · Types (Link-Konvertierung)
+├── plugins/            # Types · Manager · Install · Storage
+├── windows_media/      # Session (WinRT, Universal-Erkennung)
+└── commands/           # Tauri Commands
+    ├── spotify/ · twitch/   # nach Themen aufgeteilt
+    └── widgets.rs · queue.rs · settings.rs · plugins.rs · …
 ```
 
 ---
 
 ## 📋 Changelog
 
-### v3.0.0 🎉
-- 🎧 **Universelle Musik-Erkennung** - Windows Media Session API
-- 🚀 **Kein Spotify-Zwang** - App funktioniert sofort
-- 🔗 **Multi-Platform Song Requests** - YouTube, SoundCloud, Apple Music
-- 📊 **Lokale Track-Historie** - SQLite Datenbank
-- 🎛️ **Provider-Auswahl** - Windows Audio oder Spotify
-- 👁️ **Auto-Hide** - Widget ausblenden wenn nichts läuft
-- 🔌 **Plugin System** - Python Plugins mit API
-- 🌐 **i18n** - Deutsch und Englisch
+Vollständige Liste: siehe [CHANGELOG.md](CHANGELOG.md).
 
-### v2.3.0
-- YouTube, Apple Music, SoundCloud Song Requests
-- Plugin System mit Python Support
-- SQLite Persistenz für Queue
+### v4.1.0
+- 🎫 **Requester-Anzeige** bei Song-Requests – im Player-Tab und in den Widgets
 
-### v2.2.0
-- WebView2 Transparenz-Fix
-- Lazy Loading für Widgets
-- Color Cache
+### v4.0.0
+- 🎧 Universelle Musik-Erkennung & Provider-Auswahl (Windows Media Session API)
+- 🧭 Source-Priorität greift (alle Sessions werden enumeriert)
+- 🚫 Twitch/Livestreams werden nicht mehr als Song erkannt
 
 ---
 

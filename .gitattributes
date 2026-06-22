@@ -1,3 +1,23 @@
-src-tauri/webview2-runtime/Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64/* filter=lfs diff=lfs merge=lfs -text
-src-tauri/webview2-runtime/Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64/*.dll filter=lfs diff=lfs merge=lfs -text
-src-tauri/webview2-runtime/Microsoft.WebView2.FixedVersionRuntime.143.0.3650.139.x64/*.exe filter=lfs diff=lfs merge=lfs -text
+# Treat binary assets as binary: no EOL conversion, no text diff/merge.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.icns  binary
+*.webp  binary
+*.exe   binary
+*.dll   binary
+*.msi   binary
+*.zip   binary
+*.db    binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+
+# Shell scripts must stay LF even on Windows checkouts.
+*.sh text eol=lf
+
+# (Removed: Git LFS rules for src-tauri/webview2-runtime — that bundled runtime
+#  is no longer used and is gitignored, so the LFS filters were dead.)
