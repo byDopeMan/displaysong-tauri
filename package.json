@@ -10,6 +10,7 @@
     "check:all": "npm run typecheck && npm run check && cargo clippy --manifest-path src-tauri/Cargo.toml",
     "clean": "tsx scripts/clean.ts",
     "build": "tauri build",
+    "build:signed": "tsx scripts/build-signed.ts",
     "build:installer": "npm run build && npm run installer",
     "installer": "tsx scripts/build-installer.ts",
     "tauri": "tauri",
