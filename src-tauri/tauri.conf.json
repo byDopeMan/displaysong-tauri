@@ -68,6 +68,13 @@
         "timestampUrl": "",
         "webviewInstallMode": {
           "type": "downloadBootstrapper"
+        },
+        "nsis": {
+          "installerIcon": "icons/icon.ico",
+          "sidebarImage": "installer/sidebar.bmp",
+          "installMode": "currentUser",
+          "languages": ["German", "English"],
+          "displayLanguageSelector": true
         }
       }
     },
@@ -75,7 +82,7 @@
       "csp": null
     },
     "updater": {
-      "active": false,
+      "active": true,
       "endpoints": [
         "https://github.com/byDopeMan/displaysong-tauri/releases/latest/download/latest.json"
       ],

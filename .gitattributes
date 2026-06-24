@@ -6,6 +6,7 @@
 *.ico   binary
 *.icns  binary
 *.webp  binary
+*.bmp   binary
 *.exe   binary
 *.dll   binary
 *.msi   binary
