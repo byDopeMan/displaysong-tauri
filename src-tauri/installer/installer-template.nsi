@@ -7,6 +7,7 @@ Unicode true
 !endif
 
 !include MUI2.nsh
+!include nsDialogs.nsh
 !include FileFunc.nsh
 !include x64.nsh
 !include WordFunc.nsh
@@ -110,6 +111,12 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 !define MUI_BGCOLOR "121212"
 !define MUI_TEXTCOLOR "F2F2F2"
 
+; DisplaySong: optional-components state + checkbox handles
+Var InstallPlugins
+Var InstallPython
+Var DSChkPlugins
+Var DSChkPython
+
 ; Define registry key to store installer language
 !define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
 !define MUI_LANGDLL_REGISTRY_KEY "${MANUPRODUCTKEY}"
@@ -119,6 +126,9 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 ; 1. Welcome Page
 !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfPassive
 !insertmacro MUI_PAGE_WELCOME
+
+; 1b. DisplaySong: optional components (plugins / python)
+Page custom DSComponentsPage DSComponentsPageLeave
 
 ; 2. License Page (if defined)
 !if "${LICENSE}" != ""
@@ -387,6 +397,9 @@ FunctionEnd
 
 Var PassiveMode
 Function .onInit
+  ; DisplaySong optional-components defaults (used for silent/passive installs)
+  StrCpy $InstallPlugins ${BST_CHECKED}
+  StrCpy $InstallPython ${BST_UNCHECKED}
   ${GetOptions} $CMDLINE "/P" $PassiveMode
   IfErrors +2 0
     StrCpy $PassiveMode 1
@@ -542,6 +555,55 @@ SectionEnd
   app_check_done:
 !macroend
 
+; ============================================================================
+; DisplaySong: optional components page (Plugins / Python)
+; ============================================================================
+Function DSComponentsPage
+  ${If} $PassiveMode == 1
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "Komponenten" "Optionale Erweiterungen auswählen."
+  nsDialogs::Create 1018
+  Pop $0
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+  SetCtlColors $0 0xF2F2F2 0x121212
+
+  ${NSD_CreateCheckbox} 8u 8u 98% 12u "Beispiel-Plugins installieren (Theme Studio, Stream Clock, Focus Timer)"
+  Pop $DSChkPlugins
+  SetCtlColors $DSChkPlugins 0xF2F2F2 0x121212
+  ${NSD_SetState} $DSChkPlugins $InstallPlugins
+  ${NSD_OnClick} $DSChkPlugins DSOnPluginsClick
+
+  ${NSD_CreateCheckbox} 20u 24u 98% 12u "Python-Runtime mitinstallieren (nur für Python-Plugins, ca. +60 MB)"
+  Pop $DSChkPython
+  SetCtlColors $DSChkPython 0xF2F2F2 0x121212
+  ${NSD_SetState} $DSChkPython $InstallPython
+
+  ${NSD_CreateLabel} 8u 46u 98% 30u "Plugins sind optionale Erweiterungen und lassen sich später im Plugins-Tab verwalten. Python wird nur von Plugins benötigt, die Python verwenden."
+  Pop $0
+  SetCtlColors $0 0xA8A8A8 0x121212
+
+  Call DSOnPluginsClick
+  nsDialogs::Show
+FunctionEnd
+
+Function DSOnPluginsClick
+  ${NSD_GetState} $DSChkPlugins $0
+  ${If} $0 == ${BST_CHECKED}
+    EnableWindow $DSChkPython 1
+  ${Else}
+    EnableWindow $DSChkPython 0
+    ${NSD_SetState} $DSChkPython ${BST_UNCHECKED}
+  ${EndIf}
+FunctionEnd
+
+Function DSComponentsPageLeave
+  ${NSD_GetState} $DSChkPlugins $InstallPlugins
+  ${NSD_GetState} $DSChkPython $InstallPython
+FunctionEnd
+
 Section Install
   SetOutPath $INSTDIR
 
@@ -557,6 +619,18 @@ Section Install
   {{#each resources}}
     File /a "/oname={{this.[1]}}" "{{unescape-dollar-sign @key}}"
   {{/each}}
+
+  ; --- DisplaySong: optional components ---
+  ${If} $InstallPlugins == ${BST_CHECKED}
+    CreateDirectory "$APPDATA\${BUNDLEID}\plugins"
+    CopyFiles /SILENT "$INSTDIR\_up_\example-plugins\*" "$APPDATA\${BUNDLEID}\plugins"
+  ${EndIf}
+  ; The plugins live in %APPDATA% now; drop the staged intermediate copy.
+  RMDir /r "$INSTDIR\_up_\example-plugins"
+  ${If} $InstallPython != ${BST_CHECKED}
+    ; user opted out -> remove the bundled Python runtime (find_python falls back to system)
+    RMDir /r "$INSTDIR\nsis\python"
+  ${EndIf}
 
   ; Copy external binaries
   {{#each binaries}}

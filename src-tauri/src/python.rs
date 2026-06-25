@@ -42,12 +42,18 @@ impl PythonRunner {
     
     /// Find Python executable (embedded or system)
     fn find_python() -> Option<PathBuf> {
-        // 1. Check embedded Python in install directory
+        // 1. Check embedded Python in install directory. Two layouts:
+        //    - <install>/python/python.exe         (legacy custom installer)
+        //    - <install>/nsis/python/python.exe    (Tauri installer bundled resource)
         if let Ok(exe_path) = std::env::current_exe() {
             if let Some(install_dir) = exe_path.parent() {
-                let embedded = install_dir.join("python").join("python.exe");
-                if embedded.exists() {
-                    return Some(embedded);
+                for rel in [
+                    install_dir.join("python").join("python.exe"),
+                    install_dir.join("nsis").join("python").join("python.exe"),
+                ] {
+                    if rel.exists() {
+                        return Some(rel);
+                    }
                 }
             }
         }

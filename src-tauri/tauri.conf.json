@@ -55,7 +55,9 @@
         "signingIdentity": null
       },
       "resources": [
-        "../dist/templates/*"
+        "../dist/templates/*",
+        "../example-plugins",
+        "nsis/python"
       ],
       "shortDescription": "Spotify Now Playing Widget",
       "targets": [
