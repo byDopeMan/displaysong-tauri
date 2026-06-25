@@ -70,6 +70,7 @@
           "type": "downloadBootstrapper"
         },
         "nsis": {
+          "template": "installer/installer-template.nsi",
           "installerIcon": "icons/icon.ico",
           "sidebarImage": "installer/sidebar.bmp",
           "installMode": "currentUser",
