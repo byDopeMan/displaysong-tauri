@@ -1,0 +1,9 @@
+{
+  "id": "stream-clock",
+  "name": "Stream Clock",
+  "version": "1.0.0",
+  "author": "DisplaySong",
+  "description": "Schlichtes Overlay-Fenster mit Uhrzeit und Session-Timer — praktisch für OBS. Hat nichts mit Musik zu tun.",
+  "main": "index.js",
+  "permissions": ["storage"]
+}
