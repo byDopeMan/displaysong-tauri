@@ -14,7 +14,8 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            args: ''
+            # build the updater bundle too (needs the signing secrets below)
+            args: '--bundles msi,nsis,updater'
 
     runs-on: ${{ matrix.platform }}
     

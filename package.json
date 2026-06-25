@@ -11,6 +11,7 @@
     "clean": "tsx scripts/clean.ts",
     "build": "tauri build",
     "build:signed": "tsx scripts/build-signed.ts",
+    "build:updater": "tsx scripts/build-signed.ts --bundles msi,nsis,updater",
     "build:installer": "npm run build && npm run installer",
     "installer": "tsx scripts/build-installer.ts",
     "tauri": "tauri",
