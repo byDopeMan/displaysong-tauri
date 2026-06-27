@@ -1,0 +1,9 @@
+{
+  "id": "obs-nowplaying",
+  "name": "Now Playing → OBS",
+  "version": "1.0.0",
+  "author": "DisplaySong",
+  "description": "Schreibt den aktuellen Track live in eine .txt-Datei, die du in OBS als Text-Quelle einbinden kannst. Format frei wählbar. Benötigt Python (zum Schreiben der Datei).",
+  "main": "index.js",
+  "permissions": ["storage", "python"]
+}

@@ -1,9 +1,0 @@
-{
-  "id": "focus-timer",
-  "name": "Focus Timer",
-  "version": "1.0.0",
-  "author": "DisplaySong",
-  "description": "Pomodoro-/Fokus-Timer mit Arbeits- und Pausenphasen und Benachrichtigungen. Allgemeines Produktivitäts-Tool, kein Musikbezug.",
-  "main": "index.js",
-  "permissions": ["storage"]
-}

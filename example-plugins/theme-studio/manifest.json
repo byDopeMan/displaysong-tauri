@@ -1,9 +1,0 @@
-{
-  "id": "theme-studio",
-  "name": "Theme Studio",
-  "version": "1.0.0",
-  "author": "DisplaySong",
-  "description": "Färbt die App-Oberfläche um — eigene Akzentfarbe, Presets und optionaler Glow. Verändert das Aussehen der ganzen App live.",
-  "main": "index.js",
-  "permissions": ["storage"]
-}
