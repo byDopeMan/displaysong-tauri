@@ -61,12 +61,6 @@
             <li>Weitere Plattformen: Deezer, Tidal, Amazon Music, Pandora.</li>
             <li>Songlink/Odesli API zur automatischen Konvertierung zu Spotify.</li>
           </ul>
-          <p class="changelog-sub">Plugin-System</p>
-          <ul>
-            <li>Python-Support: Plugins können Python-Skripte ausführen (pythonRun/pythonRunScript/pythonInstall).</li>
-            <li>Erweitertes Event-System (Track-, Queue-, Twitch- und App-Events).</li>
-            <li>3 Beispiel-Plugins: Lyrics, Hotkeys, Discord Bot.</li>
-          </ul>
           <p class="changelog-sub">Installer &amp; Persistenz</p>
           <ul>
             <li>Neuer NSIS-Installer mit Komponenten-Auswahl und Upgrade-Erkennung.</li>
@@ -174,10 +168,6 @@
         <div class="license-entry">
           <h4>windows-rs</h4>
           <p>MIT / Apache-2.0 - Windows Media Session API</p>
-        </div>
-        <div class="license-entry">
-          <h4>zip</h4>
-          <p>MIT - Plugin-Installation</p>
         </div>
         <div class="license-entry">
           <h4>chrono · log · fern</h4>

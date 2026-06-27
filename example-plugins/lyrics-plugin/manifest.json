@@ -1,9 +1,0 @@
-{
-  "id": "lyrics-plugin",
-  "name": "Lyrics",
-  "version": "1.0.0",
-  "author": "DisplaySong",
-  "description": "Zeigt Songtexte für den aktuellen Track",
-  "main": "index.js",
-  "permissions": ["http", "storage"]
-}

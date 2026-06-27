@@ -40,11 +40,6 @@
 - **Queue Management** - Verwaltung der Song Request Queue
 - **Customizable Messages** - Passe Chat-Nachrichten an
 
-### 🔌 Plugin System
-- **Python Plugins** - Erweitere die App mit eigenen Plugins
-- **Beispiel-Plugins** - Lyrics Overlay, Hotkeys, Discord Bot
-- **Plugin API** - HTTP Requests, Datenspeicherung, Event System
-
 ---
 
 ## 📦 Installation
@@ -178,7 +173,6 @@ window.addEventListener('autohide-change', (e) => {
 ├── widgets/           # Custom Widgets
 │   ├── custom1.html
 │   └── custom2.html
-├── plugins/           # Python Plugins
 ├── logs/              # Log-Dateien
 └── songrequests.db    # Track History + Queue
 ```
@@ -229,7 +223,7 @@ src/                    # Frontend (TypeScript + Svelte)
 ├── app.ts              # Entry point
 ├── core/               # State, Events, Timer
 ├── features/           # player, settings, designs, provider, twitch,
-│                       #   history, queue, plugins, access (Svelte + Stores)
+│                       #   history, queue, access (Svelte + Stores)
 ├── components/         # Titlebar.svelte
 ├── ui/                 # Modals, Notifications
 ├── widgets/            # OBS-Widget-Seiten (design1/2, custom1/2)
@@ -243,11 +237,10 @@ src-tauri/src/          # Backend (Rust, modular)
 ├── spotify/            # OAuth · Playback · Playlist  (+ spotify.rs)
 ├── twitch/             # Client · Credentials · EventSub · OAuth · Types
 ├── songlink/           # Detect · Odesli · Types (Link-Konvertierung)
-├── plugins/            # Types · Manager · Install · Storage
 ├── windows_media/      # Session (WinRT, Universal-Erkennung)
 └── commands/           # Tauri Commands
     ├── spotify/ · twitch/   # nach Themen aufgeteilt
-    └── widgets.rs · queue.rs · settings.rs · plugins.rs · …
+    └── widgets.rs · queue.rs · settings.rs · songlink.rs · …
 ```
 
 ---

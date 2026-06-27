@@ -7,7 +7,6 @@
   import { showNotification } from '../../ui/notifications';
   import { hexToRgb } from '../../utils/format';
   import { updateTabVisibility } from '../../ui/navigation';
-  import { setPluginSettingsStyle } from '../plugins/index';
   import { broadcastAccentColor } from '../widgets';
   import { t } from '../../utils/i18n';
   import { settingsStore, updateSettings, saveSettings, applySettings, updateGlobalBackground } from './index';
@@ -36,14 +35,6 @@
     const { updateTwitchUI } = await import('../twitch/index');
     updateTwitchUI();
     showNotification(t('notifications.languageChanged', {}, 'Sprache gewechselt'));
-  }
-
-  function onPluginStyle(e: Event) {
-    const v = (e.currentTarget as HTMLSelectElement).value;
-    updateSettings({ pluginSettingsStyle: v });
-    saveSettings();
-    setPluginSettingsStyle(v);
-    showNotification(v === 'modal' ? 'Plugin-Einstellungen: Fenster' : 'Plugin-Einstellungen: Panel');
   }
 
   async function onShowPlayer(e: Event) {
@@ -110,14 +101,6 @@
     <select id="language-select" class="setting-select" on:change={onLanguage}>
       <option value="de">Deutsch</option>
       <option value="en">English</option>
-    </select>
-  </div>
-
-  <div class="setting-row" id="plugin-settings-style-row" style="display: none;">
-    <label for="plugin-settings-style" data-i18n="settings.appearance.pluginSettings">Plugin-Einstellungen</label>
-    <select id="plugin-settings-style" class="setting-select" value={$settingsStore.pluginSettingsStyle} on:change={onPluginStyle}>
-      <option value="panel" data-i18n="settings.appearance.pluginPanel">Als Panel (im Tab)</option>
-      <option value="modal" data-i18n="settings.appearance.pluginModal">Als Fenster (Modal)</option>
     </select>
   </div>
 

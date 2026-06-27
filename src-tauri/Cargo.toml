@@ -44,9 +44,6 @@ chrono = "0.4"
 # Lazy static für Caching
 once_cell = "1.19"
 
-# ZIP für Plugin-Installation
-zip = "0.6"
-
 # SQLite für Song Request Queue
 rusqlite = { version = "0.31", features = ["bundled"] }
 

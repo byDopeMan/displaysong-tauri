@@ -14,7 +14,6 @@ mod commands;
 mod tray;
 mod logging;
 mod polling;
-mod plugins;
 mod python;
 mod events;
 mod songlink;
@@ -136,24 +135,6 @@ fn main() {
             commands::get_dominant_color,
             // Frontend Logging
             commands::log_frontend,
-            // Plugins
-            commands::check_plugins_folder_exists,
-            commands::list_plugins,
-            commands::load_plugin_code,
-            commands::set_plugin_enabled,
-            commands::open_plugins_folder,
-            commands::install_plugin_from_zip,
-            commands::uninstall_plugin,
-            // Plugin API
-            commands::plugin_store_data,
-            commands::plugin_get_data,
-            commands::plugin_delete_data,
-            commands::plugin_store_secret,
-            commands::plugin_get_secret,
-            commands::plugin_delete_secret,
-            commands::plugin_http_request,
-            commands::plugin_invoke,
-            commands::plugin_get_allowed_commands,
             // Twitch
             commands::twitch_connect,
             commands::save_twitch_credentials,

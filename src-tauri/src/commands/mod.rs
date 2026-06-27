@@ -5,7 +5,6 @@
 pub mod widgets;
 pub mod spotify;
 pub mod settings;
-pub mod plugins;
 pub mod i18n;
 pub mod twitch;
 pub mod queue;
@@ -17,7 +16,6 @@ pub mod windows_media;
 pub use widgets::*;
 pub use spotify::*;
 pub use settings::*;
-pub use plugins::*;
 // i18n commands are exported directly in main.rs
 pub use twitch::*;
 // Queue: commands are referenced directly via commands::queue:: in main.rs

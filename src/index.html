@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="styles/forms.css">
   <link rel="stylesheet" href="styles/components.css">
   <link rel="stylesheet" href="styles/views.css">
-  <link rel="stylesheet" href="styles/plugins.css">
   <link rel="stylesheet" href="features/queue/queue.css">
 </head>
 <body>
@@ -26,7 +25,6 @@
       <button class="tab" data-tab="queue" data-i18n="nav.queue" id="queue-tab" style="display: none;">Queue</button>
       <button class="tab" data-tab="history" data-i18n="nav.history">Verlauf</button>
       <button class="tab" data-tab="designs" data-i18n="nav.designs">Designs</button>
-      <button class="tab" data-tab="plugins" id="plugins-tab" style="display: none;" data-i18n="nav.plugins">Plugins</button>
       <button class="tab" data-tab="settings" data-i18n="nav.settings">Einstellungen</button>
     </nav>
 
@@ -92,11 +90,6 @@
       <div id="designs-view" class="view hidden">
         <!-- Designs view (features/designs/Designs.svelte) -->
         <div id="designs-mount"></div>
-      </div>
-
-      <!-- Plugins View -->
-      <div id="plugins-view" class="view hidden">
-        <div id="plugins-mount"></div>
       </div>
 
       <!-- Settings View -->

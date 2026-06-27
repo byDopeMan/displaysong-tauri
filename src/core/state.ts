@@ -64,7 +64,6 @@ export function initViews(): void {
     queue: document.getElementById('queue-view'),
     history: document.getElementById('history-view'),
     designs: document.getElementById('designs-view'),
-    plugins: document.getElementById('plugins-view'),
     settings: document.getElementById('settings-view'),
     auth: document.getElementById('auth-view'),
   });

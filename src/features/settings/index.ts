@@ -15,7 +15,6 @@ import { showNotification } from '../../ui/notifications';
 import { t } from '../../utils/i18n';
 import { broadcastAccentColor } from '../widgets';
 import { updateTabVisibility } from '../../ui/navigation';
-import { setPluginSettingsStyle } from '../plugins/index';
 import { settingsStore, DEFAULT_SETTINGS, type AppSettings } from './store';
 
 export type { AppSettings } from './store';
@@ -73,9 +72,6 @@ export function applySettings(): void {
   const color = getCurrentAccentColor();
   document.documentElement.style.setProperty('--accent', `rgb(${color.r}, ${color.g}, ${color.b})`);
   document.documentElement.style.setProperty('--accent-rgb', `${color.r}, ${color.g}, ${color.b}`);
-
-  // Plugin settings rendering style (panel vs modal).
-  setPluginSettingsStyle(settings.pluginSettingsStyle || 'panel');
 
   // The Designs-tab widget toggles are rendered by Designs.svelte now; still
   // mirror the requester/auto-hide settings to localStorage + broadcast at load

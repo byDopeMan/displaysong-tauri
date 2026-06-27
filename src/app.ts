@@ -15,7 +15,6 @@ import Titlebar from './components/Titlebar.svelte';
 import Player from './features/player/Player.svelte';
 import Settings from './features/settings/Settings.svelte';
 import Designs from './features/designs/Designs.svelte';
-import PluginsView from './features/plugins/PluginsView.svelte';
 import HistoryView from './features/history/HistoryView.svelte';
 import QueueView from './features/queue/QueueView.svelte';
 import PlayerQueue from './features/queue/PlayerQueue.svelte';
@@ -35,7 +34,6 @@ import { loadWidgetPositions, autoShowWidgets, syncActiveWidgets } from './featu
 import { setupAccessRequestListeners, initAccessSystem } from './features/access/index';
 import { checkExistingCredentialsWithStatus } from './features/provider/auth';
 import { checkForUpdates } from './features/updater';
-import { loadEnabledPlugins, setupPluginListeners, renderPluginList } from './features/plugins/index';
 import { setupTwitchListeners, initTwitch } from './features/twitch/index';
 import { initQueue, isYouTubePlaying } from './features/queue/index';
 import { initYouTubePlayer } from './features/queue/youtube-player';
@@ -161,23 +159,6 @@ export async function startWindowsAudioPolling(invoke: any): Promise<void> {
   windowsAudioInterval = setInterval(pollTrack, 2000);
 }
 
-/** Check if plugins folder exists and show/hide Plugins tab */
-async function checkPluginsTabVisibility(): Promise<void> {
-  const invoke = getTauriInvoke();
-  if (!invoke) return;
-
-  const pluginsTab = document.getElementById('plugins-tab');
-  if (!pluginsTab) return;
-
-  try {
-    const exists = await invoke('check_plugins_folder_exists');
-    pluginsTab.style.display = exists === true ? 'block' : 'none';
-  } catch (e) {
-    console.error('[Plugins] Tab visibility check error:', e);
-    pluginsTab.style.display = 'none';
-  }
-}
-
 /** Main initialization function */
 async function init(): Promise<void> {
   const loadingStatus = document.getElementById('loading-status');
@@ -215,9 +196,6 @@ async function init(): Promise<void> {
   // Designs tab.
   const designsMount = document.getElementById('designs-mount');
   if (designsMount) new Designs({ target: designsMount });
-  // Plugins tab.
-  const pluginsMount = document.getElementById('plugins-mount');
-  if (pluginsMount) new PluginsView({ target: pluginsMount });
   // History + standalone Queue view shells.
   const historyMount = document.getElementById('history-mount');
   if (historyMount) new HistoryView({ target: historyMount });
@@ -254,7 +232,6 @@ async function init(): Promise<void> {
   setupEventListeners();
   setupSettingsListeners();
   setupAccessRequestListeners();
-  setupPluginListeners();
   setupTwitchListeners();
 
   // Initialize source priority
@@ -338,13 +315,6 @@ async function init(): Promise<void> {
 
   // Check for updates after startup
   setTimeout(checkForUpdates, 2000);
-
-  // Check if plugins folder exists and show/hide Plugins tab
-  await checkPluginsTabVisibility();
-
-  // Load plugins
-  await renderPluginList();
-  await loadEnabledPlugins();
 
   // Initialize Twitch (checks for saved credentials)
   await initTwitch();

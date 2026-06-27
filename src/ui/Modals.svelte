@@ -1,33 +1,8 @@
 <!--
-  Leftover modal shells (plugin settings, Twitch OAuth/messages, Spotify
-  playlist setup, Spotify re-auth). Markup only — the owning modules open them
-  and the generic .modal-close handler closes them, all by id after mount.
+  Leftover modal shells (Twitch OAuth/messages, Spotify playlist setup, Spotify
+  re-auth). Markup only — the owning modules open them and the generic
+  .modal-close handler closes them, all by id after mount.
 -->
-      <!-- Plugin Settings Modal -->
-      <div id="plugin-settings-modal" class="modal plugin-settings-modal hidden">
-        <div class="modal-content">
-          <div class="modal-header">
-            <div class="modal-icon" id="plugin-modal-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
-              </svg>
-            </div>
-            <h3 id="plugin-modal-title" data-i18n="plugins.settingsTitle">Plugin Einstellungen</h3>
-            <button class="modal-close" data-modal="plugin-settings-modal">×</button>
-          </div>
-          <div class="modal-body" id="plugin-modal-body">
-            <div class="plugin-no-settings">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 16v-4M12 8h.01"></path>
-              </svg>
-              <p data-i18n="plugins.noSettings">Dieses Plugin hat keine Einstellungen</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       <!-- Twitch OAuth Modal - zeigt Warte-Status während OAuth im Browser -->
       <div id="twitch-oauth-modal" class="modal hidden">
         <div class="modal-content modal-small">
