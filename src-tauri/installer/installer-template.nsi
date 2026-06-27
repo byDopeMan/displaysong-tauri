@@ -108,7 +108,7 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 
 ; --- DisplaySong dark theme: dark page background + light text (matches the app) ---
 ; MUI2 applies these via SetCtlColors on header/welcome/finish/inner pages.
-!define MUI_BGCOLOR "121212"
+!define MUI_BGCOLOR "1E1E22"
 !define MUI_TEXTCOLOR "F2F2F2"
 
 ; DisplaySong: optional-components state + checkbox handles
@@ -568,22 +568,22 @@ Function DSComponentsPage
   ${If} $0 == error
     Abort
   ${EndIf}
-  SetCtlColors $0 0xF2F2F2 0x121212
+  SetCtlColors $0 0xF2F2F2 0x1E1E22
 
   ${NSD_CreateCheckbox} 8u 8u 98% 12u "Beispiel-Plugins installieren (Theme Studio, Stream Clock, Focus Timer)"
   Pop $DSChkPlugins
-  SetCtlColors $DSChkPlugins 0xF2F2F2 0x121212
+  SetCtlColors $DSChkPlugins 0xF2F2F2 0x1E1E22
   ${NSD_SetState} $DSChkPlugins $InstallPlugins
   ${NSD_OnClick} $DSChkPlugins DSOnPluginsClick
 
   ${NSD_CreateCheckbox} 20u 24u 98% 12u "Python-Runtime mitinstallieren (nur für Python-Plugins, ca. +60 MB)"
   Pop $DSChkPython
-  SetCtlColors $DSChkPython 0xF2F2F2 0x121212
+  SetCtlColors $DSChkPython 0xF2F2F2 0x1E1E22
   ${NSD_SetState} $DSChkPython $InstallPython
 
   ${NSD_CreateLabel} 8u 46u 98% 30u "Plugins sind optionale Erweiterungen und lassen sich später im Plugins-Tab verwalten. Python wird nur von Plugins benötigt, die Python verwenden."
   Pop $0
-  SetCtlColors $0 0xA8A8A8 0x121212
+  SetCtlColors $0 0xA8A8A8 0x1E1E22
 
   Call DSOnPluginsClick
   nsDialogs::Show
