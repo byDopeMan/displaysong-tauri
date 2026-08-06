@@ -85,7 +85,7 @@
       "csp": null
     },
     "updater": {
-      "active": true,
+      "active": false,
       "endpoints": [
         "https://github.com/byDopeMan/displaysong-tauri/releases/latest/download/latest.json"
       ],

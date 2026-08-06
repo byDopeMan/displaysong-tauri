@@ -14,8 +14,9 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            # build the updater bundle too (needs the signing secrets below)
-            args: '--bundles msi,nsis,updater'
+            # Plugins variant: no auto-updater (main owns the 'latest' channel),
+            # so we build the plain installers only — no updater bundle, no signing.
+            args: '--bundles msi,nsis'
 
     runs-on: ${{ matrix.platform }}
     
@@ -42,7 +43,7 @@ jobs:
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'DisplaySong ${{ github.ref_name }}'
+          releaseName: 'DisplaySong Plugins ${{ github.ref_name }}'
           releaseBody: |
             Siehe [Changelog](https://github.com/${{ github.repository }}/blob/main/README.md#-changelog) für Details.
             
@@ -52,7 +53,7 @@ jobs:
             | **Windows** | `DisplaySong_x.x.x_x64-setup.exe` (empfohlen) oder `.msi` |
             
             ---
-            ℹ️ Die App prüft automatisch auf Updates!
+            ℹ️ Plugins-Variante: manuell herunterladen & installieren (kein Auto-Update).
           releaseDraft: true
           prerelease: false
           updaterJsonKeepUniversal: true
