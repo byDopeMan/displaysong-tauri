@@ -14,7 +14,11 @@ const APP_API_URL: &str = "https://displaysong-api.bydopeman.workers.dev/api/app
 // - user:read:chat + user:write:chat = für Chat lesen und senden
 // - chat:read + chat:edit = legacy IRC chat (backup)
 // - moderator:read:chatters = zum lesen der Chat-Nachrichten via EventSub
-const SCOPES: &str = "channel:read:redemptions channel:manage:redemptions user:read:chat user:write:chat chat:read chat:edit user:read:email moderator:read:chatters";
+// - moderator:read:followers = Follow-Alerts (channel.follow v2) für Plugins
+// - channel:read:subscriptions = Sub-Alerts (channel.subscribe / .message / .gift)
+// - bits:read = Cheer/Bits-Alerts (channel.cheer)
+// (channel.raid braucht keinen Scope.)
+const SCOPES: &str = "channel:read:redemptions channel:manage:redemptions user:read:chat user:write:chat chat:read chat:edit user:read:email moderator:read:chatters moderator:read:followers channel:read:subscriptions bits:read";
 
 mod types;
 mod credentials;

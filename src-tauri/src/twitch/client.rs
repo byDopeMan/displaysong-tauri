@@ -24,6 +24,10 @@ pub struct TwitchClient {
     pub user: Option<TwitchUser>,
     pub http: reqwest::Client,
     pub use_bot_for_chat: bool,
+    /// OAuth scopes the current token actually holds (from /validate). Used to
+    /// tell plugins which EventSub alerts are available (Follow/Sub/Cheer need
+    /// specific scopes).
+    pub scopes: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -69,7 +73,13 @@ impl TwitchClient {
             user: None,
             http: reqwest::Client::new(),
             use_bot_for_chat: true,
+            scopes: Vec::new(),
         }
+    }
+
+    /// Scopes the current token holds (populated on `fetch_user_info`).
+    pub fn get_scopes(&self) -> Vec<String> {
+        self.scopes.clone()
     }
 
     /// Create TwitchClient from App Credentials (async)
@@ -310,6 +320,23 @@ impl TwitchClient {
                 login: user.login,
                 display_name: user.display_name,
             });
+        }
+
+        // Also record the granted scopes so plugins can see which EventSub alerts
+        // are available. Best-effort: a failure here must not fail the connect.
+        if let Some(token) = self.access_token.as_ref() {
+            if let Ok(resp) = self.http
+                .get(VALIDATE_URL)
+                .header("Authorization", format!("OAuth {}", token))
+                .send()
+                .await
+            {
+                if resp.status().is_success() {
+                    if let Ok(v) = resp.json::<ValidateResponse>().await {
+                        self.scopes = v.scopes;
+                    }
+                }
+            }
         }
 
         Ok(())

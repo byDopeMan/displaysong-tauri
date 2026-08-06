@@ -51,6 +51,36 @@ pub async fn python_run_script(
     Ok(runner.run_script(&path, args).await)
 }
 
+/// Spawn a long-running Python script (daemon). Returns the process id
+/// immediately; use `python_kill` (or app-exit) to stop it.
+#[tauri::command]
+pub async fn python_spawn(
+    script_path: String,
+    args: Vec<String>,
+) -> Result<u32, String> {
+    let python = PYTHON.lock().await;
+    let runner = python.as_ref().ok_or("Python not initialized")?;
+    let path = PathBuf::from(script_path);
+    runner.spawn_daemon(&path, args).await
+}
+
+/// Kill a Python daemon started with `python_spawn`. Returns true if found.
+#[tauri::command]
+pub async fn python_kill(pid: u32) -> Result<bool, String> {
+    let python = PYTHON.lock().await;
+    let runner = python.as_ref().ok_or("Python not initialized")?;
+    Ok(runner.kill(pid).await)
+}
+
+/// Kill every spawned Python daemon. Called on app exit so plugin servers
+/// (e.g. an overlay HTTP server) don't linger after DisplaySong closes.
+pub async fn kill_all_python() {
+    let python = PYTHON.lock().await;
+    if let Some(runner) = python.as_ref() {
+        runner.kill_all().await;
+    }
+}
+
 /// Install Python package
 #[tauri::command]
 pub async fn python_pip_install(package: String) -> Result<PythonResult, String> {

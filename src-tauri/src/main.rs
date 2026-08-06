@@ -144,6 +144,7 @@ fn main() {
             commands::open_plugins_folder,
             commands::install_plugin_from_zip,
             commands::uninstall_plugin,
+            commands::emit_test_event,
             // Plugin API
             commands::plugin_store_data,
             commands::plugin_get_data,
@@ -191,6 +192,8 @@ fn main() {
             commands::python_version,
             commands::python_run_code,
             commands::python_run_script,
+            commands::python_spawn,
+            commands::python_kill,
             commands::python_pip_install,
             commands::python_package_installed,
             commands::youtube_audio_url,
@@ -298,6 +301,13 @@ fn main() {
             
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("Fehler beim Starten der App");
+        .build(tauri::generate_context!())
+        .expect("Fehler beim Starten der App")
+        .run(|_app, event| {
+            // On exit, kill any Python daemons plugins spawned (e.g. an overlay
+            // server) so they don't keep running after DisplaySong closes.
+            if let tauri::RunEvent::Exit = event {
+                tauri::async_runtime::block_on(commands::kill_all_python());
+            }
+        });
 }

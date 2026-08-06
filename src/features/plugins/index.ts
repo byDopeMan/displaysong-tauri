@@ -33,10 +33,10 @@ export async function loadEnabledPlugins(): Promise<void> {
   if (!invoke) return;
 
   try {
-    const plugins = await invoke('list_plugins');
+    const plugins = await invoke('list_plugins') as PluginInfo[];
     for (const plugin of plugins) {
       if (plugin.enabled && !plugin.has_error) {
-        await loadPlugin(plugin.id, plugin.name);
+        await loadPlugin(plugin);
       }
     }
   } catch (e) {
@@ -44,7 +44,8 @@ export async function loadEnabledPlugins(): Promise<void> {
   }
 }
 
-async function loadPlugin(pluginId: string, pluginName: string): Promise<void> {
+async function loadPlugin(plugin: PluginInfo): Promise<void> {
+  const pluginId = plugin.id;
   if (loadedPlugins.has(pluginId)) return;
 
   const invoke = getTauriInvoke();
@@ -58,7 +59,12 @@ async function loadPlugin(pluginId: string, pluginName: string): Promise<void> {
       return;
     }
 
-    const api = createPluginAPI(pluginId);
+    // Gate the API by the manifest permissions and hand the plugin its folder
+    // path (for bundled files like a server.py it wants to pythonSpawn).
+    const api = createPluginAPI(pluginId, {
+      permissions: plugin.permissions,
+      path: plugin.path,
+    });
 
     // Einfaches Format: Plugin hat Zugriff auf 'api' und 'pluginId'
     // und gibt { init, cleanup } zurück
@@ -127,7 +133,7 @@ export async function togglePlugin(plugin: PluginInfo, enabled: boolean): Promis
   try {
     await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled });
     if (enabled) {
-      await loadPlugin(plugin.id, plugin.name);
+      await loadPlugin(plugin);
       showNotification(t('notifications.pluginEnabled', { name: plugin.name }, `${plugin.name} aktiviert`));
     } else {
       await unloadPlugin(plugin.id);
@@ -158,8 +164,23 @@ export async function deletePlugin(plugin: PluginInfo): Promise<void> {
 // EVENT LISTENERS
 // ============================================================================
 
+// Best-effort: run every loaded plugin's cleanup() when the window is tearing
+// down (app close / reload). cleanup() may be async, but beforeunload can't
+// await — the backend additionally kills any pythonSpawn'd daemons on exit.
+let cleanupRegistered = false;
+function registerCleanupOnExit(): void {
+  if (cleanupRegistered) return;
+  cleanupRegistered = true;
+  window.addEventListener('beforeunload', () => {
+    for (const inst of loadedPlugins.values()) {
+      try { inst?.cleanup?.(); } catch {}
+    }
+  });
+}
+
 export function setupPluginListeners(): void {
   mountPluginList();
+  registerCleanupOnExit();
 
   // Open Folder
   document.getElementById('btn-plugins-folder')?.addEventListener('click', async () => {

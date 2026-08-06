@@ -30,6 +30,9 @@ pub struct PluginInfo {
     pub description: String,
     pub enabled: bool,
     pub path: String,
+    /// Permissions declared in the manifest — the frontend uses these to gate
+    /// which `api` methods the plugin actually receives.
+    pub permissions: Vec<String>,
     pub has_error: bool,
     pub error_message: Option<String>,
 }

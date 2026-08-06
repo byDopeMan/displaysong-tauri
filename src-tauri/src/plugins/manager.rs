@@ -84,6 +84,7 @@ pub fn discover_plugins(app_data_dir: &Path) -> Vec<PluginInfo> {
                         description: manifest.description,
                         enabled,
                         path: path.to_string_lossy().to_string(),
+                        permissions: manifest.permissions,
                         has_error: false,
                         error_message: None,
                     });
@@ -101,6 +102,7 @@ pub fn discover_plugins(app_data_dir: &Path) -> Vec<PluginInfo> {
                         description: String::new(),
                         enabled: false,
                         path: path.to_string_lossy().to_string(),
+                        permissions: Vec::new(),
                         has_error: true,
                         error_message: Some(e),
                     });

@@ -39,6 +39,9 @@ pub struct TwitchConnectionInfo {
     pub user: Option<TwitchUser>,
     pub eventsub_connected: bool,
     pub use_bot_account: bool,
+    /// OAuth scopes the token holds — lets a plugin tell the user e.g.
+    /// "Follow-Alerts brauchen moderator:read:followers".
+    pub scopes: Vec<String>,
 }
 
 mod connection;

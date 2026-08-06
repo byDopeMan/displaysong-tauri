@@ -10,7 +10,7 @@ tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
 # Tauri (mit Updater!)
-tauri = { version = "1.8", features = [ "updater", "dialog-open", "dialog-confirm", "shell-open", "path-all", "window-all", "system-tray", "process-relaunch"] }
+tauri = { version = "1.8", features = [ "dialog-open", "dialog-confirm", "shell-open", "path-all", "window-all", "system-tray", "process-relaunch"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

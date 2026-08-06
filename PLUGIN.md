@@ -39,20 +39,37 @@ plugins/
 | `author` | | Dein Name |
 | `description` | | Kurze Beschreibung |
 | `main` | ✓ | Einstiegspunkt (normalerweise "index.js") |
-| `permissions` | | Array von Berechtigungen (rein informativ) |
+| `permissions` | | Array von Berechtigungen (**wird erzwungen**, siehe unten) |
 
 ### Berechtigungen
 
-Die `permissions` dienen aktuell nur zur Dokumentation – sie schränken die API
-**nicht** technisch ein. Trag trotzdem ehrlich ein, was dein Plugin nutzt:
+Die `permissions` werden **technisch erzwungen**: Beim Laden bekommt dein Plugin
+ein `api`-Objekt, in dem **nur** die Methoden funktionieren, deren Permission im
+Manifest steht. Rufst du eine Methode ohne die passende Permission auf, wirft sie
+einen klaren Fehler (statt still nichts zu tun):
 
-- `track` - Zugriff auf Track-Daten
-- `storage` - Daten persistent speichern
-- `secrets` - Secrets im System-Keyring speichern
-- `http` - HTTP-Requests machen
-- `twitch` - Zugriff auf Twitch Integration
-- `window` - Eigene Plugin-Fenster erstellen
-- `python` - Python-Code ausführen (wenn Python installiert ist)
+```
+PermissionError: Plugin "<id>" nutzt api.<method>, aber Permission "<perm>" fehlt im manifest
+```
+
+Trag also genau das ein, was dein Plugin nutzt. Mapping Permission → freigeschaltete Methoden:
+
+| Permission | schaltet frei |
+|-----------|----------------|
+| `track`   | `getTrack`, `getHistory`, `onTrackChange`, `addToQueue`, `playTrack` |
+| `storage` | `storeData`, `getData`, `deleteData`, `getLocalSetting`, `setLocalSetting` |
+| `secrets` | `storeSecret`, `getSecret`, `deleteSecret` |
+| `http`    | `httpRequest` |
+| `twitch`  | `getTwitchConnection`, `sendTwitchChat`, `onTwitchRedemption`, `onTwitchFollow`, `onTwitchSubscribe`, `onTwitchRaid`, `onTwitchCheer` |
+| `window`  | `createWindow` |
+| `python`  | `pythonAvailable`, `pythonVersion`, `pythonRun`, `pythonRunScript`, `pythonSpawn`, `pythonKill`, `pythonInstall`, `pythonPackageInstalled` |
+
+**Immer verfügbar** (ohne Permission): `registerSettings`, `updateSettingsInfo`,
+`unregisterSettings`, `showNotification`, `on`, `emit`, `getPluginId`,
+`getAppVersion`, `createElement`, `getPluginPath`, `getDataPath`.
+
+> Das Enforcement lässt sich global über `ENFORCE_PERMISSIONS` in
+> `src/features/plugins/api.ts` abschalten (Default: an). Nur für Entwicklung.
 
 ## index.js
 
@@ -304,22 +321,34 @@ return { init, cleanup };
 Plugins können die Twitch-Integration nutzen (wenn verbunden).
 
 > **Einschränkungen:**
-> - Es gibt **keinen** allgemeinen Chat-Nachrichten-Listener. Plugins können nur
->   auf **Channel-Point-Einlösungen** reagieren (`onTwitchRedemption`).
-> - Channel Points / Einlösungen setzen **Twitch Affiliate oder Partner** voraus.
->   Ohne diesen Status liefert Twitch keine Redemption-Events.
+> - Es gibt **keinen** allgemeinen Chat-Nachrichten-Listener.
+> - Follow/Sub/Raid/Cheer/Redemption laufen über Twitch **EventSub** und brauchen
+>   die passenden Scopes bei der Autorisierung:
+>   - Follow → `moderator:read:followers`
+>   - Sub → `channel:read:subscriptions`
+>   - Cheer/Bits → `bits:read`
+>   - Redemption → `channel:read:redemptions` (+ **Affiliate/Partner**)
+>   - Raid → kein Scope nötig
+>   Fehlt ein Scope, schlägt nur diese eine EventSub-Subscription fehl (im Log
+>   sichtbar). Prüfe `getTwitchConnection().scopes`, um dem User zu sagen, was fehlt.
+> - **Echte Geld-Spenden** (Streamlabs/StreamElements/PayPal) sind **nicht** Teil
+>   von Twitch-EventSub. Mappe „Donation"-Alerts clientseitig auf Cheer/Bits.
 
 ### `api.getTwitchConnection()`
 
-Gibt den Twitch-Verbindungsstatus zurück.
+Gibt den Twitch-Verbindungsstatus inkl. der gewährten Scopes zurück.
 
 ```javascript
 const twitch = await api.getTwitchConnection();
 // {
 //   connected: true,
 //   user: { id: "123", login: "username", display_name: "Username" },
-//   eventsub_connected: true
+//   eventsub_connected: true,
+//   scopes: ["moderator:read:followers", "channel:read:subscriptions", ...]
 // }
+if (!twitch.scopes.includes('moderator:read:followers')) {
+  // Follow-Alerts brauchen diesen Scope — User zum Neu-Verbinden auffordern.
+}
 ```
 
 ### `api.sendTwitchChat(message)`
@@ -360,6 +389,63 @@ const unlisten = api.onTwitchRedemption((redemption) => {
   reward_id: "reward-id",
   reward_title: "Song Request"
 }
+```
+
+### Alert-Listener: `onTwitchFollow` / `onTwitchSubscribe` / `onTwitchRaid` / `onTwitchCheer`
+
+Gleiches Muster wie `onTwitchRedemption` — Callback rein, `unlisten()` zurück.
+Brauchen `permissions: ["twitch"]` **und** den jeweiligen Scope (siehe oben).
+
+```javascript
+const off = api.onTwitchFollow((e) => {
+  console.log('Neuer Follow:', e.user_name);
+});
+
+api.onTwitchSubscribe((e) => {
+  // e.is_gift === true  → e.user_name ist der Gifter, e.total = Anzahl
+  // Resub               → e.message + e.cumulative_months gesetzt
+  console.log(e.user_name, e.tier, e.cumulative_months, e.message);
+});
+
+api.onTwitchRaid((e) => console.log('Raid von', e.from_name, 'mit', e.viewers));
+api.onTwitchCheer((e) => console.log(e.user_name, 'cheer', e.bits, 'Bits'));
+
+// off()  // Listener entfernen
+```
+
+**Event-Objekte:**
+
+```javascript
+// onTwitchFollow
+{ user_id, user_name }
+
+// onTwitchSubscribe
+// - Gift-Subs kommen genau EINMAL (über subscription.gift): is_gift=true, total=n.
+//   Das doppelte channel.subscribe (is_gift=true) wird verworfen.
+// - Resubs: message + cumulative_months gesetzt.
+{ user_id, user_name, tier: "1000"|"2000"|"3000"|"prime", is_gift: false,
+  cumulative_months: 3, streak_months: 0, message: "...", total: 0, recipient_name: null }
+
+// onTwitchRaid
+{ from_id, from_name, viewers: 48 }
+
+// onTwitchCheer
+{ user_id, user_name, bits: 500, message: "..." }
+```
+
+> EventSub liefert Notifications teils mehrfach — DisplaySong dedupliziert intern
+> über die `message_id`, du bekommst pro Ereignis genau einen Callback.
+
+#### Testen ohne echte Events
+
+Zum Entwickeln kannst du Fake-Events durch denselben Event-Kanal schicken:
+
+```javascript
+// irgendwo im Dev-Code (nicht im Plugin nötig):
+await window.__TAURI__.tauri.invoke('emit_test_event', {
+  event: 'twitch-follow',
+  payload: { user_id: '1', user_name: 'TestFollower' },
+});
 ```
 
 ---
@@ -444,7 +530,7 @@ if (await api.pythonAvailable()) {
   // Code-Schnipsel ausführen
   const result = await api.pythonRun('print(2 + 2)');
 
-  // Skript-Datei mit Argumenten ausführen
+  // Skript-Datei mit Argumenten ausführen (blockiert bis Prozess-Ende)
   await api.pythonRunScript('C:/pfad/script.py', ['arg1', 'arg2']);
 
   // Pakete prüfen/installieren (pip)
@@ -454,12 +540,35 @@ if (await api.pythonAvailable()) {
 }
 ```
 
+### Dauerprozesse: `pythonSpawn` / `pythonKill`
+
+`pythonRunScript` **wartet auf das Prozess-Ende** — für einen dauerhaft laufenden
+Server (z.B. ein Overlay-HTTP-Server für eine OBS-Browser-Source) würde der Aufruf
+nie zurückkehren. Nimm dafür `pythonSpawn`: es startet das Skript und kehrt
+**sofort** mit der PID zurück. Mit `getPluginPath()` kommst du an gebündelte Dateien.
+
+```javascript
+async function init() {
+  // server.py liegt im Plugin-Ordner
+  this.pid = await api.pythonSpawn(api.getPluginPath() + '/server.py', ['--port', '8777']);
+}
+
+async function cleanup() {
+  if (this.pid) await api.pythonKill(this.pid);
+}
+```
+
+> Beim App-Beenden killt DisplaySong alle per `pythonSpawn` gestarteten Prozesse
+> automatisch — dein Server bleibt also nicht hängen, falls `cleanup()` mal ausfällt.
+
 | Methode | Beschreibung |
 |---------|--------------|
 | `api.pythonAvailable()` | `true`/`false` ob Python gefunden wurde |
 | `api.pythonVersion()` | Versions-String oder `null` |
 | `api.pythonRun(code)` | Führt Python-Code aus, gibt das Ergebnis zurück |
-| `api.pythonRunScript(path, args)` | Führt eine `.py`-Datei aus |
+| `api.pythonRunScript(path, args)` | Führt eine `.py`-Datei aus (**blockierend**) |
+| `api.pythonSpawn(path, args)` | Startet einen Dauerprozess, gibt sofort die PID zurück |
+| `api.pythonKill(pid)` | Beendet einen mit `pythonSpawn` gestarteten Prozess |
 | `api.pythonPackageInstalled(name)` | Prüft ob ein pip-Paket installiert ist |
 | `api.pythonInstall(name)` | Installiert ein pip-Paket |
 
@@ -542,6 +651,10 @@ api.emit('custom-event', { message: 'Hello!' });
 ```javascript
 api.getPluginId();     // "mein-plugin"
 api.getAppVersion();   // "2.2.0"
+
+// Absolute Pfade (synchron) — für gebündelte Dateien / eigene Daten
+api.getPluginPath();   // ...\plugins\mein-plugin  (Ordner deines Plugins)
+api.getDataPath();     // ...\plugins\mein-plugin\data  (persistenter Datenordner)
 
 // DOM Helper
 const el = api.createElement('div', {

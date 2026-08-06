@@ -1,6 +1,10 @@
 use tauri::{State, Manager, AppHandle};
 use log::{info, error, warn};
-use crate::twitch::{parse_eventsub_welcome, parse_redemption_event, parse_chat_message_event, is_keepalive, parse_reconnect_url, API_BASE};
+use crate::twitch::{
+    parse_eventsub_welcome, parse_redemption_event, parse_chat_message_event,
+    parse_follow_event, parse_subscribe_event, parse_raid_event, parse_cheer_event,
+    parse_message_id, is_keepalive, parse_reconnect_url, API_BASE,
+};
 use super::TwitchState;
 
 // ============================================================================
@@ -138,6 +142,46 @@ pub async fn twitch_connect_eventsub(
             }
         }
 
+        // Subscribe to the alert events plugins can listen to (Follow / Sub /
+        // Raid / Cheer) — independent of the request mode. Each needs its own
+        // scope at authorization; a missing scope makes only that one POST fail,
+        // which we log clearly instead of swallowing. channel.raid needs none.
+        let alert_subs = [
+            ("channel.follow", "2", serde_json::json!({
+                "broadcaster_user_id": user_id, "moderator_user_id": user_id
+            })),
+            ("channel.subscribe", "1", serde_json::json!({ "broadcaster_user_id": user_id })),
+            ("channel.subscription.message", "1", serde_json::json!({ "broadcaster_user_id": user_id })),
+            ("channel.subscription.gift", "1", serde_json::json!({ "broadcaster_user_id": user_id })),
+            ("channel.raid", "1", serde_json::json!({ "to_broadcaster_user_id": user_id })),
+            ("channel.cheer", "1", serde_json::json!({ "broadcaster_user_id": user_id })),
+        ];
+        for (sub_type, version, condition) in alert_subs {
+            let body = serde_json::json!({
+                "type": sub_type,
+                "version": version,
+                "condition": condition,
+                "transport": { "method": "websocket", "session_id": session_id },
+            });
+            match http.post(format!("{}/eventsub/subscriptions", API_BASE))
+                .header("Authorization", format!("Bearer {}", access_token))
+                .header("Client-Id", &client_id)
+                .json(&body)
+                .send()
+                .await
+            {
+                Ok(resp) if resp.status().is_success() => {
+                    info!("EventSub {} subscription OK", sub_type);
+                }
+                Ok(resp) => {
+                    let status = resp.status();
+                    let text = resp.text().await.unwrap_or_default();
+                    warn!("EventSub {} subscription failed ({}): {} — fehlt evtl. ein Scope", sub_type, status, text);
+                }
+                Err(e) => warn!("EventSub {} subscription request error: {}", sub_type, e),
+            }
+        }
+
         // Mark as connected
         {
             let mut es = eventsub_connected.write().await;
@@ -145,7 +189,11 @@ pub async fn twitch_connect_eventsub(
         }
         
         info!("EventSub connected, listening for command: {}", command);
-        
+
+        // Cache of recent message ids so re-delivered notifications are dropped.
+        let mut seen_ids: std::collections::VecDeque<String> =
+            std::collections::VecDeque::with_capacity(64);
+
         // Listen for events until a shutdown is requested (e.g. on mode switch).
         loop {
             let msg_result = tokio::select! {
@@ -168,11 +216,37 @@ pub async fn twitch_connect_eventsub(
                         warn!("EventSub reconnect requested: {}", reconnect_url);
                         break;
                     }
-                    
+
+                    // Dedup: skip notifications we've already handled.
+                    if let Some(mid) = parse_message_id(&text) {
+                        if seen_ids.contains(&mid) {
+                            continue;
+                        }
+                        seen_ids.push_back(mid);
+                        if seen_ids.len() > 50 {
+                            seen_ids.pop_front();
+                        }
+                    }
+
                     if let Some(redemption) = parse_redemption_event(&text) {
                         let _ = app.emit_all("twitch-redemption", &redemption);
                     }
-                    
+
+                    // Alert events for plugins (Follow / Sub / Raid / Cheer).
+                    if let Some(follow) = parse_follow_event(&text) {
+                        let _ = app.emit_all("twitch-follow", &follow);
+                    }
+                    if let Some(sub) = parse_subscribe_event(&text) {
+                        let _ = app.emit_all("twitch-subscribe", &sub);
+                    }
+                    if let Some(raid) = parse_raid_event(&text) {
+                        let _ = app.emit_all("twitch-raid", &raid);
+                    }
+                    if let Some(cheer) = parse_cheer_event(&text) {
+                        let _ = app.emit_all("twitch-cheer", &cheer);
+                    }
+
+
                     if let Some(chat_msg) = parse_chat_message_event(&text) {
                         // Always emit raw chat message for permit system
                         let _ = app.emit_all("twitch-chat-message", serde_json::json!({

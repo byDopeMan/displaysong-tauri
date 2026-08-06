@@ -1,4 +1,7 @@
-use super::{TwitchRedemption, TwitchChatMessage};
+use super::{
+    TwitchRedemption, TwitchChatMessage,
+    TwitchFollowEvent, TwitchSubscribeEvent, TwitchRaidEvent, TwitchCheerEvent,
+};
 
 // ============================================================================
 // EventSub Helpers
@@ -77,6 +80,140 @@ pub fn parse_chat_message_event(message: &str) -> Option<TwitchChatMessage> {
         is_moderator,
         is_vip,
     })
+}
+
+/// The EventSub notification's unique message id (`metadata.message_id`).
+/// Twitch may deliver the same notification more than once, so callers cache the
+/// last N ids and drop repeats.
+pub fn parse_message_id(message: &str) -> Option<String> {
+    let json: serde_json::Value = serde_json::from_str(message).ok()?;
+    json["metadata"]["message_id"].as_str().map(|s| s.to_string())
+}
+
+/// Helper: return the event object for a notification of the given subscription
+/// type, or None if this message isn't that notification.
+fn notification_event<'a>(json: &'a serde_json::Value, sub_type: &str) -> Option<&'a serde_json::Value> {
+    if json["metadata"]["message_type"].as_str()? != "notification" {
+        return None;
+    }
+    if json["metadata"]["subscription_type"].as_str()? != sub_type {
+        return None;
+    }
+    Some(&json["payload"]["event"])
+}
+
+/// Parse a `channel.follow` (v2) notification.
+pub fn parse_follow_event(message: &str) -> Option<TwitchFollowEvent> {
+    let json: serde_json::Value = serde_json::from_str(message).ok()?;
+    let event = notification_event(&json, "channel.follow")?;
+    Some(TwitchFollowEvent {
+        user_id: event["user_id"].as_str()?.to_string(),
+        user_name: event["user_name"].as_str().unwrap_or("").to_string(),
+    })
+}
+
+/// Parse a `channel.raid` notification (incoming raid → us).
+pub fn parse_raid_event(message: &str) -> Option<TwitchRaidEvent> {
+    let json: serde_json::Value = serde_json::from_str(message).ok()?;
+    let event = notification_event(&json, "channel.raid")?;
+    Some(TwitchRaidEvent {
+        from_id: event["from_broadcaster_user_id"].as_str().unwrap_or("").to_string(),
+        from_name: event["from_broadcaster_user_name"].as_str().unwrap_or("").to_string(),
+        viewers: event["viewers"].as_u64().unwrap_or(0) as u32,
+    })
+}
+
+/// Parse a `channel.cheer` notification.
+pub fn parse_cheer_event(message: &str) -> Option<TwitchCheerEvent> {
+    let json: serde_json::Value = serde_json::from_str(message).ok()?;
+    let event = notification_event(&json, "channel.cheer")?;
+    let is_anonymous = event["is_anonymous"].as_bool().unwrap_or(false);
+    Some(TwitchCheerEvent {
+        user_id: event["user_id"].as_str().unwrap_or("").to_string(),
+        user_name: if is_anonymous {
+            "Anonymous".to_string()
+        } else {
+            event["user_name"].as_str().unwrap_or("").to_string()
+        },
+        bits: event["bits"].as_u64().unwrap_or(0) as u32,
+        message: event["message"].as_str().unwrap_or("").to_string(),
+    })
+}
+
+/// Parse a subscription notification, normalizing the three EventSub types into
+/// exactly one `TwitchSubscribeEvent` per real event:
+/// - `channel.subscribe`          → new sub. A gift here (`is_gift=true`) is
+///   IGNORED (returns None) because the gifter is reported via
+///   `channel.subscription.gift`; otherwise the recipient would double-count.
+/// - `channel.subscription.message` → resub (carries `message` + months).
+/// - `channel.subscription.gift`    → the gifter (carries `total`).
+pub fn parse_subscribe_event(message: &str) -> Option<TwitchSubscribeEvent> {
+    let json: serde_json::Value = serde_json::from_str(message).ok()?;
+    if json["metadata"]["message_type"].as_str()? != "notification" {
+        return None;
+    }
+    let sub_type = json["metadata"]["subscription_type"].as_str()?;
+    let event = &json["payload"]["event"];
+
+    match sub_type {
+        "channel.subscribe" => {
+            // Gift subs arrive again via subscription.gift — drop the duplicate.
+            if event["is_gift"].as_bool().unwrap_or(false) {
+                return None;
+            }
+            Some(TwitchSubscribeEvent {
+                user_id: event["user_id"].as_str().unwrap_or("").to_string(),
+                user_name: event["user_name"].as_str().unwrap_or("").to_string(),
+                tier: normalize_tier(event["tier"].as_str().unwrap_or("1000")),
+                is_gift: false,
+                cumulative_months: 1,
+                streak_months: 0,
+                message: String::new(),
+                total: 0,
+                recipient_name: None,
+            })
+        }
+        "channel.subscription.message" => Some(TwitchSubscribeEvent {
+            user_id: event["user_id"].as_str().unwrap_or("").to_string(),
+            user_name: event["user_name"].as_str().unwrap_or("").to_string(),
+            tier: normalize_tier(event["tier"].as_str().unwrap_or("1000")),
+            is_gift: false,
+            cumulative_months: event["cumulative_months"].as_u64().unwrap_or(1) as u32,
+            streak_months: event["streak_months"].as_u64().unwrap_or(0) as u32,
+            message: event["message"]["text"].as_str().unwrap_or("").to_string(),
+            total: 0,
+            recipient_name: None,
+        }),
+        "channel.subscription.gift" => {
+            let is_anonymous = event["is_anonymous"].as_bool().unwrap_or(false);
+            Some(TwitchSubscribeEvent {
+                user_id: event["user_id"].as_str().unwrap_or("").to_string(),
+                user_name: if is_anonymous {
+                    "Anonymous".to_string()
+                } else {
+                    event["user_name"].as_str().unwrap_or("").to_string()
+                },
+                tier: normalize_tier(event["tier"].as_str().unwrap_or("1000")),
+                is_gift: true,
+                cumulative_months: 0,
+                streak_months: 0,
+                message: String::new(),
+                total: event["total"].as_u64().unwrap_or(1) as u32,
+                recipient_name: None,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Twitch sends "1000"/"2000"/"3000" for tiers and "prime" is signalled via the
+/// `is_prime` flag on some payloads; we keep the raw tier string, mapping the
+/// empty/prime case to "prime".
+fn normalize_tier(tier: &str) -> String {
+    match tier {
+        "" | "prime" | "Prime" => "prime".to_string(),
+        other => other.to_string(),
+    }
 }
 
 /// Check if message is a keepalive

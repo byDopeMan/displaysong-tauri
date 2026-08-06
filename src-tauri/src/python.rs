@@ -10,7 +10,6 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 /// Python process manager
-#[allow(dead_code)] // Fields used by daemon methods (future use)
 pub struct PythonRunner {
     python_path: Option<PathBuf>,
     processes: Arc<Mutex<Vec<std::process::Child>>>,
@@ -164,8 +163,9 @@ impl PythonRunner {
         }
     }
     
-    /// Run a long-running Python script (daemon)
-    #[allow(dead_code)] // Future use for background Python processes
+    /// Run a long-running Python script (daemon). Returns immediately with the
+    /// process id. stdout/stderr are discarded (a server that logs a lot would
+    /// otherwise fill the pipe buffer and block once nobody drains it).
     pub async fn spawn_daemon(
         &self,
         script_path: &PathBuf,
@@ -173,30 +173,44 @@ impl PythonRunner {
     ) -> Result<u32, String> {
         let python = self.python_path.as_ref()
             .ok_or("Python not available")?;
-        
+
         let child = Command::new(python)
             .arg(script_path)
             .args(&args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .spawn()
             .map_err(|e| format!("Failed to spawn: {}", e))?;
-        
+
         let pid = child.id();
-        
+
         let mut processes = self.processes.lock().await;
         processes.push(child);
-        
+
         info!("Python daemon spawned: PID {}", pid);
         Ok(pid)
     }
-    
+
+    /// Kill a single spawned Python process by pid. Returns true if it was found.
+    pub async fn kill(&self, pid: u32) -> bool {
+        let mut processes = self.processes.lock().await;
+        if let Some(idx) = processes.iter().position(|c| c.id() == pid) {
+            let mut child = processes.remove(idx);
+            let _ = child.kill();
+            let _ = child.wait();
+            info!("Python daemon killed: PID {}", pid);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Kill all spawned Python processes
-    #[allow(dead_code)] // Future use for cleanup
     pub async fn kill_all(&self) {
         let mut processes = self.processes.lock().await;
         for mut child in processes.drain(..) {
             let _ = child.kill();
+            let _ = child.wait();
         }
         info!("All Python processes killed");
     }

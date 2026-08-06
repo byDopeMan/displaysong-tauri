@@ -33,6 +33,16 @@ pub async fn check_plugins_folder_exists(app: AppHandle) -> Result<bool, String>
     Ok(false)
 }
 
+/// Dev helper: emit a fake event through the same Tauri event channel real
+/// events use, so plugin listeners (onTwitchFollow/Subscribe/Raid/Cheer, …)
+/// can be tested without live Twitch activity.
+/// Example: emit_test_event("twitch-follow", { user_name: "Tester" }).
+#[tauri::command]
+pub async fn emit_test_event(app: AppHandle, event: String, payload: Value) -> Result<(), String> {
+    use tauri::Manager;
+    app.emit_all(&event, payload).map_err(|e| e.to_string())
+}
+
 // ============================================================================
 // PLUGIN MANAGEMENT
 // ============================================================================

@@ -191,6 +191,7 @@ pub async fn twitch_get_connection(
             user: c.get_user(),
             eventsub_connected: eventsub,
             use_bot_account: use_bot,
+            scopes: c.get_scopes(),
         })
     } else {
         Ok(TwitchConnectionInfo {
@@ -198,6 +199,7 @@ pub async fn twitch_get_connection(
             user: None,
             eventsub_connected: false,
             use_bot_account: use_bot,
+            scopes: Vec::new(),
         })
     }
 }

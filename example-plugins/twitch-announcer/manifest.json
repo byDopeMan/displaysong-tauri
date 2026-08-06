@@ -5,5 +5,5 @@
   "author": "DisplaySong",
   "description": "Postet bei jedem Songwechsel automatisch eine Nachricht in deinen Twitch-Chat (Vorlage + Cooldown einstellbar). Nutzt deine bestehende Twitch-Anbindung.",
   "main": "index.js",
-  "permissions": ["storage", "twitch"]
+  "permissions": ["storage", "twitch", "track"]
 }

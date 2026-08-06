@@ -5,5 +5,5 @@
   "author": "DisplaySong",
   "description": "Zählt mit, was du hörst, und zeigt deine meistgespielten Tracks plus Songs dieser Session in einem Overlay-Fenster. Lokal gespeichert.",
   "main": "index.js",
-  "permissions": ["storage"]
+  "permissions": ["storage", "track", "window"]
 }

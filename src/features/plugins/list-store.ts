@@ -14,6 +14,10 @@ export interface PluginInfo {
   author?: string;
   description?: string;
   enabled: boolean;
+  /** Absolute path to the plugin's folder (from the backend). */
+  path?: string;
+  /** Permissions declared in the manifest — gate the api surface. */
+  permissions?: string[];
   has_error: boolean;
   error_message?: string;
 }
