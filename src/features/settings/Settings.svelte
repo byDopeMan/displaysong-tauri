@@ -80,7 +80,7 @@
       <h3 data-i18n="settings.about.title">Über</h3>
       <div class="about-info">
         <p class="app-name">DisplaySong</p>
-        <p class="app-version">Version 4.1.0</p>
+        <p class="app-version">Version 4.2.0</p>
         <p class="app-desc" data-i18n="settings.about.description">Now Playing Widget für OBS</p>
       </div>
       <div class="about-links">
