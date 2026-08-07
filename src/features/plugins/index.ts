@@ -24,6 +24,43 @@ export { setPluginSettingsStyle };
 // Loaded plugin instances, keyed by pluginId.
 const loadedPlugins = new Map<string, any>();
 
+// ---------------------------------------------------------------------------
+// Plugin sandbox — hide the global Tauri bridge from plugin code.
+//
+// Without this a plugin could call window.__TAURI__…invoke('<command>', …) and
+// reach ANY Tauri command directly, bypassing the manifest permission gate.
+// We run each plugin body with `window`/`globalThis`/`self` shadowed by a Proxy
+// that returns `undefined` for __TAURI__* (and self-references itself for
+// parent/top/etc.), plus the bare __TAURI__* names shadowed as parameters, and
+// `this` bound to the sandbox.
+//
+// This closes the DIRECT bridge path and makes the permission enforcement real.
+// It is NOT full isolation: plugin code still shares the app's JS realm, so a
+// determined plugin could still reach the bridge via e.g. document.defaultView
+// or Function('return this')(). Full iframe/Worker isolation stays on the
+// roadmap. The app itself is untouched — it keeps using the real window.__TAURI__.
+// ---------------------------------------------------------------------------
+const TAURI_BRIDGE_KEYS = [
+  '__TAURI__', '__TAURI_INTERNALS__', '__TAURI_IPC__',
+  '__TAURI_METADATA__', '__TAURI_EVENT_PLUGIN_INTERNALS__',
+];
+const SELF_REFS = new Set(['window', 'globalThis', 'self', 'parent', 'top', 'frames']);
+
+const pluginScope: any = new Proxy(window, {
+  get(target, prop) {
+    if (typeof prop === 'string') {
+      if (prop.startsWith('__TAURI')) return undefined;
+      if (SELF_REFS.has(prop)) return pluginScope;
+    }
+    const value = (target as any)[prop];
+    return typeof value === 'function' ? value.bind(target) : value;
+  },
+  has(target, prop) {
+    if (typeof prop === 'string' && prop.startsWith('__TAURI')) return false;
+    return prop in target;
+  },
+});
+
 // ============================================================================
 // PLUGIN LOADING
 // ============================================================================
@@ -67,9 +104,12 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
     });
 
     // Einfaches Format: Plugin hat Zugriff auf 'api' und 'pluginId'
-    // und gibt { init, cleanup } zurück
-    const fn = new Function('api', 'pluginId', code);
-    const instance = fn(api, pluginId);
+    // und gibt { init, cleanup } zurück. Der Body läuft im Sandbox-Scope, in dem
+    // die Tauri-Bridge (window.__TAURI__ & Co.) versteckt ist — nur api.* trägt.
+    const paramNames = ['api', 'pluginId', 'window', 'globalThis', 'self', ...TAURI_BRIDGE_KEYS];
+    const fn = new Function(...paramNames, code);
+    const args = [api, pluginId, pluginScope, pluginScope, pluginScope, ...TAURI_BRIDGE_KEYS.map(() => undefined)];
+    const instance = fn.apply(pluginScope, args);
 
     if (instance?.init) {
       await instance.init();

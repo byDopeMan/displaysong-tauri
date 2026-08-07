@@ -447,9 +447,11 @@ await api._devEmitTestEvent('twitch-follow', { user_id: '1', user_name: 'TestFol
 await api._devEmitTestEvent('twitch-subscribe', { user_name: 'A', tier: '1000', is_gift: false, cumulative_months: 3, message: 'gg' });
 ```
 
-> **Sicherheitsnotiz:** Greife in Plugins **nicht** direkt auf `window.__TAURI__`
-> zu. Nutze ausschließlich `api.*` — nur darüber greift das Permission-Enforcement.
-> (Eine vollständige Sandbox-Isolierung des Plugin-Scopes ist geplant.)
+> **Sicherheitsnotiz:** Der globale Tauri-Bridge (`window.__TAURI__` & Co.) ist im
+> Plugin-Scope **bewusst nicht verfügbar** — `typeof window.__TAURI__` ist dort
+> `undefined`. Alles läuft ausschließlich über `api.*`; nur darüber greift das
+> Permission-Enforcement. (Das blockiert den direkten Bridge-Zugriff; eine
+> vollständige Isolierung via iframe/Worker bleibt Roadmap.)
 
 ---
 
