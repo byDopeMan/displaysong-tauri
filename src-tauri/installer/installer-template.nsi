@@ -116,6 +116,7 @@ Var InstallPlugins
 Var InstallPython
 Var DSChkPlugins
 Var DSChkPython
+Var SystemPython
 
 ; Define registry key to store installer language
 !define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
@@ -570,23 +571,60 @@ Function DSComponentsPage
   ${EndIf}
   SetCtlColors $0 0xF2F2F2 0x1E1E22
 
+  ; Detect a usable system Python. If present, the bundled runtime is redundant
+  ; (find_python falls back to system Python), so default the Python option OFF
+  ; and don't write the +60 MB copy. If absent, default it ON so Python plugins
+  ; and YouTube playback work out of the box.
+  Call DSDetectSystemPython
+  ${If} $SystemPython == 1
+    StrCpy $InstallPython ${BST_UNCHECKED}
+  ${Else}
+    StrCpy $InstallPython ${BST_CHECKED}
+  ${EndIf}
+
   ${NSD_CreateCheckbox} 8u 8u 98% 12u "Beispiel-Plugins installieren (Theme Studio, Stream Clock, Focus Timer)"
   Pop $DSChkPlugins
   SetCtlColors $DSChkPlugins 0xF2F2F2 0x1E1E22
   ${NSD_SetState} $DSChkPlugins $InstallPlugins
   ${NSD_OnClick} $DSChkPlugins DSOnPluginsClick
 
-  ${NSD_CreateCheckbox} 20u 24u 98% 12u "Python-Runtime mitinstallieren (nur für Python-Plugins, ca. +60 MB)"
+  ${If} $SystemPython == 1
+    ${NSD_CreateCheckbox} 20u 24u 98% 12u "Python-Runtime mitinstallieren  —  System-Python erkannt, nicht nötig"
+  ${Else}
+    ${NSD_CreateCheckbox} 20u 24u 98% 12u "Python-Runtime mitinstallieren (nur für Python-Plugins, ca. +60 MB)"
+  ${EndIf}
   Pop $DSChkPython
   SetCtlColors $DSChkPython 0xF2F2F2 0x1E1E22
   ${NSD_SetState} $DSChkPython $InstallPython
 
-  ${NSD_CreateLabel} 8u 46u 98% 30u "Plugins sind optionale Erweiterungen und lassen sich später im Plugins-Tab verwalten. Python wird nur von Plugins benötigt, die Python verwenden."
+  ${If} $SystemPython == 1
+    ${NSD_CreateLabel} 8u 46u 98% 30u "Auf diesem System wurde bereits Python gefunden — DisplaySong nutzt es automatisch. Die gebündelte Python-Runtime wird deshalb nicht mitinstalliert (Haken bei Bedarf trotzdem setzbar)."
+  ${Else}
+    ${NSD_CreateLabel} 8u 46u 98% 30u "Plugins sind optionale Erweiterungen und lassen sich später im Plugins-Tab verwalten. Python wird nur von Plugins benötigt, die Python verwenden (und für die YouTube-Wiedergabe)."
+  ${EndIf}
   Pop $0
   SetCtlColors $0 0xA8A8A8 0x1E1E22
 
   Call DSOnPluginsClick
   nsDialogs::Show
+FunctionEnd
+
+; Detect a usable system Python (python / py -3 on PATH). Sets $SystemPython 1/0.
+Function DSDetectSystemPython
+  StrCpy $SystemPython 0
+  nsExec::ExecToStack '"python" --version'
+  Pop $0
+  Pop $1
+  ${If} $0 == 0
+    StrCpy $SystemPython 1
+    Return
+  ${EndIf}
+  nsExec::ExecToStack '"py" "-3" "--version"'
+  Pop $0
+  Pop $1
+  ${If} $0 == 0
+    StrCpy $SystemPython 1
+  ${EndIf}
 FunctionEnd
 
 Function DSOnPluginsClick
@@ -608,6 +646,18 @@ Section Install
   SetOutPath $INSTDIR
 
   !insertmacro CheckIfAppIsRunning
+
+  ; Free any bundled Python still running (a plugin daemon / the YouTube resolver
+  ; the app spawned). The app was hard-killed above, so its exit handler couldn't
+  ; stop it; the orphaned python.exe keeps nsis\python files (e.g. _bz2.pyd) locked
+  ; and would abort the File overwrite below with "Fehler beim Überschreiben".
+  !if "${INSTALLMODE}" == "currentUser"
+    nsis_tauri_utils::KillProcessCurrentUser "python.exe"
+  !else
+    nsis_tauri_utils::KillProcess "python.exe"
+  !endif
+  Pop $R0
+  Sleep 500
 
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"
