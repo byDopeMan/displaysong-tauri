@@ -35,6 +35,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # The plugins variant bundles a portable Python (src-tauri/nsis/python,
+      # listed under bundle.resources). That folder is gitignored (60 MB), so CI
+      # must recreate it: download the 3.11 embeddable, enable site, bootstrap pip.
+      # yt-dlp itself is pip-installed by the app at runtime on first use.
+      - name: Prepare bundled Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $py = "src-tauri/nsis/python"
+          New-Item -ItemType Directory -Force -Path $py | Out-Null
+          Invoke-WebRequest "https://www.python.org/ftp/python/3.11.7/python-3.11.7-embed-amd64.zip" -OutFile python-embed.zip
+          Expand-Archive python-embed.zip -DestinationPath $py -Force
+          (Get-Content "$py/python311._pth") -replace '#import site', 'import site' | Set-Content "$py/python311._pth"
+          Invoke-WebRequest "https://bootstrap.pypa.io/get-pip.py" -OutFile "$py/get-pip.py"
+          & "$py/python.exe" "$py/get-pip.py" --no-warn-script-location
+          & "$py/python.exe" --version
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
