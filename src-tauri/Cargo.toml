@@ -1,6 +1,6 @@
 [package]
 name = "displaysong"
-version = "4.2.2"
+version = "4.2.3"
 description = "Spotify Now Playing Widget"
 authors = ["DisplaySong"]
 edition = "2021"

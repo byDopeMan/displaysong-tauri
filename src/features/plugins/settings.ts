@@ -36,12 +36,14 @@ const pluginSettingsConfigs = new Map<string, PluginSettingsConfig>();
 // Currently open plugin's id (null when no settings are open).
 let currentPluginId: string | null = null;
 
-// Settings presentation: 'modal' (default — a centered dialog like the app's
-// other modals) or 'panel' (legacy inline panel appended to the settings page).
-let settingsStyle = 'modal';
+// Plugin settings always open as a centered modal now (the legacy inline panel
+// forced you to scroll to the bottom of the settings page). We keep the field &
+// setter for compatibility, but the value is ignored — always 'modal'. This also
+// ignores any stale `pluginSettingsStyle: 'panel'` persisted in localStorage.
+const settingsStyle: string = 'modal';
 
-export function setPluginSettingsStyle(style: string): void {
-  settingsStyle = style;
+export function setPluginSettingsStyle(_style: string): void {
+  // Intentionally a no-op — plugin settings are always a modal.
 }
 
 // Per-plugin "any setting changed" callbacks (api.onSettingChange).
