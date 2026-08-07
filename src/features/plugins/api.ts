@@ -11,13 +11,18 @@
 
 import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
-import { PluginWindow, type PluginWindowOptions } from './window';
+import { PluginWindow, PluginModal, type PluginWindowOptions, type PluginModalOptions } from './window';
 import { getLocalSetting, setLocalSetting } from './storage';
 import {
   registerPluginSettings,
   unregisterPluginSettings,
   updateSettingsInfo,
+  registerSettingChange,
 } from './settings';
+
+/** Plugin API version (semver). Bump when the api surface changes; plugins can
+ *  read api.apiVersion and use api.has(name) to degrade gracefully. */
+const PLUGIN_API_VERSION = '1.1.0';
 
 /** Global switch — set to false to hand plugins the full API ungated (dev). */
 const ENFORCE_PERMISSIONS = true;
@@ -31,8 +36,9 @@ const PERMISSION_METHODS: Record<string, string[]> = {
   twitch: [
     'getTwitchConnection', 'sendTwitchChat', 'onTwitchRedemption',
     'onTwitchFollow', 'onTwitchSubscribe', 'onTwitchRaid', 'onTwitchCheer',
+    'onChatMessage',
   ],
-  window: ['createWindow'],
+  window: ['createWindow', 'openModal'],
   python: [
     'pythonAvailable', 'pythonVersion', 'pythonRun', 'pythonRunScript',
     'pythonSpawn', 'pythonKill', 'pythonInstall', 'pythonPackageInstalled',
@@ -41,10 +47,16 @@ const PERMISSION_METHODS: Record<string, string[]> = {
 
 /** Methods every plugin gets regardless of declared permissions. */
 const ALWAYS_ALLOWED = new Set([
-  'registerSettings', 'updateSettingsInfo', 'unregisterSettings',
-  'showNotification', 'on', 'emit', 'getPluginId', 'getAppVersion',
-  'createElement', 'getPluginPath', 'getDataPath',
+  'registerSettings', 'updateSettingsInfo', 'unregisterSettings', 'onSettingChange',
+  'showNotification', 'on', 'emit', 'getPluginId', 'getAppVersion', 'apiVersion', 'has',
+  'createElement', 'getPluginPath', 'getDataPath', 'log', 'getFreePort', '_devEmitTestEvent',
 ]);
+
+/** Reverse map: method name → the permission it requires (built once). */
+const METHOD_PERM: Record<string, string> = {};
+for (const [perm, methods] of Object.entries(PERMISSION_METHODS)) {
+  for (const m of methods) METHOD_PERM[m] = perm;
+}
 
 export interface PluginApiOptions {
   /** Permissions declared in the plugin's manifest. */
@@ -57,6 +69,11 @@ export function createPluginAPI(pluginId: string, opts: PluginApiOptions = {}) {
   const invoke = getTauriInvoke();
   const pluginPath = opts.path || '';
   const dataPath = pluginPath ? `${pluginPath}/data` : '';
+  const granted = new Set(opts.permissions || []);
+
+  // Whether a given method is usable by this plugin (used by api.has()).
+  const methodAllowed = (name: string): boolean =>
+    !ENFORCE_PERMISSIONS || ALWAYS_ALLOWED.has(name) || !METHOD_PERM[name] || granted.has(METHOD_PERM[name]);
 
   const api = {
     async getTrack() {
@@ -158,6 +175,36 @@ export function createPluginAPI(pluginId: string, opts: PluginApiOptions = {}) {
     getPluginId() { return pluginId; },
     getAppVersion() { return '2.2.0'; },
 
+    // Plugin-API version + capability check, so a plugin can degrade gracefully
+    // instead of crashing when a method is missing on an older build.
+    apiVersion: PLUGIN_API_VERSION,
+    has(name: string): boolean {
+      return methodAllowed(name) && name in api;
+    },
+
+    // Write to the app log with a plugin-id prefix (visible even in release
+    // builds, where DevTools/console isn't). level: 'info'|'warn'|'error'|'debug'.
+    async log(level: string, message: string) {
+      if (invoke) { try { await invoke('plugin_log', { pluginId, level, message }); } catch {} }
+    },
+
+    // A free localhost port for a plugin that runs its own server/daemon.
+    async getFreePort() {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('get_free_port');
+    },
+
+    // Called whenever ANY of this plugin's registered settings change.
+    onSettingChange(callback: (key: string, value: any) => void) {
+      registerSettingChange(pluginId, callback);
+    },
+
+    // Dev-only: fire a fake event through the real event channel (for testing
+    // onTwitchFollow/Subscribe/Raid/Cheer/onChatMessage without live Twitch).
+    async _devEmitTestEvent(event: string, payload: any) {
+      if (invoke) return await invoke('emit_test_event', { event, payload });
+    },
+
     // Absolute path to this plugin's folder / persistent data folder. Sync, so
     // plugins can build paths inline, e.g.
     //   api.pythonSpawn(api.getPluginPath() + '/server.py', ['--port','8777'])
@@ -179,8 +226,15 @@ export function createPluginAPI(pluginId: string, opts: PluginApiOptions = {}) {
     // PLUGIN WINDOW API
     // ============================================================
 
+    // Floating in-app window, OR — with { url } — a real OS window (call .show()).
     createWindow(options: PluginWindowOptions = {}) {
       return new PluginWindow(pluginId, options);
+    },
+
+    // Centered modal dialog (backdrop, internal scroll, ESC/X/click-outside).
+    // Recommended for a plugin's own UI. Returns { getContentElement(), close() }.
+    openModal(options: PluginModalOptions = {}) {
+      return new PluginModal(pluginId, options);
     },
 
     // ============================================================
@@ -221,6 +275,17 @@ export function createPluginAPI(pluginId: string, opts: PluginApiOptions = {}) {
     onTwitchCheer(callback: (payload: any) => void) {
       if (window.__TAURI__?.event) {
         return window.__TAURI__.event.listen('twitch-cheer', (e: any) => callback(e.payload));
+      }
+      return () => {};
+    },
+
+    // Read-only chat listener — reuses DisplaySong's existing chat connection so
+    // plugins don't open a second IRC session. Payload: { user_id, user,
+    // message, badges, is_mod, is_sub, is_vip, is_broadcaster }. Chat must be
+    // connected (request mode "commands").
+    onChatMessage(callback: (msg: any) => void) {
+      if (window.__TAURI__?.event) {
+        return window.__TAURI__.event.listen('twitch-chat-message', (e: any) => callback(e.payload));
       }
       return () => {};
     },
@@ -315,15 +380,11 @@ function enforcePermissions<T extends Record<string, any>>(
   if (!ENFORCE_PERMISSIONS) return api;
 
   const grantedSet = new Set(granted || []);
-  const methodPerm: Record<string, string> = {};
-  for (const [perm, methods] of Object.entries(PERMISSION_METHODS)) {
-    for (const m of methods) methodPerm[m] = perm;
-  }
 
   const guarded: Record<string, any> = {};
   for (const key of Object.keys(api)) {
     const val = api[key];
-    const perm = methodPerm[key];
+    const perm = METHOD_PERM[key];
     if (typeof val !== 'function' || ALWAYS_ALLOWED.has(key) || !perm || grantedSet.has(perm)) {
       guarded[key] = val;
     } else {

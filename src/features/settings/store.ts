@@ -42,7 +42,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   widgetAccentColors: {},
   autoHideWidgets: false, // Global: hide widgets when paused / nothing playing
   showRequesterWidgets: false, // Global: show requester name in widgets
-  pluginSettingsStyle: 'panel',
+  pluginSettingsStyle: 'modal', // Plugin settings open as a centered modal by default
 };
 
 export const settingsStore = writable<AppSettings>({ ...DEFAULT_SETTINGS });

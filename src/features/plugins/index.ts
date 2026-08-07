@@ -13,7 +13,7 @@ import { getTauriInvoke } from '../../core/tauri';
 import { showNotification } from '../../ui/notifications';
 import { t } from '../../utils/i18n';
 import { createPluginAPI } from './api';
-import { closePluginWindows } from './window';
+import { closePluginWindows, closePluginModals } from './window';
 import { closePluginSettings, dropPluginSettings, setPluginSettingsStyle } from './settings';
 import { pluginList, type PluginInfo } from './list-store';
 import PluginList from './PluginList.svelte';
@@ -79,19 +79,29 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
 
     loadedPlugins.set(pluginId, instance);
   } catch (e: any) {
+    // Surface the failure in the UI (not just the log) and keep it contained to
+    // this plugin — a throwing plugin must not take down the manager.
     console.error(`[Plugin Loader] ${pluginId} Fehler:`, e);
     console.error('[Plugin Loader] Stack:', e?.stack);
+    showNotification(
+      t('notifications.pluginError', { name: pluginId, error: String(e?.message || e) },
+        `Plugin "${pluginId}" Fehler: ${e?.message || e}`),
+      { type: 'error' },
+    );
   }
 }
 
 async function unloadPlugin(pluginId: string): Promise<void> {
   const instance = loadedPlugins.get(pluginId);
   if (instance?.cleanup) {
-    try { await instance.cleanup(); } catch {}
+    try { await instance.cleanup(); } catch (e: any) {
+      console.error(`[Plugin Loader] ${pluginId} cleanup Fehler:`, e);
+    }
   }
   loadedPlugins.delete(pluginId);
   // Tear down anything the plugin left behind so a disable/uninstall is clean.
   closePluginWindows(pluginId);
+  closePluginModals(pluginId);
   dropPluginSettings(pluginId);
 }
 
@@ -126,10 +136,48 @@ function mountPluginList(): void {
   }
 }
 
+// Human-readable labels for the sensitive permissions shown in the consent
+// dialog when enabling a plugin.
+const SENSITIVE_PERMISSIONS: Record<string, string> = {
+  python: 'Python-Code ausführen (beliebige Programme)',
+  http: 'Netzwerk-/HTTP-Zugriff',
+  secrets: 'Zugriff auf gespeicherte Secrets',
+  twitch: 'Twitch (Chat & Events lesen/senden)',
+  window: 'Eigene Fenster/Modals öffnen',
+};
+
+/**
+ * Ask the user to confirm a plugin's requested permissions before enabling it.
+ * Only prompts for sensitive ones; returns true if there's nothing to confirm
+ * or the dialog API is unavailable. Guards against malicious third-party plugins.
+ */
+async function confirmPluginPermissions(plugin: PluginInfo): Promise<boolean> {
+  const sensitive = (plugin.permissions || []).filter((p) => p in SENSITIVE_PERMISSIONS);
+  if (sensitive.length === 0) return true;
+
+  const confirm = window.__TAURI__?.dialog?.confirm;
+  if (!confirm) return true;
+
+  const list = sensitive.map((p) => `• ${SENSITIVE_PERMISSIONS[p]}`).join('\n');
+  const msg = `„${plugin.name}" fordert folgende Berechtigungen an:\n\n${list}\n\nJetzt aktivieren?`;
+  try {
+    return await confirm(msg, { title: 'Plugin aktivieren', type: 'warning' });
+  } catch {
+    return true;
+  }
+}
+
 /** Enable/disable a plugin (called from the Svelte list). */
 export async function togglePlugin(plugin: PluginInfo, enabled: boolean): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) return;
+
+  // Consent gate: confirm sensitive permissions before enabling.
+  if (enabled && !(await confirmPluginPermissions(plugin))) {
+    await renderPluginList(); // revert the checkbox
+    return;
+  }
+
   try {
     await invoke('set_plugin_enabled', { pluginId: plugin.id, enabled });
     if (enabled) {

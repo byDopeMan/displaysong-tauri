@@ -36,11 +36,29 @@ const pluginSettingsConfigs = new Map<string, PluginSettingsConfig>();
 // Currently open plugin's id (null when no settings are open).
 let currentPluginId: string | null = null;
 
-// Settings presentation: 'modal' or 'panel'.
-let settingsStyle = 'panel';
+// Settings presentation: 'modal' (default — a centered dialog like the app's
+// other modals) or 'panel' (legacy inline panel appended to the settings page).
+let settingsStyle = 'modal';
 
 export function setPluginSettingsStyle(style: string): void {
   settingsStyle = style;
+}
+
+// Per-plugin "any setting changed" callbacks (api.onSettingChange).
+const settingChangeCallbacks = new Map<string, ((key: string, value: any) => void)[]>();
+
+export function registerSettingChange(pluginId: string, cb: (key: string, value: any) => void): void {
+  const list = settingChangeCallbacks.get(pluginId) || [];
+  list.push(cb);
+  settingChangeCallbacks.set(pluginId, list);
+}
+
+function fireSettingChange(pluginId: string, key: string, value: any): void {
+  const list = settingChangeCallbacks.get(pluginId);
+  if (!list) return;
+  for (const cb of list) {
+    try { cb(key, value); } catch (e) { console.error('[plugin onSettingChange]', e); }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +88,7 @@ export function updateSettingsInfo(fieldId: string, text: string): void {
 /** Drop a plugin's registered config (used by the loader on unload). */
 export function dropPluginSettings(pluginId: string): void {
   pluginSettingsConfigs.delete(pluginId);
+  settingChangeCallbacks.delete(pluginId);
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +228,7 @@ function attachSettingsFieldListeners(pluginId: string, fields: PluginField[], b
         input.addEventListener('change', () => {
           setLocalSetting(pluginId, field.key || '', input.value);
           if (field.onChange) field.onChange(input.value);
+          fireSettingChange(pluginId, field.key || '', input.value);
         });
       }
     }
@@ -218,6 +238,7 @@ function attachSettingsFieldListeners(pluginId: string, fields: PluginField[], b
         checkbox.addEventListener('change', () => {
           setLocalSetting(pluginId, field.key || '', checkbox.checked);
           if (field.onChange) field.onChange(checkbox.checked);
+          fireSettingChange(pluginId, field.key || '', checkbox.checked);
         });
       }
     }
@@ -227,6 +248,7 @@ function attachSettingsFieldListeners(pluginId: string, fields: PluginField[], b
         select.addEventListener('change', () => {
           setLocalSetting(pluginId, field.key || '', select.value);
           if (field.onChange) field.onChange(select.value);
+          fireSettingChange(pluginId, field.key || '', select.value);
         });
       }
     }

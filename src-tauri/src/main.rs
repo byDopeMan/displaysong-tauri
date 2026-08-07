@@ -145,6 +145,8 @@ fn main() {
             commands::install_plugin_from_zip,
             commands::uninstall_plugin,
             commands::emit_test_event,
+            commands::plugin_log,
+            commands::get_free_port,
             // Plugin API
             commands::plugin_store_data,
             commands::plugin_get_data,

@@ -60,13 +60,14 @@ Trag also genau das ein, was dein Plugin nutzt. Mapping Permission → freigesch
 | `storage` | `storeData`, `getData`, `deleteData`, `getLocalSetting`, `setLocalSetting` |
 | `secrets` | `storeSecret`, `getSecret`, `deleteSecret` |
 | `http`    | `httpRequest` |
-| `twitch`  | `getTwitchConnection`, `sendTwitchChat`, `onTwitchRedemption`, `onTwitchFollow`, `onTwitchSubscribe`, `onTwitchRaid`, `onTwitchCheer` |
-| `window`  | `createWindow` |
+| `twitch`  | `getTwitchConnection`, `sendTwitchChat`, `onTwitchRedemption`, `onTwitchFollow`, `onTwitchSubscribe`, `onTwitchRaid`, `onTwitchCheer`, `onChatMessage` |
+| `window`  | `createWindow`, `openModal` |
 | `python`  | `pythonAvailable`, `pythonVersion`, `pythonRun`, `pythonRunScript`, `pythonSpawn`, `pythonKill`, `pythonInstall`, `pythonPackageInstalled` |
 
 **Immer verfügbar** (ohne Permission): `registerSettings`, `updateSettingsInfo`,
-`unregisterSettings`, `showNotification`, `on`, `emit`, `getPluginId`,
-`getAppVersion`, `createElement`, `getPluginPath`, `getDataPath`.
+`unregisterSettings`, `onSettingChange`, `showNotification`, `on`, `emit`,
+`getPluginId`, `getAppVersion`, `apiVersion`, `has`, `createElement`,
+`getPluginPath`, `getDataPath`, `log`, `getFreePort`, `_devEmitTestEvent`.
 
 > Das Enforcement lässt sich global über `ENFORCE_PERMISSIONS` in
 > `src/features/plugins/api.ts` abschalten (Default: an). Nur für Entwicklung.
@@ -438,15 +439,17 @@ api.onTwitchCheer((e) => console.log(e.user_name, 'cheer', e.bits, 'Bits'));
 
 #### Testen ohne echte Events
 
-Zum Entwickeln kannst du Fake-Events durch denselben Event-Kanal schicken:
+Zum Entwickeln kannst du Fake-Events durch denselben Event-Kanal schicken — über
+eine **api-Methode** (nicht über `window.__TAURI__`, siehe Sicherheitsnotiz):
 
 ```javascript
-// irgendwo im Dev-Code (nicht im Plugin nötig):
-await window.__TAURI__.tauri.invoke('emit_test_event', {
-  event: 'twitch-follow',
-  payload: { user_id: '1', user_name: 'TestFollower' },
-});
+await api._devEmitTestEvent('twitch-follow', { user_id: '1', user_name: 'TestFollower' });
+await api._devEmitTestEvent('twitch-subscribe', { user_name: 'A', tier: '1000', is_gift: false, cumulative_months: 3, message: 'gg' });
 ```
+
+> **Sicherheitsnotiz:** Greife in Plugins **nicht** direkt auf `window.__TAURI__`
+> zu. Nutze ausschließlich `api.*` — nur darüber greift das Permission-Enforcement.
+> (Eine vollständige Sandbox-Isolierung des Plugin-Scopes ist geplant.)
 
 ---
 
@@ -661,7 +664,81 @@ const el = api.createElement('div', {
   className: 'my-class',
   onClick: () => console.log('clicked')
 }, ['Text', api.createElement('span', {}, ['Nested'])]);
+
+// API-Version + Capability-Check (sauber degradieren statt crashen)
+api.apiVersion;            // z.B. "1.1.0"
+if (api.has('onChatMessage')) { /* verfügbar */ }
+
+// In die App-Logs schreiben (auch im Release sichtbar; console.log ist es nicht)
+await api.log('info', 'Plugin gestartet');
+
+// Freien lokalen Port holen (für eigenen Server/Daemon)
+const port = await api.getFreePort();   // z.B. 51763
 ```
+
+---
+
+## Neu ab v4.2.1
+
+### Plugin-Settings als Modal + `api.openModal`
+
+Der Zahnrad-Klick öffnet die per `registerSettings` registrierten Einstellungen
+jetzt als **zentriertes Modal** (Backdrop, eigener Scroll, ESC/X/Klick-außerhalb) —
+nicht mehr unten an die Settings-Seite angehängt.
+
+Für eigene UIs gibt es `api.openModal` (Permission `window`) — gleiche
+`getContentElement()`-Mechanik wie `createWindow`, nur als Modal:
+
+```javascript
+const m = api.openModal({ title: 'Meine UI', width: 520, height: 640 });
+const root = m.getContentElement();      // hier DOM aufbauen
+root.appendChild(api.createElement('p', {}, ['Hallo']));
+// m.close();  // schließt; ESC / X / Klick außerhalb ebenfalls
+```
+
+### `api.createWindow({ url })` — echtes Fenster
+
+`createWindow` öffnet mit `{ url }` ein **echtes OS-Fenster** (eigener
+Webview-Kontext, per OS-Titelleiste verschieb-/schließbar) statt eines In-App-
+`<div>`. Ideal, wenn dein Plugin eh einen lokalen Server hat:
+
+```javascript
+const w = api.createWindow({ url: 'http://127.0.0.1:8777/settings', width: 520, height: 660, title: '…' });
+w.show();
+// w.close();
+```
+
+Ohne `url` bleibt das alte schwebende In-App-Fenster (mit `getContentElement()`).
+
+### `api.onChatMessage` (Permission `twitch`)
+
+Read-only Chat-Listener — nutzt DisplaySongs bestehende Chat-Verbindung, du
+brauchst **keine** zweite IRC-Session. Chat muss verbunden sein (Request-Modus
+„Commands"):
+
+```javascript
+const off = api.onChatMessage((m) => {
+  // { user_id, user, message, badges, is_mod, is_sub, is_vip, is_broadcaster }
+  console.log(m.user + ': ' + m.message);
+});
+```
+
+### `api.onSettingChange`
+
+Reagiert auf jede Änderung an den registrierten Settings dieses Plugins (statt
+`getLocalSetting` zu pollen). Alternativ hat jedes `registerSettings`-Feld weiter
+seinen eigenen `onChange(value)`.
+
+```javascript
+api.onSettingChange((key, value) => console.log('geändert:', key, value));
+```
+
+### Kein Konsolenfenster + Consent-Dialog
+
+- Python-Aufrufe (`pythonSpawn`/`pythonRunScript`/…) öffnen unter Windows **kein**
+  sichtbares Konsolenfenster mehr (`CREATE_NO_WINDOW`).
+- Beim **Aktivieren** eines Plugins fragt ein Dialog die sensiblen Permissions
+  (`python`, `http`, `secrets`, `twitch`, `window`) einmal ab.
 
 ---
 

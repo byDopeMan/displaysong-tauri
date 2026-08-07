@@ -1,6 +1,6 @@
 {
   "name": "displaysong",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "scripts": {
     "dev": "tauri dev",
     "dev:vite": "vite",

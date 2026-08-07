@@ -248,11 +248,22 @@ pub async fn twitch_connect_eventsub(
 
 
                     if let Some(chat_msg) = parse_chat_message_event(&text) {
-                        // Always emit raw chat message for permit system
+                        // Always emit the raw chat message. Rich shape for the
+                        // plugin api.onChatMessage listener; the old userId/
+                        // userName/message keys stay for the permit system.
+                        let is_broadcaster = chat_msg.badges.iter().any(|b| b == "broadcaster");
                         let _ = app.emit_all("twitch-chat-message", serde_json::json!({
+                            "user_id": chat_msg.user_id,
+                            "user": chat_msg.user_name,
+                            "message": chat_msg.message,
+                            "badges": chat_msg.badges,
+                            "is_mod": chat_msg.is_moderator,
+                            "is_sub": chat_msg.is_subscriber,
+                            "is_vip": chat_msg.is_vip,
+                            "is_broadcaster": is_broadcaster,
+                            // Back-compat keys (permit system):
                             "userId": chat_msg.user_id,
-                            "userName": chat_msg.user_name,
-                            "message": chat_msg.message
+                            "userName": chat_msg.user_name
                         }));
                         
                         if chat_msg.message.to_lowercase().starts_with(&command.to_lowercase()) {

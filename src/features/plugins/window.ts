@@ -10,6 +10,9 @@ export interface PluginWindowOptions {
   width?: number;
   height?: number;
   html?: string;
+  /** When set, open a REAL OS window (Tauri WebviewWindow) loading this URL
+   *  instead of an in-app <div> overlay. getContentElement() is null then. */
+  url?: string;
   resizable?: boolean;
   alwaysOnTop?: boolean;
   transparent?: boolean;
@@ -24,6 +27,7 @@ interface ResolvedOptions {
   width: number;
   height: number;
   html: string;
+  url: string | null;
   resizable: boolean;
   alwaysOnTop: boolean;
   transparent: boolean;
@@ -43,6 +47,8 @@ export class PluginWindow {
   options: ResolvedOptions;
   element: HTMLDivElement | null = null;
   contentElement: HTMLElement | null = null;
+  /** Real OS window handle when opened with { url } (Tauri WebviewWindow). */
+  nativeWindow: any = null;
   isVisible = false;
   isDragging = false;
   isResizing = false;
@@ -55,6 +61,7 @@ export class PluginWindow {
       width: options.width || 400,
       height: options.height || 300,
       html: options.html || '',
+      url: options.url || null,
       resizable: options.resizable !== false,
       alwaysOnTop: options.alwaysOnTop || false,
       transparent: options.transparent || false,
@@ -69,6 +76,12 @@ export class PluginWindow {
 
   /** Show the window */
   show(): void {
+    // { url } → real OS window (own webview context, no getContentElement).
+    if (this.options.url) {
+      this._createNative();
+      this.isVisible = true;
+      return;
+    }
     if (this.element) {
       this.element.style.display = 'flex';
       this.isVisible = true;
@@ -77,6 +90,25 @@ export class PluginWindow {
 
     this._create();
     this.isVisible = true;
+  }
+
+  /** Internal: open a real Tauri WebviewWindow loading options.url. */
+  _createNative(): void {
+    if (this.nativeWindow) return;
+    const WV = (window as any).__TAURI__?.window?.WebviewWindow;
+    if (!WV || !this.options.url) {
+      console.error('[PluginWindow] WebviewWindow API not available');
+      return;
+    }
+    const label = this.windowId.replace(/[^a-zA-Z0-9\-_/]/g, '-');
+    this.nativeWindow = new WV(label, {
+      url: this.options.url,
+      title: this.options.title,
+      width: this.options.width,
+      height: this.options.height,
+      resizable: this.options.resizable,
+      alwaysOnTop: this.options.alwaysOnTop,
+    });
   }
 
   /** Hide the window */
@@ -89,12 +121,16 @@ export class PluginWindow {
 
   /** Close and destroy the window */
   close(): void {
+    if (this.nativeWindow) {
+      try { this.nativeWindow.close(); } catch {}
+      this.nativeWindow = null;
+    }
     if (this.element) {
       this.element.remove();
       this.element = null;
       this.contentElement = null;
-      this.isVisible = false;
     }
+    this.isVisible = false;
     pluginWindows.delete(this.windowId);
   }
 
@@ -262,5 +298,104 @@ export class PluginWindow {
 export function closePluginWindows(pluginId: string): void {
   for (const win of [...pluginWindows.values()]) {
     if (win.pluginId === pluginId) win.close();
+  }
+}
+
+// ===========================================================================
+// PLUGIN MODAL — a centered overlay dialog (backdrop, internal scroll,
+// ESC / X / click-outside to close). This is the recommended surface for a
+// plugin's own UI (e.g. its settings), instead of the floating <div> window.
+// ===========================================================================
+
+export interface PluginModalOptions {
+  title?: string;
+  html?: string;
+  width?: number;
+  height?: number;
+}
+
+const pluginModals = new Set<PluginModal>();
+
+export class PluginModal {
+  pluginId: string;
+  element: HTMLDivElement | null = null;
+  contentElement: HTMLElement | null = null;
+  private onKey: ((e: KeyboardEvent) => void) | null = null;
+
+  constructor(pluginId: string, options: PluginModalOptions = {}) {
+    this.pluginId = pluginId;
+    const width = options.width || 520;
+    const height = options.height || 0; // 0 = auto height
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal plugin-api-modal';
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.width = width + 'px';
+    content.style.maxWidth = '92vw';
+    content.style.maxHeight = '85vh';
+    if (height) content.style.height = height + 'px';
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const h3 = document.createElement('h3');
+    h3.textContent = options.title || 'Plugin';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', () => this.close());
+    header.appendChild(h3);
+    header.appendChild(closeBtn);
+
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    body.style.overflow = 'auto';
+    body.style.flex = '1';
+    if (options.html) body.innerHTML = options.html;
+
+    content.appendChild(header);
+    content.appendChild(body);
+    overlay.appendChild(content);
+
+    // Click on the backdrop (not the content) closes.
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) this.close();
+    });
+    // ESC closes.
+    this.onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') this.close(); };
+    document.addEventListener('keydown', this.onKey);
+
+    document.body.appendChild(overlay);
+    this.element = overlay;
+    this.contentElement = body;
+    pluginModals.add(this);
+  }
+
+  /** The scrollable body element for direct DOM manipulation. */
+  getContentElement(): HTMLElement | null { return this.contentElement; }
+
+  setContent(html: string): void {
+    if (this.contentElement) this.contentElement.innerHTML = html;
+  }
+
+  setTitle(title: string): void {
+    const h3 = this.element?.querySelector('.modal-header h3');
+    if (h3) h3.textContent = title;
+  }
+
+  close(): void {
+    if (this.onKey) { document.removeEventListener('keydown', this.onKey); this.onKey = null; }
+    if (this.element) { this.element.remove(); this.element = null; this.contentElement = null; }
+    pluginModals.delete(this);
+  }
+}
+
+/** Close every modal a plugin opened (called on disable/uninstall). */
+export function closePluginModals(pluginId: string): void {
+  for (const m of [...pluginModals]) {
+    if (m.pluginId === pluginId) m.close();
   }
 }

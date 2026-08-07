@@ -9,6 +9,21 @@ use tokio::sync::Mutex;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
+/// Build a Command that never flashes a console window on Windows
+/// (CREATE_NO_WINDOW). Plugins run Python in the background — without this a
+/// visible cmd window pops up on every spawn/run, which is distracting on stream.
+fn base_command<S: AsRef<std::ffi::OsStr>>(program: S) -> Command {
+    #[allow(unused_mut)]
+    let mut cmd = Command::new(program);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd
+}
+
 /// Python process manager
 pub struct PythonRunner {
     python_path: Option<PathBuf>,
@@ -60,7 +75,7 @@ impl PythonRunner {
         // 2. Check system Python
         let candidates = ["python", "python3", "py"];
         for cmd in candidates {
-            if let Ok(output) = Command::new(cmd)
+            if let Ok(output) = base_command(cmd)
                 .arg("--version")
                 .output()
             {
@@ -82,7 +97,7 @@ impl PythonRunner {
     pub fn get_version(&self) -> Option<String> {
         let python = self.python_path.as_ref()?;
         
-        let output = Command::new(python)
+        let output = base_command(python)
             .arg("--version")
             .output()
             .ok()?;
@@ -105,7 +120,7 @@ impl PythonRunner {
             },
         };
         
-        let output = Command::new(python)
+        let output = base_command(python)
             .arg(script_path)
             .args(&args)
             .stdout(Stdio::piped())
@@ -140,7 +155,7 @@ impl PythonRunner {
             },
         };
         
-        let output = Command::new(python)
+        let output = base_command(python)
             .arg("-c")
             .arg(code)
             .stdout(Stdio::piped())
@@ -174,7 +189,7 @@ impl PythonRunner {
         let python = self.python_path.as_ref()
             .ok_or("Python not available")?;
 
-        let child = Command::new(python)
+        let child = base_command(python)
             .arg(script_path)
             .args(&args)
             .stdout(Stdio::null())
@@ -227,7 +242,7 @@ impl PythonRunner {
             },
         };
         
-        let output = Command::new(python)
+        let output = base_command(python)
             .args(["-m", "pip", "install", "--quiet", package])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -256,7 +271,7 @@ impl PythonRunner {
             None => return false,
         };
         
-        let output = Command::new(python)
+        let output = base_command(python)
             .args(["-c", &format!("import {}", package.split('[').next().unwrap_or(package))])
             .output();
         

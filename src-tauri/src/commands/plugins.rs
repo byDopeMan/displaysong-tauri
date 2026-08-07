@@ -43,6 +43,29 @@ pub async fn emit_test_event(app: AppHandle, event: String, payload: Value) -> R
     app.emit_all(&event, payload).map_err(|e| e.to_string())
 }
 
+/// Plugin logging: write to the app log with a plugin-id prefix. console.log is
+/// hard to see in release builds (DevTools only in debug), so this lands in
+/// %APPDATA%/com.displaysong.app/logs.
+#[tauri::command]
+pub async fn plugin_log(plugin_id: String, level: String, message: String) -> Result<(), String> {
+    match level.as_str() {
+        "error" => log::error!("[plugin:{}] {}", plugin_id, message),
+        "warn" => log::warn!("[plugin:{}] {}", plugin_id, message),
+        "debug" => log::debug!("[plugin:{}] {}", plugin_id, message),
+        _ => log::info!("[plugin:{}] {}", plugin_id, message),
+    }
+    Ok(())
+}
+
+/// Return a free localhost TCP port, so a plugin that starts its own server/
+/// daemon can avoid hard-coded port clashes.
+#[tauri::command]
+pub async fn get_free_port() -> Result<u16, String> {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0")
+        .map_err(|e| format!("no free port: {}", e))?;
+    listener.local_addr().map(|a| a.port()).map_err(|e| e.to_string())
+}
+
 // ============================================================================
 // PLUGIN MANAGEMENT
 // ============================================================================
