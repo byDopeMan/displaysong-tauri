@@ -9,7 +9,7 @@
   },
   "package": {
     "productName": "DisplaySong",
-    "version": "4.1.0"
+    "version": "4.2.0"
   },
   "tauri": {
     "allowlist": {
@@ -76,7 +76,10 @@
           "installerIcon": "icons/icon.ico",
           "sidebarImage": "installer/sidebar.bmp",
           "installMode": "currentUser",
-          "languages": ["German", "English"],
+          "languages": [
+            "German",
+            "English"
+          ],
           "displayLanguageSelector": true
         }
       }
