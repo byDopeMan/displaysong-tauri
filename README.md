@@ -2,9 +2,23 @@
 
 **Universal Now Playing Widget für OBS** - Eine elegante Desktop-App, die den aktuell spielenden Track als Widget anzeigt. Funktioniert mit **allen Musik-Playern**!
 
-![Version](https://img.shields.io/badge/version-4.1.0-green)
+![Version](https://img.shields.io/badge/version-4.2.0-green)
+![Plugins Edition](https://img.shields.io/badge/plugins%20edition-4.3.0-blueviolet)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Tauri-orange)
+
+---
+
+## 📦 Editionen
+
+DisplaySong gibt es in zwei Varianten:
+
+| Edition | Version | Beschreibung |
+|---------|---------|--------------|
+| **Standard** | 4.2.0 | Die schlanke Haupt-App (diese README) – mit Auto-Update. |
+| **Plugins** | 4.3.0 | Zusätzlich ein Plugin-System: Twitch-Alerts, OBS-Overlays, Python u. v. m. |
+
+Downloads beider Editionen: **[Releases →](https://github.com/byDopeMan/displaysong-tauri/releases)** (Plugins-Builds tragen das Suffix `-plugins`).
 
 ---
 
