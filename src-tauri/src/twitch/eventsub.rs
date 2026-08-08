@@ -1,6 +1,7 @@
 use super::{
     TwitchRedemption, TwitchChatMessage,
     TwitchFollowEvent, TwitchSubscribeEvent, TwitchRaidEvent, TwitchCheerEvent,
+    TwitchCategoryChange,
 };
 
 // ============================================================================
@@ -120,6 +121,17 @@ pub fn parse_raid_event(message: &str) -> Option<TwitchRaidEvent> {
         from_id: event["from_broadcaster_user_id"].as_str().unwrap_or("").to_string(),
         from_name: event["from_broadcaster_user_name"].as_str().unwrap_or("").to_string(),
         viewers: event["viewers"].as_u64().unwrap_or(0) as u32,
+    })
+}
+
+/// Parse a `channel.update` (v2) notification — title / category changed.
+pub fn parse_channel_update(message: &str) -> Option<TwitchCategoryChange> {
+    let json: serde_json::Value = serde_json::from_str(message).ok()?;
+    let event = notification_event(&json, "channel.update")?;
+    Some(TwitchCategoryChange {
+        category_id: event["category_id"].as_str().unwrap_or("").to_string(),
+        category_name: event["category_name"].as_str().unwrap_or("").to_string(),
+        title: event["title"].as_str().unwrap_or("").to_string(),
     })
 }
 

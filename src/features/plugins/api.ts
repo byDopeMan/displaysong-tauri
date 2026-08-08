@@ -22,7 +22,7 @@ import {
 
 /** Plugin API version (semver). Bump when the api surface changes; plugins can
  *  read api.apiVersion and use api.has(name) to degrade gracefully. */
-const PLUGIN_API_VERSION = '1.1.0';
+const PLUGIN_API_VERSION = '1.2.0';
 
 /** Global switch — set to false to hand plugins the full API ungated (dev). */
 const ENFORCE_PERMISSIONS = true;
@@ -36,7 +36,7 @@ const PERMISSION_METHODS: Record<string, string[]> = {
   twitch: [
     'getTwitchConnection', 'sendTwitchChat', 'onTwitchRedemption',
     'onTwitchFollow', 'onTwitchSubscribe', 'onTwitchRaid', 'onTwitchCheer',
-    'onChatMessage',
+    'onChatMessage', 'getStreamInfo', 'onCategoryChange',
   ],
   window: ['createWindow', 'openModal'],
   python: [
@@ -49,7 +49,8 @@ const PERMISSION_METHODS: Record<string, string[]> = {
 const ALWAYS_ALLOWED = new Set([
   'registerSettings', 'updateSettingsInfo', 'unregisterSettings', 'onSettingChange',
   'showNotification', 'on', 'emit', 'getPluginId', 'getAppVersion', 'apiVersion', 'has',
-  'createElement', 'getPluginPath', 'getDataPath', 'log', 'getFreePort', '_devEmitTestEvent',
+  'createElement', 'getPluginPath', 'getDataPath', 'log', 'getFreePort', 'openExternal',
+  '_devEmitTestEvent',
 ]);
 
 /** Reverse map: method name → the permission it requires (built once). */
@@ -194,6 +195,12 @@ export function createPluginAPI(pluginId: string, opts: PluginApiOptions = {}) {
       return await invoke('get_free_port');
     },
 
+    // Open a URL in the user's default browser (http/https only).
+    async openExternal(url: string) {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('plugin_open_external', { url });
+    },
+
     // Called whenever ANY of this plugin's registered settings change.
     onSettingChange(callback: (key: string, value: any) => void) {
       registerSettingChange(pluginId, callback);
@@ -298,6 +305,22 @@ export function createPluginAPI(pluginId: string, opts: PluginApiOptions = {}) {
     async getTwitchConnection() {
       if (!invoke) throw new Error('Backend not available');
       return await invoke('twitch_get_connection');
+    },
+
+    // Current stream category/title + live state:
+    // { category_id, category_name, title, is_live }
+    async getStreamInfo() {
+      if (!invoke) throw new Error('Backend not available');
+      return await invoke('twitch_get_stream_info');
+    },
+
+    // Fires when the stream category/title changes (EventSub channel.update).
+    // Payload: { category_id, category_name, title }.
+    onCategoryChange(callback: (info: any) => void) {
+      if (window.__TAURI__?.event) {
+        return window.__TAURI__.event.listen('twitch-category-change', (e: any) => callback(e.payload));
+      }
+      return () => {};
     },
 
     // ============================================================

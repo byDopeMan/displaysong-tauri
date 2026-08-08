@@ -66,6 +66,16 @@ pub async fn get_free_port() -> Result<u16, String> {
     listener.local_addr().map(|a| a.port()).map_err(|e| e.to_string())
 }
 
+/// Open a URL in the user's default browser (for doc/dashboard links from a
+/// plugin's settings). Restricted to http(s).
+#[tauri::command]
+pub async fn plugin_open_external(url: String) -> Result<(), String> {
+    if !(url.starts_with("http://") || url.starts_with("https://")) {
+        return Err("Nur http(s)-URLs erlaubt".to_string());
+    }
+    open::that(&url).map_err(|e| e.to_string())
+}
+
 // ============================================================================
 // PLUGIN MANAGEMENT
 // ============================================================================

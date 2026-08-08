@@ -375,6 +375,65 @@ impl TwitchClient {
         }).collect())
     }
 
+    /// Current channel category/title (Helix GET /channels) + live state
+    /// (GET /streams). Returns { category_id, category_name, title, is_live }.
+    pub async fn get_stream_info(&self) -> Result<serde_json::Value, String> {
+        let token = self.access_token.as_ref().ok_or("Not authenticated")?;
+        let user = self.user.as_ref().ok_or("User info not available")?;
+
+        #[derive(Deserialize)]
+        struct ChannelsResp { data: Vec<ChannelData> }
+        #[derive(Deserialize)]
+        struct ChannelData {
+            #[serde(default)] game_id: String,
+            #[serde(default)] game_name: String,
+            #[serde(default)] title: String,
+        }
+
+        let response = self.http
+            .get(format!("{}/channels", API_BASE))
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Client-Id", &self.client_id)
+            .query(&[("broadcaster_id", &user.id)])
+            .send()
+            .await
+            .map_err(|e| format!("Channel info request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let error = response.text().await.unwrap_or_default();
+            return Err(format!("Channel info failed: {}", error));
+        }
+
+        let ch: ChannelsResp = response.json().await
+            .map_err(|e| format!("Parse error: {}", e))?;
+        let c = ch.data.into_iter().next().unwrap_or(ChannelData {
+            game_id: String::new(), game_name: String::new(), title: String::new(),
+        });
+
+        // Live state — best-effort; a failure just reports not-live.
+        #[derive(Deserialize)]
+        struct StreamsResp { data: Vec<serde_json::Value> }
+        let is_live = match self.http
+            .get(format!("{}/streams", API_BASE))
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Client-Id", &self.client_id)
+            .query(&[("user_id", &user.id)])
+            .send()
+            .await
+        {
+            Ok(r) if r.status().is_success() => r.json::<StreamsResp>().await
+                .map(|s| !s.data.is_empty()).unwrap_or(false),
+            _ => false,
+        };
+
+        Ok(serde_json::json!({
+            "category_id": c.game_id,
+            "category_name": c.game_name,
+            "title": c.title,
+            "is_live": is_live,
+        }))
+    }
+
     /// Create a channel point reward for song requests
     pub async fn create_song_request_reward(&self, title: &str, cost: u32) -> Result<TwitchReward, String> {
         let token = self.access_token.as_ref()

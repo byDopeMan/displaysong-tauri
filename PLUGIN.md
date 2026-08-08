@@ -60,14 +60,15 @@ Trag also genau das ein, was dein Plugin nutzt. Mapping Permission → freigesch
 | `storage` | `storeData`, `getData`, `deleteData`, `getLocalSetting`, `setLocalSetting` |
 | `secrets` | `storeSecret`, `getSecret`, `deleteSecret` |
 | `http`    | `httpRequest` |
-| `twitch`  | `getTwitchConnection`, `sendTwitchChat`, `onTwitchRedemption`, `onTwitchFollow`, `onTwitchSubscribe`, `onTwitchRaid`, `onTwitchCheer`, `onChatMessage` |
+| `twitch`  | `getTwitchConnection`, `sendTwitchChat`, `onTwitchRedemption`, `onTwitchFollow`, `onTwitchSubscribe`, `onTwitchRaid`, `onTwitchCheer`, `onChatMessage`, `getStreamInfo`, `onCategoryChange` |
 | `window`  | `createWindow`, `openModal` |
 | `python`  | `pythonAvailable`, `pythonVersion`, `pythonRun`, `pythonRunScript`, `pythonSpawn`, `pythonKill`, `pythonInstall`, `pythonPackageInstalled` |
 
 **Immer verfügbar** (ohne Permission): `registerSettings`, `updateSettingsInfo`,
 `unregisterSettings`, `onSettingChange`, `showNotification`, `on`, `emit`,
 `getPluginId`, `getAppVersion`, `apiVersion`, `has`, `createElement`,
-`getPluginPath`, `getDataPath`, `log`, `getFreePort`, `_devEmitTestEvent`.
+`getPluginPath`, `getDataPath`, `log`, `getFreePort`, `openExternal`,
+`_devEmitTestEvent`.
 
 > Das Enforcement lässt sich global über `ENFORCE_PERMISSIONS` in
 > `src/features/plugins/api.ts` abschalten (Default: an). Nur für Entwicklung.
@@ -741,6 +742,67 @@ api.onSettingChange((key, value) => console.log('geändert:', key, value));
   sichtbares Konsolenfenster mehr (`CREATE_NO_WINDOW`).
 - Beim **Aktivieren** eines Plugins fragt ein Dialog die sensiblen Permissions
   (`python`, `http`, `secrets`, `twitch`, `window`) einmal ab.
+
+---
+
+## Neu ab v4.3.0
+
+### `createWindow({ url })`: kein Flash + Öffnen/Schließen-Hooks
+
+Ein echtes OS-Fenster (`{ url }`) wird jetzt **unsichtbar erstellt** und erst
+sichtbar, wenn der Inhalt bereit ist — kein weißer Flash mehr. Standard:
+`animated: true`.
+
+```javascript
+const w = api.createWindow({ url: 'http://127.0.0.1:8777/overlay', width: 520, height: 660, animated: true });
+w.show();
+```
+
+- **Früher einblenden:** Die geladene Seite kann selbst signalisieren, dass sie
+  bereit ist — dann erscheint das Fenster sofort statt nach dem ~200 ms-Fallback:
+  ```javascript
+  // in der geladenen Seite:
+  window.__TAURI__.event.emit('plugin:ready');
+  ```
+- **Animiertes Schließen:** Sowohl das X als auch `w.close()` schicken der Seite
+  zuerst ein `plugin:before-close`-Event und schließen erst ~220 ms später — Zeit
+  für eine Exit-Animation:
+  ```javascript
+  // in der geladenen Seite:
+  window.__TAURI__.event.listen('plugin:before-close', () => {
+    document.body.classList.add('closing'); // deine CSS-Ausblend-Animation
+  });
+  ```
+
+> Ein echtes OS-Fenster-**Frame** lässt sich auf Windows nicht per CSS
+> animieren; `background_color` gibt es in der aktuellen Tauri-Version noch nicht.
+> Für volle CSS-Animation nimm **`openModal`** (In-App, mit Enter/Leave-Transition).
+> `openModal` blendet Backdrop + Inhalt beim Öffnen/Schließen automatisch ein/aus.
+
+### `api.getStreamInfo()` + `api.onCategoryChange()` (Permission `twitch`)
+
+Aktuelle Kategorie/Titel des Streams — z.B. um ein Overlay je nach Spiel
+umzuschalten. `onCategoryChange` feuert bei Wechsel (EventSub `channel.update`).
+
+```javascript
+const info = await api.getStreamInfo();
+// { category_id: "...", category_name: "Dead by Daylight", title: "...", is_live: true }
+
+const off = api.onCategoryChange((info) => {
+  // { category_id, category_name, title }
+  if (info.category_name === 'Dead by Daylight') switchToDbdOverlay();
+  else switchToVarietyOverlay();
+});
+```
+
+### `api.openExternal(url)`
+
+Öffnet eine http(s)-URL im **Standardbrowser** (für Doku-/Dashboard-Links aus
+den Plugin-Settings), statt sie im Plugin-Fenster zu laden.
+
+```javascript
+await api.openExternal('https://dashboard.example.com');
+```
 
 ---
 

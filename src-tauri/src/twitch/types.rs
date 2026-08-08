@@ -81,3 +81,11 @@ pub struct TwitchCheerEvent {
     pub bits: u32,
     pub message: String,
 }
+
+/// channel.update — stream title / category changed.
+#[derive(Debug, Clone, Serialize)]
+pub struct TwitchCategoryChange {
+    pub category_id: String,
+    pub category_name: String,
+    pub title: String,
+}

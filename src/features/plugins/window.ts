@@ -13,6 +13,10 @@ export interface PluginWindowOptions {
   /** When set, open a REAL OS window (Tauri WebviewWindow) loading this URL
    *  instead of an in-app <div> overlay. getContentElement() is null then. */
   url?: string;
+  /** Real-window ({url}) only: create hidden and reveal once the page is ready
+   *  (no white flash), and run a short close delay so the page can animate out.
+   *  Default true. */
+  animated?: boolean;
   resizable?: boolean;
   alwaysOnTop?: boolean;
   transparent?: boolean;
@@ -28,6 +32,7 @@ interface ResolvedOptions {
   height: number;
   html: string;
   url: string | null;
+  animated: boolean;
   resizable: boolean;
   alwaysOnTop: boolean;
   transparent: boolean;
@@ -49,6 +54,8 @@ export class PluginWindow {
   contentElement: HTMLElement | null = null;
   /** Real OS window handle when opened with { url } (Tauri WebviewWindow). */
   nativeWindow: any = null;
+  /** Guards the animated-close path so our own .close() isn't re-intercepted. */
+  private _closing = false;
   isVisible = false;
   isDragging = false;
   isResizing = false;
@@ -62,6 +69,7 @@ export class PluginWindow {
       height: options.height || 300,
       html: options.html || '',
       url: options.url || null,
+      animated: options.animated !== false,
       resizable: options.resizable !== false,
       alwaysOnTop: options.alwaysOnTop || false,
       transparent: options.transparent || false,
@@ -101,6 +109,7 @@ export class PluginWindow {
       return;
     }
     const label = this.windowId.replace(/[^a-zA-Z0-9\-_/]/g, '-');
+    const animated = this.options.animated;
     this.nativeWindow = new WV(label, {
       url: this.options.url,
       title: this.options.title,
@@ -108,7 +117,50 @@ export class PluginWindow {
       height: this.options.height,
       resizable: this.options.resizable,
       alwaysOnTop: this.options.alwaysOnTop,
+      // (a) No flash: create hidden and reveal only once the content is ready.
+      visible: !animated,
+      focus: true,
     });
+
+    if (animated) {
+      // Reveal on an explicit ready signal from the page (window.__TAURI__.event
+      // .emit('plugin:ready')), else a short fallback so it can't stay hidden.
+      let revealed = false;
+      const reveal = () => {
+        if (revealed) return;
+        revealed = true;
+        try { this.nativeWindow?.show(); this.nativeWindow?.setFocus?.(); } catch {}
+      };
+      try { this.nativeWindow.once('plugin:ready', reveal); } catch {}
+      setTimeout(reveal, 200);
+    }
+
+    // (c) Animated close: intercept the OS close (X) so the page can play an
+    // exit animation before the window actually goes away.
+    try {
+      this.nativeWindow.onCloseRequested((event: any) => {
+        if (this._closing) return;      // our own close() — let it through
+        event.preventDefault();
+        this._animateCloseThenDestroy();
+      });
+    } catch {}
+  }
+
+  /** Emit `plugin:before-close` so the loaded page can fade out, then actually
+   *  close after a short delay. Used by both the X button and win.close(). */
+  _animateCloseThenDestroy(): void {
+    if (this._closing) return;
+    this._closing = true;
+    const w = this.nativeWindow;
+    try { w?.emit('plugin:before-close'); } catch {}
+    const finish = () => {
+      try { w?.close(); } catch {}
+      this.nativeWindow = null;
+      this.isVisible = false;
+      pluginWindows.delete(this.windowId);
+    };
+    if (this.options.animated) setTimeout(finish, 220);
+    else finish();
   }
 
   /** Hide the window */
@@ -121,9 +173,10 @@ export class PluginWindow {
 
   /** Close and destroy the window */
   close(): void {
+    // Real OS window → take the animated close path (X and win.close() match).
     if (this.nativeWindow) {
-      try { this.nativeWindow.close(); } catch {}
-      this.nativeWindow = null;
+      this._animateCloseThenDestroy();
+      return;
     }
     if (this.element) {
       this.element.remove();
@@ -329,6 +382,9 @@ export class PluginModal {
 
     const overlay = document.createElement('div');
     overlay.className = 'modal plugin-api-modal';
+    // (d) Enter transition — backdrop fade + slight scale/slide of the content.
+    overlay.style.transition = 'opacity 180ms ease';
+    overlay.style.opacity = '0';
 
     const content = document.createElement('div');
     content.className = 'modal-content';
@@ -338,6 +394,9 @@ export class PluginModal {
     if (height) content.style.height = height + 'px';
     content.style.display = 'flex';
     content.style.flexDirection = 'column';
+    content.style.transition = 'opacity 180ms ease, transform 180ms ease';
+    content.style.opacity = '0';
+    content.style.transform = 'scale(0.96) translateY(8px)';
 
     const header = document.createElement('div');
     header.className = 'modal-header';
@@ -372,6 +431,13 @@ export class PluginModal {
     this.element = overlay;
     this.contentElement = body;
     pluginModals.add(this);
+
+    // Animate in on the next frame (after the initial styles are applied).
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      content.style.opacity = '1';
+      content.style.transform = 'none';
+    });
   }
 
   /** The scrollable body element for direct DOM manipulation. */
@@ -388,7 +454,16 @@ export class PluginModal {
 
   close(): void {
     if (this.onKey) { document.removeEventListener('keydown', this.onKey); this.onKey = null; }
-    if (this.element) { this.element.remove(); this.element = null; this.contentElement = null; }
+    const el = this.element;
+    if (el) {
+      // (d) Leave transition, then remove.
+      const content = el.querySelector('.modal-content') as HTMLElement | null;
+      el.style.opacity = '0';
+      if (content) { content.style.opacity = '0'; content.style.transform = 'scale(0.96) translateY(8px)'; }
+      setTimeout(() => el.remove(), 180);
+    }
+    this.element = null;
+    this.contentElement = null;
     pluginModals.delete(this);
   }
 }

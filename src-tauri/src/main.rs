@@ -147,6 +147,7 @@ fn main() {
             commands::emit_test_event,
             commands::plugin_log,
             commands::get_free_port,
+            commands::plugin_open_external,
             // Plugin API
             commands::plugin_store_data,
             commands::plugin_get_data,
@@ -164,6 +165,7 @@ fn main() {
             commands::twitch_get_auth_url,
             commands::twitch_start_auth,
             commands::twitch_get_connection,
+            commands::twitch_get_stream_info,
             commands::twitch_disconnect,
             commands::twitch_set_mode,
             commands::twitch_set_sub_only,

@@ -204,6 +204,17 @@ pub async fn twitch_get_connection(
     }
 }
 
+/// Current stream category/title + live state (for plugins that switch overlays
+/// by game). Pairs with the `twitch-category-change` event (channel.update).
+#[tauri::command]
+pub async fn twitch_get_stream_info(
+    twitch: State<'_, TwitchState>,
+) -> Result<serde_json::Value, String> {
+    let client = twitch.client.read().await;
+    let c = client.as_ref().ok_or("Nicht verbunden")?;
+    c.get_stream_info().await
+}
+
 #[tauri::command]
 pub async fn twitch_disconnect(
     twitch: State<'_, TwitchState>,

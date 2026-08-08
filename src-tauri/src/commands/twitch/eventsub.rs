@@ -3,7 +3,7 @@ use log::{info, error, warn};
 use crate::twitch::{
     parse_eventsub_welcome, parse_redemption_event, parse_chat_message_event,
     parse_follow_event, parse_subscribe_event, parse_raid_event, parse_cheer_event,
-    parse_message_id, is_keepalive, parse_reconnect_url, API_BASE,
+    parse_channel_update, parse_message_id, is_keepalive, parse_reconnect_url, API_BASE,
 };
 use super::TwitchState;
 
@@ -155,6 +155,7 @@ pub async fn twitch_connect_eventsub(
             ("channel.subscription.gift", "1", serde_json::json!({ "broadcaster_user_id": user_id })),
             ("channel.raid", "1", serde_json::json!({ "to_broadcaster_user_id": user_id })),
             ("channel.cheer", "1", serde_json::json!({ "broadcaster_user_id": user_id })),
+            ("channel.update", "2", serde_json::json!({ "broadcaster_user_id": user_id })),
         ];
         for (sub_type, version, condition) in alert_subs {
             let body = serde_json::json!({
@@ -244,6 +245,9 @@ pub async fn twitch_connect_eventsub(
                     }
                     if let Some(cheer) = parse_cheer_event(&text) {
                         let _ = app.emit_all("twitch-cheer", &cheer);
+                    }
+                    if let Some(update) = parse_channel_update(&text) {
+                        let _ = app.emit_all("twitch-category-change", &update);
                     }
 
 
