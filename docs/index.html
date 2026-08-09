@@ -1,162 +1,1140 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DisplaySong by byDopeMan – Universal Now Playing Widget für OBS</title>
-  <meta name="description" content="DisplaySong von byDopeMan: Universal Now Playing Widget für OBS. Zeigt den aktuell spielenden Track als elegantes Widget an – funktioniert mit Spotify, YouTube, VLC und allen Musik-Playern." />
-  <meta name="google-site-verification" content="ziONzzSPZX5U-8ZD34mKFtU-XYVaH4KNcqij2yZwXZs" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DisplaySong by byDopeMan – Universal Now Playing Widget für OBS</title>
+<meta name="description" content="DisplaySong von byDopeMan: Universal Now Playing Widget für OBS. Zeigt den aktuell spielenden Track als elegantes Widget an – funktioniert mit Spotify, YouTube, VLC und allen Musik-Playern." />
+<meta name="google-site-verification" content="ziONzzSPZX5U-8ZD34mKFtU-XYVaH4KNcqij2yZwXZs" />
+<style>
+:root{
+  --bg:#0a0a0a; --surface:#141414; --surface-hover:#1a1a1a; --border:#2a2a2a;
+  --text:#ffffff; --text-dim:#888888;
+  --accent:#1db954; --accent-rgb:29,185,84; --accent-hover:#1ed760;
+  --twitch:#9146ff; --danger:#e74c3c;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);
+  position:relative;
+}
+/* ---- Liquid Metal background: soft colored blobs merged via an SVG "goo"
+   filter (blur + contrast) so they visually FUSE like mercury/metal droplets
+   instead of showing as separate circles — no conic-gradient, no spinner look. ---- */
+#liquidBg{ position:fixed; inset:0; z-index:-1; overflow:hidden; background:#0a0a0c; }
+/* One soft gradient layer, gently flowing via background-position only — no
+   contrast()/blur() combined with animation this time (that caused the
+   flicker). Calm, smooth, continuously blended color. */
+#liquidBg .flow{
+  position:absolute; inset:-15%;
+  background-image:
+    radial-gradient(circle at 20% 25%, rgba(140,145,150,.24), transparent 48%),
+    radial-gradient(circle at 80% 20%, rgba(29,185,84,.20), transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(90,95,100,.22), transparent 50%),
+    radial-gradient(circle at 25% 80%, rgba(145,70,255,.16), transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(50,50,54,.35), transparent 55%);
+  background-repeat:no-repeat;
+  background-size:150% 150%;
+  filter:blur(75px) saturate(.9);
+  animation:liquidFlow 46s ease-in-out infinite alternate;
+}
+#liquidBg .sheen{
+  position:absolute; inset:-30%; mix-blend-mode:overlay; opacity:.35;
+  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.2) 48%, rgba(255,255,255,.32) 50%, rgba(255,255,255,.2) 52%, transparent 70%);
+  background-size:300% 300%;
+  animation:sheenMove 22s ease-in-out infinite;
+}
+#liquidBg .grain{ position:absolute; inset:0; background-image:repeating-linear-gradient(115deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 5px); mix-blend-mode:overlay; opacity:.35; }
+@keyframes liquidFlow{
+  0%{ background-position:20% 25%, 80% 15%, 70% 80%, 20% 85%, 50% 50%; }
+  50%{ background-position:40% 55%, 60% 40%, 55% 55%, 40% 55%, 55% 45%; }
+  100%{ background-position:65% 20%, 25% 70%, 85% 30%, 65% 20%, 40% 65%; }
+}
+@keyframes sheenMove{ 0%{background-position:0% 0%;} 50%{background-position:100% 100%;} 100%{background-position:0% 0%;} }
+@media (prefers-reduced-motion: reduce){ #liquidBg .flow, #liquidBg .sheen{animation:none;} }
+@media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+.wrap{max-width:900px; margin:0 auto; padding:0 24px;}
+a{color:inherit;}
 
-  <!-- Open Graph / Social Preview -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="DisplaySong by byDopeMan" />
-  <meta property="og:description" content="Universal Now Playing Widget für OBS. Zeigt den aktuell spielenden Track als Widget an – funktioniert mit allen Musik-Playern." />
-  <meta property="og:url" content="https://bydopeman.github.io/displaysong-tauri/" />
+/* scroll reveal */
+.reveal{opacity:0; transform:translateY(28px); transition:opacity .7s ease, transform .7s ease;}
+.reveal.in{opacity:1; transform:translateY(0);}
 
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="DisplaySong by byDopeMan" />
-  <meta name="twitter:description" content="Universal Now Playing Widget für OBS. Erkennt Musik von Spotify, YouTube, VLC & mehr." />
+/* nav */
+nav.top{position:sticky; top:0; z-index:50; backdrop-filter:blur(14px); background:rgba(10,10,10,0.75); border-bottom:1px solid var(--border);}
+nav.top .wrap{display:flex; justify-content:space-between; align-items:center; padding:16px 24px;}
+nav.top .brand{font-weight:700; font-size:15px; display:flex; align-items:center; gap:8px;}
+nav.top .brand span.dot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.6s infinite;}
+nav.top a.gh{color:var(--text-dim); text-decoration:none; font-size:13.5px; border:1px solid var(--border); padding:7px 14px; border-radius:8px;}
+nav.top a.gh:hover{border-color:var(--text-dim); color:var(--text);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
 
-  <style>
-    :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --accent: #1db954;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    .wrap {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 64px 24px 80px;
-    }
-    .badge {
-      display: inline-block;
-      font-size: 13px;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      padding: 4px 10px;
-      border-radius: 999px;
-      margin-bottom: 20px;
-    }
-    h1 {
-      font-size: 40px;
-      margin: 0 0 8px;
-      letter-spacing: -0.5px;
-    }
-    .subtitle {
-      color: var(--muted);
-      font-size: 18px;
-      margin: 0 0 32px;
-    }
-    .cta {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 48px;
-    }
-    .btn {
-      display: inline-block;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 15px;
-      border: 1px solid var(--border);
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: #0d1117;
-      border-color: var(--accent);
-    }
-    .btn-secondary {
-      color: var(--text);
-      background: var(--card);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 48px;
-    }
-    .feature {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .feature h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-    }
-    .feature p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    footer {
-      border-top: 1px solid var(--border);
-      padding-top: 24px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-    code {
-      background: var(--card);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 13px;
-      border: 1px solid var(--border);
-    }
-  </style>
+/* hero */
+header.hero{padding:80px 0 40px; text-align:center;}
+header.hero h1{font-size:clamp(34px,6vw,58px); font-weight:700; letter-spacing:-1.4px; line-height:1.04; margin:0 0 18px;}
+header.hero h1 span{color:var(--accent);}
+header.hero p{color:var(--text-dim); font-size:17px; max-width:520px; margin:0 auto 30px; line-height:1.6;}
+.cta{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;}
+.btn{padding:13px 24px; border-radius:9px; font-weight:600; font-size:14.5px; text-decoration:none; display:inline-block; border:none; cursor:pointer;}
+.btn-primary{background:var(--accent); color:#06110a;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:var(--surface); color:var(--text); border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--surface-hover);}
+.btn-plugin{background:transparent; color:#bf94ff; border:1px solid rgba(145,70,255,0.4);}
+.btn-plugin:hover{background:rgba(145,70,255,0.12); border-color:#9146ff;}
+
+section{padding:70px 0;}
+.section-head{text-align:center; margin-bottom:36px;}
+.eyebrow{font-size:11.5px; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent); font-weight:700; margin:0 0 10px;}
+.section-head h2{font-size:clamp(26px,4vw,38px); font-weight:700; letter-spacing:-0.8px; margin:0 0 12px;}
+.section-head p{color:var(--text-dim); font-size:15.5px; max-width:520px; margin:0 auto; line-height:1.6;}
+
+/* ============ APP CHROME (functional tabs) ============ */
+.app-frame{border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 40px 80px -30px rgba(0,0,0,0.7); background:var(--bg);}
+.titlebar{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--surface);}
+.titlebar .title{font-size:13px; color:var(--text-dim); font-weight:600;}
+.tb-controls{display:flex; gap:8px;}
+.tb-btn{width:28px; height:28px; border:none; background:var(--surface-hover); color:var(--text-dim); border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:center;}
+.tb-btn.tb-close:hover, .tb-btn.tb-close{transition:background .15s, color .15s;}
+.tabbar{display:flex; gap:2px; padding:6px 12px; background:var(--surface); border-bottom:1px solid var(--border);}
+.tabbtn{padding:7px 12px; font-size:12px; color:var(--text-dim); border-radius:6px; background:none; border:none; cursor:pointer; font-family:inherit;}
+.tabbtn:hover{color:var(--text);}
+.tabbtn.active{color:var(--accent); background:rgba(var(--accent-rgb),0.1);}
+.tabpanel{display:none; padding:24px 22px 40px;}
+.tabpanel.active{display:block;}
+
+/* player tab — matches views.css .player-container / .cover-image / .status-badge / .track-title etc. exactly */
+.player-mock{display:flex; flex-direction:column; align-items:center; text-align:center; padding:10px 0;}
+.player-mock .cover{width:180px; height:180px; border-radius:12px; margin-bottom:20px; background:var(--surface); box-shadow:0 8px 32px rgba(0,0,0,.5); background-size:cover; background-position:center;}
+.status-badge{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(var(--accent-rgb),0.15); border-radius:12px; margin-bottom:12px;}
+.status-dot{width:6px; height:6px; background:var(--accent); border-radius:50%; animation:pulse 2s infinite;}
+.status-text{font-size:11px; font-weight:600; text-transform:uppercase; color:var(--accent); letter-spacing:0.5px;}
+.player-mock .title{font-size:18px; font-weight:600; margin-bottom:4px;}
+.player-mock .artist{font-size:14px; color:var(--text-dim); margin-bottom:20px;}
+.progress-bar-bg{width:280px; max-width:100%; height:4px; background:var(--surface); border-radius:2px; overflow:hidden; margin:0 auto;}
+.progress-bar{height:100%; background:var(--accent); width:38%;}
+.progress-times{display:flex; justify-content:space-between; width:280px; max-width:100%; margin:6px auto 0; font-size:11px; color:var(--text-dim);}
+
+/* history tab — matches views.css .history-header / .history-item exactly, plus index + design toggle */
+.history-header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
+.history-header h2{font-size:16px; margin:0 0 4px; font-weight:600;}
+.history-subtitle{color:var(--text-dim); font-size:12.5px;}
+.history-design-toggle{display:flex; gap:4px; background:var(--surface); padding:4px; border-radius:8px;}
+.design-toggle-btn{background:none; border:none; padding:6px; border-radius:6px; color:var(--text-dim); display:flex;}
+.design-toggle-btn.active{background:var(--accent); color:#fff;}
+.history-list{display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto; scrollbar-width:none; -ms-overflow-style:none;}
+.history-list::-webkit-scrollbar{width:0; height:0; display:none;}
+.history-item{display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--surface); border-radius:10px;}
+.history-index{font-size:12px; color:var(--text-dim); width:18px; text-align:right; flex-shrink:0;}
+.history-cover{width:48px; height:48px; border-radius:6px; flex-shrink:0; background-size:cover; background-position:center; background-color:#333;}
+.history-info{flex:1; min-width:0;}
+.history-title{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.history-artist{font-size:12px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+/* designs tab — matches views.css .design-grid / .design-card exactly, plus Aktive-Widgets section */
+.design-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:16px;}
+@media(max-width:520px){ .design-grid{grid-template-columns:1fr;} }
+.design-card{background:var(--surface); border-radius:12px; padding:16px; text-align:center; transition:transform .25s ease, background .25s ease;}
+.design-card:hover{transform:translateY(-3px); background:var(--surface-hover);}
+.design-preview{height:80px; background:var(--surface-hover); border-radius:8px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+.preview-bar{width:70%; height:30px; background:linear-gradient(90deg,var(--accent),#333); border-radius:6px;}
+.preview-square{width:50px; height:50px; background:var(--accent); border-radius:8px;}
+.preview-custom{font-size:18px; font-weight:bold; color:var(--accent); background:linear-gradient(135deg,var(--surface-hover),var(--border)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:8px;}
+.design-card h3{font-size:14px; margin:0 0 4px;}
+.design-desc{font-size:11px; color:var(--text-dim); margin:0 0 12px;}
+.checkbox-label{display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; color:var(--text-dim); margin-bottom:10px;}
+.checkbox-label input{width:14px; height:14px; accent-color:var(--accent);}
+.btn-show{padding:8px 16px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-size:13px; cursor:pointer; font-family:inherit;}
+.active-widgets{margin-top:24px;}
+.active-widgets h3{font-size:14px; margin-bottom:12px; color:var(--text-dim); font-weight:600;}
+.widget-tag{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:var(--surface); border-radius:6px; font-size:12px; margin:0 6px 6px 0;}
+.close-widget{background:none; border:none; color:var(--text-dim); font-size:14px; line-height:1; cursor:pointer;}
+.btn-show:hover{background:var(--accent-hover);}
+
+/* settings tab — grouped .settings-section blocks like the real Settings.svelte */
+.settings-section{background:var(--surface); border-radius:12px; padding:16px; margin-bottom:16px;}
+.settings-section h3{font-size:14px; margin-bottom:12px; color:var(--text-dim); font-weight:600;}
+.setting-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px;}
+.setting-row:last-child{border-bottom:none;}
+.toggle{position:relative; width:44px; height:24px; border-radius:24px; flex-shrink:0;}
+.toggle.on{background:var(--accent);} .toggle.off{background:var(--surface-hover); border:1px solid var(--border);}
+.toggle::before{content:''; position:absolute; top:3px; width:18px; height:18px; border-radius:50%; background:#fff;}
+.toggle.on::before{left:23px;} .toggle.off::before{left:3px; background:var(--text-dim);}
+.connection-item{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+.connection-item:last-child{margin-bottom:0;}
+
+/* Plugins tab — matches the real app's plugins.css exactly */
+.plugins-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+.plugins-header h2{margin:0; font-size:16px; font-weight:600;}
+.plugins-actions{display:flex; gap:8px;}
+.btn-icon{width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text-dim); font-size:14px;}
+.plugins-intro{color:var(--text-dim); font-size:12.5px; margin-bottom:16px; line-height:1.5;}
+.plugin-card{background:var(--bg); border-radius:12px; padding:14px; border:1px solid var(--border); margin-bottom:10px;}
+.plugin-card.enabled{border-color:var(--accent); background:rgba(var(--accent-rgb),0.03);}
+.plugin-main{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+.plugin-info{display:flex; align-items:center; gap:10px; flex:1; min-width:0;}
+.plugin-name{font-weight:600; font-size:14px;}
+.plugin-version{font-size:10px; color:var(--text-dim); background:var(--surface-hover); padding:2px 6px; border-radius:4px; flex-shrink:0;}
+.plugin-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+.plugin-btn{width:26px; height:26px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-dim); font-size:11px; display:flex; align-items:center; justify-content:center;}
+.plugin-meta{margin-top:6px;}
+.plugin-author{font-size:11.5px; color:var(--text-dim); display:block; margin-bottom:2px;}
+.plugin-desc{font-size:12px; color:var(--text-dim); line-height:1.4;}
+.connection-info{display:flex; align-items:center; gap:10px;}
+.connection-icon{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(29,185,84,0.15); color:#1db954; font-size:14px;}
+.connection-icon.twitch{background:rgba(145,70,255,0.15); color:#9146ff;}
+.connection-name{font-size:13px; font-weight:500;}
+.connection-status{font-size:11px; color:var(--accent);}
+
+/* ============ ALBUM FOCUS CAROUSEL ============ */
+.carousel-wrap{display:flex; flex-direction:column; align-items:center;}
+.widget-abox{width:280px; background:linear-gradient(145deg, rgba(var(--r,29),var(--g,185),var(--b,84),0.12), rgba(0,0,0,0.92)); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:22px; text-align:center; box-shadow:0 25px 50px rgba(0,0,0,.5), 0 0 90px rgba(var(--r,29),var(--g,185),var(--b,84),0.15); transition:background .6s ease, box-shadow .6s ease;}
+.abox-header{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px;}
+.abox-pulse{width:8px; height:8px; border-radius:50%; background:rgb(var(--r,29),var(--g,185),var(--b,84)); animation:pulse 1.5s infinite; transition:background .6s ease;}
+.abox-label{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:rgb(var(--r,29),var(--g,185),var(--b,84)); transition:color .6s ease;}
+.abox-cover{width:190px; height:190px; margin:0 auto 16px; border-radius:12px; background-size:cover; background-position:center; box-shadow:0 15px 40px rgba(0,0,0,.4); transition:opacity .9s ease;}
+.abox-title{font-size:16px; font-weight:700; margin-bottom:4px;}
+.abox-artist{font-size:13px; color:rgba(255,255,255,.6); margin-bottom:16px;}
+.abox-progress{height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden;}
+.abox-fill{height:100%; width:0%; background:rgb(var(--r,29),var(--g,185),var(--b,84)); transition:background .6s ease;}
+.abox-time{display:flex; justify-content:space-between; margin-top:6px; font-size:10px; color:rgba(255,255,255,.35);}
+.dots{display:flex; gap:8px; margin-top:24px;}
+.dots span{width:7px; height:7px; border-radius:50%; background:var(--border); transition:background .3s;}
+.dots span.active{background:var(--accent);}
+
+/* ============ COMPACT BAR ============ */
+.bars{display:flex; flex-direction:column; gap:14px;}
+.bar{display:flex; gap:14px; align-items:center; padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 8px 32px rgba(0,0,0,.4); transition:transform .25s ease;}
+.bar:hover{transform:translateY(-3px) scale(1.01);}
+.bar.g{background:linear-gradient(135deg, rgba(29,185,84,0.15), rgba(0,0,0,0.85));}
+.bar.p{background:linear-gradient(135deg, rgba(145,70,255,0.15), rgba(0,0,0,0.85));}
+.bar.o{background:linear-gradient(135deg, rgba(255,138,61,0.15), rgba(0,0,0,0.85));}
+.bar .cover{width:56px; height:56px; border-radius:8px; flex-shrink:0; background-size:cover; background-position:center;}
+.bar .info{flex:1; min-width:0;}
+.bar .badge{display:inline-flex; align-items:center; gap:6px; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;}
+.bar .badge::before{content:''; width:6px; height:6px; border-radius:50%;}
+.bar.g .badge{color:#1db954;} .bar.g .badge::before{background:#1db954;}
+.bar.p .badge{color:#bf94ff;} .bar.p .badge::before{background:#9146ff;}
+.bar.o .badge{color:#ffb27a;} .bar.o .badge::before{background:#ff8a3d;}
+.bar .title2{font-size:14.5px; font-weight:600; margin-bottom:2px;}
+.bar .artist2{font-size:12px; color:rgba(255,255,255,.6);}
+.bar .progress{margin-top:9px; height:3px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden;}
+.bar .fill{height:100%;}
+.bar.g .fill{width:62%; background:#1db954;} .bar.p .fill{width:30%; background:#9146ff;} .bar.o .fill{width:80%; background:#ff8a3d;}
+
+/* ============ TWITCH ============ */
+.twitch-grid{display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:center;}
+@media(max-width:720px){ .twitch-grid{grid-template-columns:1fr;} }
+.tag-pill{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#bf94ff; background:rgba(145,70,255,0.15); border:1px solid rgba(145,70,255,0.3); border-radius:12px; padding:5px 10px; margin-bottom:16px;}
+.chat-mock{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px;}
+.chat-mock .row{display:flex; gap:8px; padding:8px 0; font-size:13px; align-items:baseline;}
+.chat-mock .sender{font-weight:600; color:var(--twitch);}
+.chat-mock .sender.bot{color:var(--accent);}
+.chat-mock .msg{color:#ddd;}
+.chat-mock hr{border:none; border-top:1px solid var(--border); margin:6px 0;}
+
+/* grid feature cards used in a couple sections */
+.grid2{display:grid; grid-template-columns:repeat(2,1fr); gap:14px;}
+@media(max-width:600px){ .grid2{grid-template-columns:1fr;} }
+.card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px; transition:transform .25s ease, border-color .25s ease;}
+.card:hover{transform:translateY(-3px); border-color:rgba(var(--accent-rgb),0.4);}
+.card h3{font-size:15px; margin:0 0 6px;}
+.card p{color:var(--text-dim); font-size:13px; margin:0; line-height:1.5;}
+
+/* ============ CUSTOM WIDGETS ============ */
+.custom-grid{display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:center;}
+@media(max-width:760px){ .custom-grid{grid-template-columns:1fr;} }
+.editor-mock{background:#1a1a2e; border:1px solid var(--border); border-radius:12px; padding:18px; font-family:'Fira Code','Cascadia Code','JetBrains Mono',Consolas,monospace; font-size:11.5px; line-height:1.65; overflow-x:auto; box-shadow:0 25px 50px -20px rgba(0,0,0,.6);}
+.editor-mock .ln{color:#5c5c7a; user-select:none; display:inline-block; width:18px;}
+.editor-mock .k{color:#c586c0;} .editor-mock .s{color:#ce9178;} .editor-mock .p{color:#9cdcfe;} .editor-mock .c{color:#6a9955;}
+.custom-cards{display:flex; flex-direction:column; gap:14px;}
+.custom-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; align-items:center; gap:14px; transition:transform .25s ease, border-color .25s ease;}
+.custom-card:hover{transform:translateY(-3px); border-color:rgba(var(--accent-rgb),0.4);}
+.custom-thumb{width:52px; height:52px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:var(--accent); background:linear-gradient(135deg,var(--surface-hover),var(--border));}
+.custom-card h3{font-size:14px; margin:0 0 3px;}
+.custom-card p{font-size:12.5px; color:var(--text-dim); margin:0; line-height:1.4;}
+.perm-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
+.perm-row:last-child{border-bottom:none;}
+.perm-pill{font-family:'Fira Code','JetBrains Mono',monospace; font-size:10.5px; font-weight:600; color:var(--accent); background:rgba(var(--accent-rgb),0.12); border:1px solid rgba(var(--accent-rgb),0.3); border-radius:6px; padding:3px 8px; flex-shrink:0; min-width:64px; text-align:center;}
+.perm-row span.what{color:var(--text-dim);}
+
+/* ---- Custom Widget 1 preview (rounded card, status-dot blink) ---- */
+.cw1{ --r:29; --g:185; --b:84; width:170px; margin:0 auto; text-align:center; font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;}
+.cw1-cover{width:124px; height:124px; margin:0 auto 10px; border-radius:10px; background-size:cover; background-position:center; box-shadow:0 8px 25px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05), 0 0 40px rgba(var(--r),var(--g),var(--b),.25);}
+.cw1-title{font-size:12.5px; font-weight:600; color:#fff; display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:3px;}
+.cw1-dot{width:5px; height:5px; border-radius:50%; background:rgb(var(--r),var(--g),var(--b)); animation:cw1blink 1.5s infinite;}
+@keyframes cw1blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.cw1-artist{font-size:10.5px; color:rgba(255,255,255,.55);}
+.cw1-progress{width:88%; height:3px; margin:10px auto 0; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden;}
+.cw1-fill{height:100%; width:38%; background:linear-gradient(90deg, rgb(var(--r),var(--g),var(--b)), rgba(var(--r),var(--g),var(--b),.5));}
+
+/* ---- Custom Widget 2 preview (neon pill bar) ---- */
+.cw2{ --r:145; --g:70; --b:255; width:230px; margin:0 auto; position:relative; background:linear-gradient(90deg, rgba(var(--r),var(--g),var(--b),.08), rgba(20,20,20,.95)); border:1px solid rgba(var(--r),var(--g),var(--b),.15); border-radius:50px; padding:9px 16px 9px 9px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.cw2::after{content:''; position:absolute; bottom:0; left:18px; right:18px; height:2px; background:linear-gradient(90deg, transparent, rgb(var(--r),var(--g),var(--b)), transparent); opacity:.6; filter:blur(1px);}
+.cw2-cover{width:38px; height:38px; border-radius:50%; background-size:cover; background-position:center; flex-shrink:0; box-shadow:0 0 0 2px rgba(var(--r),var(--g),var(--b),.5), 0 0 12px rgba(var(--r),var(--g),var(--b),.3); animation:cw2pulse 2s ease-in-out infinite;}
+@keyframes cw2pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+.cw2-info{flex:1; min-width:0;}
+.cw2-title{font-size:11.5px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px;}
+.cw2-meta{font-size:9px; color:rgba(255,255,255,.4);}
+.cw2-status{width:26px; height:26px; border-radius:50%; background:rgba(var(--r),var(--g),var(--b),.15); display:flex; align-items:center; justify-content:center; gap:2px; flex-shrink:0;}
+.cw2-status span{width:2.5px; background:rgb(var(--r),var(--g),var(--b)); border-radius:1px; animation:cw2bar .8s ease-in-out infinite;}
+.cw2-status span:nth-child(1){height:5px; animation-delay:0s;} .cw2-status span:nth-child(2){height:9px; animation-delay:.15s;} .cw2-status span:nth-child(3){height:4px; animation-delay:.3s;}
+@keyframes cw2bar{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.5);}}
+.custom-widget-label{font-size:10px; color:var(--text-dim); text-align:center; margin-top:14px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;}
+
+footer{border-top:1px solid var(--border); padding:34px 0; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; color:var(--text-dim); font-size:13px;}
+footer a{text-decoration:none;}
+footer a:hover{color:var(--text);}
+
+/* ============ CLICK-TO-ENTER OVERLAY ============ */
+#enterOverlay{
+  position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+  background:#050505; overflow:hidden;
+  transition:opacity .8s ease, visibility .8s ease;
+}
+#enterOverlay.hidden{opacity:0; visibility:hidden; pointer-events:none;}
+.enter-backdrop{
+  position:absolute; inset:-10%; background-size:cover; background-position:center;
+  filter:blur(60px) brightness(.45) saturate(1.3); opacity:0; transition:opacity 1.4s ease;
+  transform:scale(1.1);
+}
+.enter-backdrop.visible{opacity:1;}
+.enter-scrim{position:absolute; inset:0; background:radial-gradient(ellipse 800px 600px at 50% 45%, rgba(10,10,10,0.2), rgba(5,5,5,0.88) 75%);}
+.enter-blob{position:absolute; border-radius:50%; filter:blur(90px); opacity:.28; animation:blobFloat 14s ease-in-out infinite;}
+.enter-blob.b1{width:380px; height:380px; background:var(--accent); top:-8%; left:-8%;}
+.enter-blob.b2{width:320px; height:320px; background:#9146ff; bottom:-10%; right:-6%; animation-delay:-6s;}
+@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-20px) scale(1.12);}}
+
+.enter-inner{position:relative; z-index:2; text-align:center; padding:0 24px;}
+
+.enter-inner h2{font-size:clamp(28px,5vw,40px); font-weight:700; margin:0 0 12px; letter-spacing:-.8px;}
+.enter-inner p{color:var(--text-dim); font-size:14.5px; max-width:360px; margin:0 auto 34px; line-height:1.55;}
+
+.enter-btn{
+  position:relative; width:76px; height:76px; border-radius:50%; background:var(--accent); border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; margin:0 auto; transition:transform .2s ease;
+}
+.enter-btn:hover{transform:scale(1.06);}
+.enter-btn svg{width:26px; height:26px; fill:#06110a; margin-left:3px;}
+.enter-btn::before, .enter-btn::after{
+  content:''; position:absolute; inset:0; border-radius:50%; border:1.5px solid rgba(29,185,84,.5);
+  animation:enterPulse 2.4s ease-out infinite;
+}
+.enter-btn::after{animation-delay:1.2s;}
+@keyframes enterPulse{0%{transform:scale(1); opacity:.8;}100%{transform:scale(1.9); opacity:0;}}
+
+.enter-label{margin-top:18px; font-size:12px; font-weight:600; color:var(--text-dim); letter-spacing:.3px;}
+.enter-hint{margin-top:22px; font-size:11.5px; color:var(--text-dim); opacity:.55;}
+.enter-hint button{background:none; border:none; color:var(--text-dim); text-decoration:underline; cursor:pointer; font:inherit; padding:0;}
+.enter-hint button:hover{color:var(--text);}
+
+/* ============ FLOATING SOUND TOGGLE ============ */
+#soundFab{
+  position:fixed; right:20px; bottom:20px; z-index:400; display:flex; align-items:center; gap:8px;
+  background:rgba(20,20,20,0.85); backdrop-filter:blur(10px); border:1px solid var(--border); color:var(--text-dim);
+  font-size:12px; padding:10px 16px; border-radius:24px; cursor:pointer; font-family:inherit;
+  box-shadow:0 10px 30px rgba(0,0,0,.4); transition:border-color .2s ease, color .2s ease, opacity .5s ease;
+  opacity:0; pointer-events:none;
+}
+#soundFab.visible{opacity:1; pointer-events:auto;}
+#soundFab:hover{border-color:var(--accent); color:var(--text);}
+#soundFab .now{max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--text-dim);}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <span class="badge">v4.1.0 · Windows</span>
-    <h1>🎵 DisplaySong</h1>
-    <p class="subtitle">Universal Now Playing Widget für OBS von <strong>byDopeMan</strong> — zeigt den aktuell spielenden Track als elegantes Widget an. Funktioniert mit allen Musik-Playern.</p>
+<div id="liquidBg">
+  <div class="flow"></div>
+  <div class="sheen"></div>
+  <div class="grain"></div>
+</div>
 
-    <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/latest">Download (neueste Version)</a>
-      <a class="btn btn-secondary" href="https://github.com/byDopeMan/displaysong-tauri">Zum Repository</a>
-    </div>
-
-    <div class="grid">
-      <div class="feature">
-        <h3>🎧 Universelle Erkennung</h3>
-        <p>Spotify, YouTube, VLC, Browser und mehr — ganz ohne Spotify-API-Setup.</p>
-      </div>
-      <div class="feature">
-        <h3>🎨 4 Widget-Designs</h3>
-        <p>Compact Bar, Album Focus und zwei Custom-Widgets, transparent für OBS.</p>
-      </div>
-      <div class="feature">
-        <h3>📺 Twitch Song Requests</h3>
-        <p>Viewer fordern Songs per Chat an — inkl. Multi-Platform-Links.</p>
-      </div>
-      <div class="feature">
-        <h3>📊 Lokale Historie</h3>
-        <p>SQLite-basierte Track-Verlaufsspeicherung, komplett lokal.</p>
-      </div>
-    </div>
-
-    <footer>
-      Entwickelt von <a href="https://github.com/byDopeMan">byDopeMan</a> ·
-      <a href="https://github.com/byDopeMan/displaysong-tauri">GitHub Repository</a> ·
-      MIT License
-    </footer>
+<div id="enterOverlay">
+  <div class="enter-backdrop" id="enterBackdrop"></div>
+  <div class="enter-scrim"></div>
+  <div class="enter-blob b1"></div>
+  <div class="enter-blob b2"></div>
+  <div class="enter-inner">
+    <h2>DisplaySong</h2>
+    <p>Die Seite klingt am besten mit Ton — leise im Hintergrund, lauter sobald du bei Album Focus bist.</p>
+    <button id="enterBtn" class="enter-btn" type="button" aria-label="Mit Sound starten">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="enter-label">Mit Sound starten</div>
+    <div class="enter-hint">oder <button id="enterMuted" type="button">ohne Ton weiter</button></div>
   </div>
+</div>
+
+<button id="soundFab" type="button">
+  <span id="soundFabIcon">🔊</span>
+  <span id="soundFabLabel">Ton an</span>
+  <span class="now" id="soundFabNow"></span>
+</button>
+
+<nav class="top">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> DisplaySong</div>
+    <a class="gh" href="https://github.com/byDopeMan/displaysong-tauri">GitHub ↗</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Dein Track, direkt<br>auf <span>Sendung.</span></h1>
+    <p>Universal Now Playing Widget für OBS. Erkennt automatisch, was gerade läuft — egal welcher Player, egal welche Plattform.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download v4.2.0</a>
+      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0-plugins">🔌 Plugin-Version</a>
+      <a class="btn btn-secondary" href="#app">Reinschauen ↓</a>
+    </div>
+    <p style="font-size:12px; color:var(--text-dim); margin-top:14px;">Zwei Release-Reihen: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">v4.2.0</code> (Standard, Auto-Update) und <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">v4.2.0-plugins</code> (mit Plugin-API, manuelles Update).</p>
+  </div>
+</header>
+
+<!-- ============ APP CHROME ============ -->
+<section id="app">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Die App</p>
+      <h2>Alles an einem Ort.</h2>
+      <p>Player, Verlauf, Widget-Designs und Einstellungen — probier die Tabs direkt aus.</p>
+    </div>
+
+    <div class="app-frame reveal">
+      <div class="titlebar">
+        <span class="title">DisplaySong — Now Playing für OBS</span>
+        <div class="tb-controls"><button class="tb-btn">─</button><button class="tb-btn">□</button><button class="tb-btn">×</button></div>
+      </div>
+      <div class="tabbar">
+        <button class="tabbtn active" data-tab="player">Player</button>
+        <button class="tabbtn" data-tab="history">Verlauf</button>
+        <button class="tabbtn" data-tab="designs">Designs</button>
+        <button class="tabbtn" data-tab="plugins">Plugins</button>
+        <button class="tabbtn" data-tab="settings">Einstellungen</button>
+      </div>
+
+      <!-- PLAYER TAB -->
+      <div class="tabpanel active" id="tab-player">
+        <div class="player-mock">
+          <div class="status-badge"><span class="status-dot"></span><span class="status-text">Läuft jetzt</span></div>
+          <div class="cover" id="playerMockCover"></div>
+          <div class="title" id="playerMockTitle">—</div>
+          <div class="artist" id="playerMockArtist">—</div>
+          <div class="progress-bar-bg"><div class="progress-bar"></div></div>
+          <div class="progress-times"><span>1:14</span><span id="playerMockDur">—</span></div>
+        </div>
+      </div>
+
+      <!-- HISTORY TAB -->
+      <div class="tabpanel" id="tab-history">
+        <div class="history-header">
+          <div><h2>Verlauf</h2><div class="history-subtitle" id="historySubtitle">Letzte Tracks</div></div>
+          <div class="history-design-toggle">
+            <button class="design-toggle-btn active" title="Liste"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
+            <button class="design-toggle-btn" title="Eingebettet"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></button>
+          </div>
+        </div>
+        <div class="history-list" id="historyListDynamic"></div>
+      </div>
+
+      <!-- DESIGNS TAB -->
+      <div class="tabpanel" id="tab-designs">
+        <div class="design-grid">
+          <div class="design-card"><div class="design-preview"><div class="preview-bar"></div></div><h3>Compact Bar</h3><p class="design-desc">Horizontal, minimalistisch</p><label class="checkbox-label"><input type="checkbox" checked> Akzentfarbe vom Cover</label><button class="btn-show">Anzeigen</button></div>
+          <div class="design-card"><div class="design-preview"><div class="preview-square"></div></div><h3>Album Focus</h3><p class="design-desc">Großes Cover, vertikal</p><label class="checkbox-label"><input type="checkbox" checked> Akzentfarbe vom Cover</label><button class="btn-show">Anzeigen</button></div>
+          <div class="design-card"><div class="design-preview"><div class="preview-custom" style="transform:scale(.44);"><div class="cw1" style="pointer-events:none;"><div class="cw1-cover" id="designsCw1Cover"></div></div></div></div><h3>Custom 1</h3><p class="design-desc">Rundes Cover, Status-Dot</p><button class="btn-show">Anzeigen</button></div>
+          <div class="design-card"><div class="design-preview"><div class="preview-custom" style="transform:scale(.36);"><div class="cw2" style="pointer-events:none;"><div class="cw2-cover" id="designsCw2Cover"></div></div></div></div><h3>Custom 2</h3><p class="design-desc">Neon Pill-Bar</p><button class="btn-show">Anzeigen</button></div>
+        </div>
+        <div class="active-widgets">
+          <h3>Aktive Widgets</h3>
+          <div id="widget-list">
+            <span class="widget-tag">Compact Bar <button class="close-widget">×</button></span>
+            <span class="widget-tag">Album Focus <button class="close-widget">×</button></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLUGINS TAB -->
+      <div class="tabpanel" id="tab-plugins">
+        <div class="plugins-header">
+          <h2>Plugins</h2>
+          <div class="plugins-actions">
+            <button class="btn-icon" title="Ordner öffnen">📁</button>
+            <button class="btn-icon" title="ZIP importieren">📦</button>
+            <button class="btn-icon" title="Liste aktualisieren">↻</button>
+          </div>
+        </div>
+        <p class="plugins-intro">Erweitere DisplaySong mit eigenem Code — Track-Events, Twitch-Events, eigene Fenster.</p>
+        <div class="plugin-card enabled">
+          <div class="plugin-main">
+            <div class="plugin-info">
+              <span class="plugin-name">Twitch Song Request Queue</span>
+              <span class="plugin-version">1.2.0</span>
+            </div>
+            <div class="plugin-actions">
+              <button class="plugin-btn" title="Einstellungen">⚙</button>
+              <button class="plugin-btn" title="Löschen">🗑</button>
+              <div class="toggle on"></div>
+            </div>
+          </div>
+          <div class="plugin-meta"><span class="plugin-author">von Community</span><span class="plugin-desc">Eigenes Queue-Fenster + Channel-Points-Anbindung für Song Requests.</span></div>
+        </div>
+        <div class="plugin-card">
+          <div class="plugin-main">
+            <div class="plugin-info">
+              <span class="plugin-name">Discord Rich Presence</span>
+              <span class="plugin-version">0.4.1</span>
+            </div>
+            <div class="plugin-actions">
+              <button class="plugin-btn" title="Einstellungen">⚙</button>
+              <button class="plugin-btn" title="Löschen">🗑</button>
+              <div class="toggle off"></div>
+            </div>
+          </div>
+          <div class="plugin-meta"><span class="plugin-author">von Community</span><span class="plugin-desc">Zeigt den aktuellen Track als Discord-Status.</span></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div class="tabpanel" id="tab-settings">
+        <div class="settings-section">
+          <h3>Verbindungen</h3>
+          <div class="connection-item">
+            <div class="connection-info"><div class="connection-icon">♪</div><div><div class="connection-name">Spotify</div><div class="connection-status">Verbunden</div></div></div>
+          </div>
+          <div class="connection-item">
+            <div class="connection-info"><div class="connection-icon twitch">T</div><div><div class="connection-name">Twitch</div><div class="connection-status" style="color:var(--text-dim);">Nicht verbunden</div></div></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Widget-Verhalten</h3>
+          <div class="setting-row"><span>Ausblenden wenn pausiert</span><div class="toggle on"></div></div>
+          <div class="setting-row"><span>Requester in Widgets anzeigen</span><div class="toggle off"></div></div>
+          <div class="setting-row"><span>Positionen merken</span><div class="toggle on"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ALBUM FOCUS CAROUSEL ============ -->
+<section id="album-focus-section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Album Focus</p>
+      <h2>Jeder Track, ein Auftritt.</h2>
+      <p>Das Widget passt Cover, Farbe und Fortschritt live an jeden Track an — hier eine kleine Auswahl im Loop. Musik läuft leise mit, sobald diese Sektion im Fokus ist.</p>
+    </div>
+    <div class="carousel-wrap reveal">
+      <div class="widget-abox" id="abox">
+        <div class="abox-header"><span class="abox-pulse" id="aboxPulse"></span><span class="abox-label">Now Playing</span></div>
+        <div class="abox-cover" id="aboxCover"></div>
+        <div class="abox-title" id="aboxTitle">—</div>
+        <div class="abox-artist" id="aboxArtist">—</div>
+        <div class="abox-progress"><div class="abox-fill" id="aboxFill"></div></div>
+        <div class="abox-time"><span id="aboxCur">0:00</span><span id="aboxDur">0:00</span></div>
+      </div>
+      <div class="dots" id="aboxDots"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Zwei Audio-Kanäle für weiches Crossfading zwischen beliebig vielen Songs
+     (Ping-Pong: während Kanal A spielt, wird der nächste Track schon in Kanal B
+     geladen, dann übergeblendet). src wird per JS aus assets/output/<Song Name>/
+     metadata.json gesetzt. -->
+<audio id="af-audio-a" preload="auto" muted></audio>
+<audio id="af-audio-b" preload="auto" muted></audio>
+
+<!-- ============ COMPACT BAR ============ -->
+<section>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Compact Bar</p>
+      <h2>Ein Widget. Jede Akzentfarbe.</h2>
+      <p>Die Compact Bar passt sich automatisch ans Album-Cover an — egal welcher Track, welche Stimmung.</p>
+    </div>
+    <div class="bars reveal">
+      <div class="bar g">
+        <div class="cover" id="bar1Cover"></div>
+        <div class="info"><div class="badge">Läuft jetzt</div><div class="title2" id="bar1Title">—</div><div class="artist2" id="bar1Artist">—</div><div class="progress"><div class="fill"></div></div></div>
+      </div>
+      <div class="bar p">
+        <div class="cover" id="bar2Cover"></div>
+        <div class="info"><div class="badge">Song Request</div><div class="title2" id="bar2Title">—</div><div class="artist2">angefordert von viewer123</div><div class="progress"><div class="fill"></div></div></div>
+      </div>
+      <div class="bar o">
+        <div class="cover" id="bar3Cover"></div>
+        <div class="info"><div class="badge">Läuft jetzt</div><div class="title2" id="bar3Title">—</div><div class="artist2" id="bar3Artist">—</div><div class="progress"><div class="fill"></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CUSTOM WIDGETS ============ -->
+<section>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Custom 1 &amp; 2</p>
+      <h2>Baust du lieber selbst?</h2>
+      <p>Zwei Widget-Slots sind komplett frei — eigenes HTML/CSS, direkt im integrierten Editor bearbeitet. DisplaySong liefert dir die Track-Daten als JSON und Live-Events, den Rest gestaltest du.</p>
+    </div>
+    <div class="custom-grid reveal">
+      <div class="editor-mock"><span class="ln">1</span><span class="k">window</span>.__TAURI__.event.<span class="p">listen</span>(<span class="s">'track-update'</span>, (e) => {<br>
+<span class="ln">2</span>&nbsp;&nbsp;<span class="k">const</span> track = e.payload;<br>
+<span class="ln">3</span>&nbsp;&nbsp;<span class="c">// { track, artist, album, albumCover,</span><br>
+<span class="ln">4</span>&nbsp;&nbsp;<span class="c">//   isPlaying, progressMs, durationMs,</span><br>
+<span class="ln">5</span>&nbsp;&nbsp;<span class="c">//   source, color: { r, g, b } }</span><br>
+<span class="ln">6</span>&nbsp;&nbsp;title.textContent = track.<span class="p">track</span>;<br>
+<span class="ln">7</span>&nbsp;&nbsp;cover.style.backgroundImage =<br>
+<span class="ln">8</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">`url(${</span>track.<span class="p">albumCover</span><span class="k">})`</span>;<br>
+<span class="ln">9</span>});</div>
+      <div class="custom-cards">
+        <div>
+          <div class="cw1">
+            <div class="cw1-cover" id="customCw1Cover"></div>
+            <div class="cw1-title"><span class="cw1-dot"></span><span id="customCw1Title">—</span></div>
+            <div class="cw1-artist" id="customCw1Artist">—</div>
+            <div class="cw1-progress"><div class="cw1-fill"></div></div>
+          </div>
+          <div class="custom-widget-label">Custom 1 — abgerundet, vertikal</div>
+        </div>
+        <div>
+          <div class="cw2">
+            <div class="cw2-cover" id="customCw2Cover"></div>
+            <div class="cw2-info"><div class="cw2-title" id="customCw2Title">—</div><div class="cw2-meta" id="customCw2Artist">—</div></div>
+            <div class="cw2-status"><span></span><span></span><span></span></div>
+          </div>
+          <div class="custom-widget-label">Custom 2 — Neon Pill-Bar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLUGIN API ============ -->
+<section>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Plugin API</p>
+      <h2>Noch mehr für Entwickler.</h2>
+      <p>Über die Plugin-API lässt sich DisplaySong erweitern — eigene Fenster, Twitch-Events, Storage, HTTP-Requests, sogar Python-Skripte. Rechte werden pro Plugin im Manifest freigeschaltet.</p>
+    </div>
+    <div class="custom-grid reveal">
+      <div class="editor-mock"><span class="ln">1</span><span class="c">// manifest.json</span><br>
+<span class="ln">2</span>{ <span class="p">"id"</span>: <span class="s">"mein-plugin"</span>, <span class="p">"permissions"</span>: [<span class="s">"track"</span>, <span class="s">"twitch"</span>] }<br>
+<span class="ln">3</span><br>
+<span class="ln">4</span><span class="c">// index.js</span><br>
+<span class="ln">5</span><span class="k">async function</span> init() {<br>
+<span class="ln">6</span>&nbsp;&nbsp;<span class="k">const</span> track = <span class="k">await</span> api.<span class="p">getTrack</span>();<br>
+<span class="ln">7</span>&nbsp;&nbsp;api.<span class="p">onTwitchRedemption</span>((r) => {<br>
+<span class="ln">8</span>&nbsp;&nbsp;&nbsp;&nbsp;api.<span class="p">sendTwitchChat</span>(<span class="k">`Danke ${</span>r.user_name<span class="k">}!`</span>);<br>
+<span class="ln">9</span>&nbsp;&nbsp;});<br>
+<span class="ln">10</span>}<br>
+<span class="ln">11</span><span class="k">return</span> { init };</div>
+      <div class="custom-cards">
+        <div class="perm-row"><span class="perm-pill">track</span><span class="what">Aktueller Song, Historie, Queue steuern</span></div>
+        <div class="perm-row"><span class="perm-pill">twitch</span><span class="what">Follows, Subs, Raids, Cheers, Redemptions, eigener Chat-Listener</span></div>
+        <div class="perm-row"><span class="perm-pill">storage</span><span class="what">Eigene Daten &amp; Settings persistent speichern</span></div>
+        <div class="perm-row"><span class="perm-pill">secrets</span><span class="what">Tokens sicher im Windows Credential Manager</span></div>
+        <div class="perm-row"><span class="perm-pill">http</span><span class="what">Requests ohne CORS-Einschränkungen</span></div>
+        <div class="perm-row"><span class="perm-pill">python</span><span class="what">Python-Skripte &amp; Dauerprozesse ausführen</span></div>
+        <div class="perm-row"><span class="perm-pill">window</span><span class="what">Eigenes Fenster oder Modal, auch als echtes OS-Fenster per URL</span></div>
+      </div>
+    </div>
+    <p style="font-size:12.5px; color:var(--text-dim); text-align:center; margin:22px 0 8px;">Neu ab v4.2.1: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">onChatMessage</code>, <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">openModal</code>, <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">onSettingChange</code> und Capability-Checks über <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">api.has()</code>.</p>
+    <p style="text-align:center;"><a href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0-plugins" style="color:var(--accent); text-decoration:none; font-size:13px; font-weight:600;">→ Plugin-Version herunterladen (v4.2.0-plugins)</a></p>
+  </div>
+</section>
+
+<!-- ============ TWITCH ============ -->
+<section>
+  <div class="wrap">
+    <div class="twitch-grid reveal">
+      <div>
+        <span class="tag-pill">● Twitch Integration</span>
+        <h2 style="font-size:clamp(26px,4vw,38px); font-weight:700; letter-spacing:-0.8px; margin:0 0 16px; line-height:1.1;">Dein Chat wählt<br>die Playlist.</h2>
+        <p style="color:var(--text-dim); font-size:15.5px; line-height:1.6; margin-bottom:24px;">Viewer fordern Songs direkt im Chat an — DisplaySong konvertiert YouTube-, Apple-Music- und SoundCloud-Links automatisch zu Spotify. Ein kurzer <code style="background:var(--surface); padding:2px 6px; border-radius:4px; font-size:13px;">!sr</code> gibt per Twitch-„Permit" 60 Sekunden frei, damit der Link selbst keinen automatischen Chat-Timeout auslöst.</p>
+        <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download v4.2.0</a>
+      </div>
+      <div class="chat-mock">
+        <div class="row"><span class="sender">streamfan22:&nbsp;</span><span class="msg">!sr</span></div><hr>
+        <div class="row"><span class="sender bot">DisplaySong:&nbsp;</span><span class="msg">@streamfan22 Du hast jetzt 60 Sekunden um deinen Song-Link zu posten!</span></div><hr>
+        <div class="row"><span class="sender">viewer123:&nbsp;</span><span class="msg">!sr https://open.spotify.com/track/...</span></div><hr>
+        <div class="row"><span class="sender bot">DisplaySong:&nbsp;</span><span class="msg">@viewer123 hat hinzugefügt: Wellconnected_G, Goof2001, Prod Gordon - Whole Melt</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Mehr im Detail</p>
+      <h2>Alles, was ein Stream braucht.</h2>
+    </div>
+    <div class="grid2 reveal">
+      <div class="card"><h3>Universelle Erkennung</h3><p>Spotify, YouTube, VLC, Browser & mehr — ganz ohne API-Setup.</p></div>
+      <div class="card"><h3>Lokale Track-Historie</h3><p>SQLite-basiert, läuft komplett offline und privat.</p></div>
+      <div class="card"><h3>Provider-Auswahl</h3><p>Windows Audio (Universal) oder Spotify API für Queue-Control.</p></div>
+      <div class="card"><h3>Eigene Designs</h3><p>Zwei Custom-Widgets, frei anpassbar per Texteditor.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; width:100%;">
+    <span>byDopeMan · MIT License</span>
+    <div>
+      <a href="https://github.com/byDopeMan/displaysong-tauri">Repository</a> ·
+      <a href="https://github.com/byDopeMan/displaysong-tauri/releases">Releases</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ---- tab switching ----
+document.querySelectorAll('.tabbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---- scroll reveal ----
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ---- album focus: loads real assets from the generator output ----
+// Erwartete Struktur pro Track: assets/output/<Song Name>/{preview.mp3, cover.webp,
+// metadata.json}. Die Ordnerliste wird automatisch über die öffentliche GitHub-
+// Contents-API ermittelt — einfach einen neuen Ordner unter assets/output/
+// anlegen, committen, pushen, fertig. FALLBACK_SONG_LIST greift nur, falls die
+// API mal nicht erreichbar ist (z.B. Rate-Limit) oder file:// lokal getestet wird.
+const GITHUB_REPO = 'byDopeMan/displaysong-tauri';
+const GITHUB_BRANCH = 'main';
+const GITHUB_OUTPUT_PATH = 'docs/assets/output'; // Pfad ab Repo-Root, nicht ab docs/
+const OUTPUT_BASE = 'assets/output/';
+
+const FALLBACK_SONG_LIST = [
+  '8BALL', 'designerfrust', 'Gasse', 'guten morgen', 'Heisenberg', "IN KLEIN' SCHEINEN", 
+  'Mir Gehts Gut', 'Ms. Jackson', 'tattoo', 'Toxisch', 'Whatever Floats Your Boat Will Definitely Sink My Ship',
+  'Whole Melt', 'ZAHLTAG',
+];
+
+/** Listet die Unterordner von assets/output/ live über die GitHub API auf.
+ * Läuft nur über http(s) (nicht file://) und braucht ein öffentliches Repo. */
+async function discoverSongFolders(){
+  try {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_OUTPUT_PATH}?ref=${GITHUB_BRANCH}`;
+    const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error('GitHub API response not ok: ' + res.status);
+    const items = await res.json();
+    const folders = items.filter((i) => i.type === 'dir').map((i) => i.name);
+    if (folders.length === 0) throw new Error('no folders found');
+    return folders;
+  } catch (e) {
+    console.warn('[DisplaySong] Automatische Song-Erkennung fehlgeschlagen, nutze Fallback-Liste:', e);
+    return FALLBACK_SONG_LIST;
+  }
+}
+
+function fmtTime(totalSeconds){
+  if (totalSeconds == null || !isFinite(totalSeconds)) return '--:--';
+  const s = Math.max(0, Math.round(totalSeconds));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+async function loadTrack(folder){
+  const base = OUTPUT_BASE + encodeURIComponent(folder) + '/';
+  try {
+    const res = await fetch(base + 'metadata.json');
+    if (!res.ok) throw new Error('metadata.json not found');
+    const m = await res.json();
+    return {
+      title: m.title || folder,
+      artist: m.artist || '',
+      cover: m.cover ? base + m.cover : '',
+      previewFile: m.preview?.file ? base + m.preview.file : null,
+      previewStart: m.preview?.start ?? 0,
+      previewLength: m.preview?.length ?? (m.preview?.end != null && m.preview?.start != null ? m.preview.end - m.preview.start : 22),
+      durSec: typeof m.duration === 'number' ? m.duration : null,
+      r: m.theme?.rgb?.[0] ?? 29, g: m.theme?.rgb?.[1] ?? 185, b: m.theme?.rgb?.[2] ?? 84,
+    };
+  } catch (e) {
+    // Kein metadata.json (noch) vorhanden — neutraler Platzhalter, keine
+    // geratenen Werte (die führten vorher zu falschen End-Zeiten).
+    return {
+      title: folder, artist: '', cover: '', previewFile: null,
+      previewStart: 0, previewLength: 22, durSec: null,
+      r: 29, g: 185, b: 84,
+    };
+  }
+}
+
+const abox = document.getElementById('abox');
+const aboxCover = document.getElementById('aboxCover');
+const aboxTitle = document.getElementById('aboxTitle');
+const aboxArtist = document.getElementById('aboxArtist');
+const aboxFill = document.getElementById('aboxFill');
+const aboxCur = document.getElementById('aboxCur');
+const aboxDur = document.getElementById('aboxDur');
+const dotsWrap = document.getElementById('aboxDots');
+
+let tracks = [];
+let currentIdx = 0;
+let recentPlayed = [];
+let fallbackTimerId = null;
+
+function setColor(t){
+  abox.style.setProperty('--r', t.r); abox.style.setProperty('--g', t.g); abox.style.setProperty('--b', t.b);
+}
+
+/** Random next track, avoiding the last couple of plays so it never repeats
+ * back-to-back and — with more than 4 songs — doesn't come around too often. */
+function pickNextIndex(){
+  if (tracks.length <= 1) return 0;
+  const excludeCount = Math.min(tracks.length - 1, 2);
+  const excluded = recentPlayed.slice(-excludeCount);
+  let candidates = tracks.map((_, i) => i).filter((i) => !excluded.includes(i));
+  if (candidates.length === 0) candidates = tracks.map((_, i) => i);
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  recentPlayed.push(pick);
+  if (recentPlayed.length > 6) recentPlayed.shift();
+  return pick;
+}
+
+function renderDots(){
+  dotsWrap.innerHTML = '';
+  if (tracks.length > 8) { dotsWrap.style.display = 'none'; return; }
+  dotsWrap.style.display = '';
+  tracks.forEach((_, i) => {
+    const d = document.createElement('span');
+    if (i === currentIdx) d.classList.add('active');
+    dotsWrap.appendChild(d);
+  });
+}
+
+function stopTiming(){
+  if (fallbackTimerId) { clearInterval(fallbackTimerId); fallbackTimerId = null; }
+}
+
+/** Real-time progress: bound to the actual playing <audio>'s clock when a real
+ * preview file exists (perfectly accurate), otherwise a real-time fallback
+ * timer over previewLength seconds — never an arbitrary fixed-speed rattle. */
+function startTiming(t, activeAudio){
+  stopTiming();
+  const total = t.durSec; // real full-song length from metadata, or null
+
+  if (t.previewFile && activeAudio) {
+    activeAudio.ontimeupdate = () => {
+      const cur = t.previewStart + activeAudio.currentTime;
+      aboxCur.textContent = fmtTime(total != null ? Math.min(cur, total) : cur);
+      const pctBase = total != null ? total : (activeAudio.duration && isFinite(activeAudio.duration) ? activeAudio.duration : t.previewLength);
+      aboxFill.style.width = Math.min(100, (cur / pctBase) * 100) + '%';
+    };
+    activeAudio.onended = () => advance();
+  } else {
+    const startedAt = performance.now();
+    fallbackTimerId = setInterval(() => {
+      const elapsed = (performance.now() - startedAt) / 1000;
+      if (elapsed >= t.previewLength) { advance(); return; }
+      const cur = t.previewStart + elapsed;
+      aboxCur.textContent = fmtTime(total != null ? Math.min(cur, total) : cur);
+      aboxFill.style.width = Math.min(100, (elapsed / t.previewLength) * 100) + '%';
+    }, 200);
+  }
+}
+
+// ---- two-channel crossfade audio engine ----
+// Channel A/B ping-pong: the inactive channel preloads the next track while the
+// active one plays, then they crossfade smoothly (no hard cut, no relying on a
+// fresh play() call mid-cycle which could get blocked).
+const audioA = document.getElementById('af-audio-a');
+const audioB = document.getElementById('af-audio-b');
+let activeChannel = 'A';
+let entered = false;          // user made a gesture (Enter or "ohne Ton") — overlay gone
+let audioEnabled = true;      // global mute toggle (independent of `entered`)
+let fadeToken = 0;            // cancels an in-flight fade when a new one starts
+
+// Distance-based ambience: volume depends on how close Album Focus is to the
+// viewport center — loud when centered, fading out smoothly the further you
+// scroll away in EITHER direction, silent again a couple of screens away
+// (so it's not still audible way down at Plugin API / Twitch).
+const PEAK_VOLUME = 0.16;         // volume when Album Focus is perfectly centered
+// HARD safety ceiling — every single volume assignment in this file clamps to
+// this, no matter what computes the target. Nothing can ever get louder than
+// this value, full stop. Raise ONLY this one number if it should be louder.
+const HARD_VOLUME_CEILING = 0.16;
+const PROXIMITY_RANGE_VH = 1.7;   // how many viewport-heights of distance until silence
+const FADE_OUT_MS = 700;          // sequential fade: old track goes fully silent first
+const FADE_IN_MS = 700;           // …then the new one fades in from silence
+const VOLUME_EASE = 0.06;         // per-frame smoothing so the proximity fade is gentle
+function clampVol(v){ return Math.max(0, Math.min(HARD_VOLUME_CEILING, v)); }
+
+function activeAudioEl(){ return activeChannel === 'A' ? audioA : audioB; }
+function inactiveAudioEl(){ return activeChannel === 'A' ? audioB : audioA; }
+
+function computeProximity(){
+  const afSection = document.getElementById('album-focus-section');
+  if (!afSection) return 0;
+  const rect = afSection.getBoundingClientRect();
+  const vh = window.innerHeight || 800;
+  const sectionCenter = rect.top + rect.height / 2;
+  const dist = Math.abs(sectionCenter - vh / 2);
+  const maxDist = vh * PROXIMITY_RANGE_VH;
+  return Math.max(0, 1 - dist / maxDist);
+}
+
+function computeTargetVolume(){
+  if (!entered || !audioEnabled) return 0;
+  return clampVol(PEAK_VOLUME * computeProximity());
+}
+
+// One rAF loop smooths the *proximity* target continuously (scroll fades) —
+// track-to-track transitions are handled separately below (sequential fade).
+let smoothedVolume = 0;
+let manualFadeActive = false; // true while a sequential track-switch fade is running
+function volumeLoop(){
+  if (!manualFadeActive) {
+    const target = computeTargetVolume();
+    smoothedVolume += (target - smoothedVolume) * VOLUME_EASE;
+    if (Math.abs(target - smoothedVolume) < 0.001) smoothedVolume = target;
+    const a = activeAudioEl();
+    if (a) a.volume = clampVol(smoothedVolume);
+  }
+  updateSoundFabLabel();
+  requestAnimationFrame(volumeLoop);
+}
+requestAnimationFrame(volumeLoop);
+
+function updateSoundFabLabel(){
+  const icon = document.getElementById('soundFabIcon');
+  const label = document.getElementById('soundFabLabel');
+  if (!icon || !label) return;
+  const on = entered && audioEnabled;
+  icon.textContent = on ? '🔊' : '🔇';
+  label.textContent = on ? 'Ton an' : 'Ton stumm';
+}
+
+/** Sequential fade: current track fades ALL THE WAY to silence and pauses,
+ * then (only after that) the next track starts and fades in — a real
+ * fade-out/fade-in, not an overlapping crossfade. */
+function fadeOutThenIn(outEl, nextEl){
+  const myToken = ++fadeToken;
+  manualFadeActive = true;
+  const startOut = outEl.volume;
+  const outStart = performance.now();
+
+  function stepOut(now){
+    if (myToken !== fadeToken) return;
+    const t = Math.min(1, (now - outStart) / FADE_OUT_MS);
+    outEl.volume = startOut * (1 - t);
+    if (t < 1) { requestAnimationFrame(stepOut); return; }
+    outEl.pause();
+    startIn();
+  }
+
+  function startIn(){
+    if (myToken !== fadeToken) return;
+    nextEl.volume = 0;
+    const targetIn = clampVol(computeTargetVolume());
+    const inStart = performance.now();
+    function stepIn(now){
+      if (myToken !== fadeToken) return;
+      const t = Math.min(1, (now - inStart) / FADE_IN_MS);
+      nextEl.volume = targetIn * t;
+      smoothedVolume = nextEl.volume;
+      if (t < 1) { requestAnimationFrame(stepIn); return; }
+      manualFadeActive = false;
+    }
+    requestAnimationFrame(stepIn);
+  }
+
+  requestAnimationFrame(stepOut);
+}
+
+function playTrack(i){
+  currentIdx = i;
+  const t = tracks[i];
+
+  aboxCover.style.opacity = 0;
+  setTimeout(() => {
+    if (t.cover) aboxCover.style.backgroundImage = `url('${t.cover}')`;
+    aboxCover.style.opacity = 1;
+  }, 450);
+  aboxTitle.textContent = t.title;
+  aboxArtist.textContent = t.artist;
+  aboxDur.textContent = fmtTime(t.durSec);
+  aboxCur.textContent = fmtTime(t.previewStart);
+  aboxFill.style.width = '0%';
+  setColor(t);
+  renderDots();
+
+  const now = document.getElementById('soundFabNow');
+  if (now) now.textContent = t.title;
+
+  const outEl = activeAudioEl();
+  const next = inactiveAudioEl();
+  const isFirstPlay = outEl.paused && outEl.currentTime === 0 && !outEl.src;
+
+  if (t.previewFile) {
+    next.src = t.previewFile;
+    next.currentTime = 0;
+    next.muted = false;
+    next.play().catch(() => {});
+  }
+
+  if (isFirstPlay) {
+    // Nothing to fade out on the very first track — just fade the new one in.
+    next.volume = 0;
+    manualFadeActive = true;
+    const targetIn = clampVol(computeTargetVolume());
+    const start = performance.now();
+    const myToken = ++fadeToken;
+    (function step(now){
+      if (myToken !== fadeToken) return;
+      const t2 = Math.min(1, (now - start) / FADE_IN_MS);
+      next.volume = targetIn * t2;
+      smoothedVolume = next.volume;
+      if (t2 < 1) { requestAnimationFrame(step); return; }
+      manualFadeActive = false;
+    })(start);
+  } else {
+    fadeOutThenIn(outEl, next);
+  }
+
+  activeChannel = activeChannel === 'A' ? 'B' : 'A';
+  startTiming(t, t.previewFile ? next : null);
+}
+
+function advance(){
+  playTrack(pickNextIndex());
+}
+
+// ---- Click-to-Enter: browsers require a real gesture before audio can make
+// sound. After it, ambience plays sitewide — louder near Album Focus,
+// fading smoothly with scroll distance, silent again a couple screens away. ----
+const enterOverlay = document.getElementById('enterOverlay');
+const enterBtn = document.getElementById('enterBtn');
+const enterMuted = document.getElementById('enterMuted');
+const soundFab = document.getElementById('soundFab');
+
+function closeOverlay(){
+  enterOverlay.classList.add('hidden');
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  soundFab.classList.add('visible');
+}
+
+function enterSite(){
+  if (entered) return;
+  entered = true;
+  [audioA, audioB].forEach((a) => { a.muted = false; });
+  activeAudioEl().play().catch(() => {});
+  closeOverlay();
+  updateSoundFabLabel();
+}
+enterBtn?.addEventListener('click', enterSite);
+enterMuted?.addEventListener('click', () => {
+  // Explicit opt-out: close the overlay but leave audio muted/off.
+  entered = true;
+  audioEnabled = false;
+  closeOverlay();
+  updateSoundFabLabel();
+});
+document.documentElement.style.overflow = 'hidden';
+document.body.style.overflow = 'hidden';
+
+soundFab?.addEventListener('click', () => {
+  if (!entered) { enterSite(); return; }
+  audioEnabled = !audioEnabled;
+  updateSoundFabLabel();
+});
+
+// ---- populate the App-Chrome tabs, Compact Bar and Custom Widget previews
+// with real track data once it's loaded (no more static assets/img refs).
+// Uses a shuffled, non-repeating pool so every slot gets a DIFFERENT song —
+// add more songs to SONG_LIST and more of them show up across the page
+// automatically instead of the same handful repeating everywhere. ----
+function uniqueTrackPicker(){
+  const shuffled = tracks.map((_, i) => i).sort(() => Math.random() - 0.5);
+  let cursor = 0;
+  return () => {
+    const t = tracks[shuffled[cursor % shuffled.length]];
+    cursor++;
+    return t;
+  };
+}
+
+function populateStaticPreviews(){
+  if (tracks.length === 0) return;
+  const next = uniqueTrackPicker(); // hands out a fresh, shuffled track each call
+
+  const set = (id, prop, val) => { const el = document.getElementById(id); if (el) el[prop] = val; };
+  const setBg = (id, url) => { const el = document.getElementById(id); if (el && url) el.style.backgroundImage = `url('${url}')`; };
+
+  // Player tab
+  const tPlayer = next();
+  setBg('playerMockCover', tPlayer.cover);
+  set('playerMockTitle', 'textContent', tPlayer.title);
+  set('playerMockArtist', 'textContent', tPlayer.artist);
+  set('playerMockDur', 'textContent', fmtTime(tPlayer.durSec));
+
+  // History tab — the whole library, most tracks shown (not just 4)
+  const historyList = document.getElementById('historyListDynamic');
+  if (historyList) {
+    const shuffledAll = [...tracks].sort(() => Math.random() - 0.5).slice(0, Math.min(tracks.length, 10));
+    historyList.innerHTML = shuffledAll.map((t, i) => `
+      <div class="history-item">
+        <span class="history-index">${i + 1}</span>
+        <div class="history-cover" style="background-image:url('${t.cover}')"></div>
+        <div class="history-info"><div class="history-title">${t.title}</div><div class="history-artist">${t.artist}</div></div>
+      </div>`).join('');
+  }
+  const historySubtitle = document.getElementById('historySubtitle');
+  if (historySubtitle) historySubtitle.textContent = `${tracks.length} Track${tracks.length === 1 ? '' : 's'}`;
+
+  // Designs tab mini previews — two more distinct tracks
+  const tD1 = next(), tD2 = next();
+  setBg('designsCw1Cover', tD1.cover);
+  setBg('designsCw2Cover', tD2.cover);
+
+  // Compact Bar section — three more distinct tracks
+  const tB1 = next(), tB2 = next(), tB3 = next();
+  setBg('bar1Cover', tB1.cover); set('bar1Title', 'textContent', tB1.title); set('bar1Artist', 'textContent', tB1.artist);
+  setBg('bar2Cover', tB2.cover); set('bar2Title', 'textContent', tB2.title);
+  setBg('bar3Cover', tB3.cover); set('bar3Title', 'textContent', tB3.title); set('bar3Artist', 'textContent', tB3.artist);
+
+  // Custom Widgets section — two more distinct tracks
+  const tC1 = next(), tC2 = next();
+  setBg('customCw1Cover', tC1.cover); set('customCw1Title', 'textContent', tC1.title); set('customCw1Artist', 'textContent', tC1.artist);
+  setBg('customCw2Cover', tC2.cover); set('customCw2Title', 'textContent', tC2.title); set('customCw2Artist', 'textContent', tC2.artist);
+}
+
+// ---- init ----
+(async () => {
+  const songFolders = await discoverSongFolders();
+  tracks = await Promise.all(songFolders.map(loadTrack));
+  populateStaticPreviews();
+
+  // Blurred cover backdrop on the enter overlay, once available.
+  const backdrop = document.getElementById('enterBackdrop');
+  const withCover = tracks.find((t) => t.cover);
+  if (backdrop && withCover) {
+    backdrop.style.backgroundImage = `url('${withCover.cover}')`;
+    requestAnimationFrame(() => backdrop.classList.add('visible'));
+  }
+
+  const first = pickNextIndex();
+  playTrack(first);
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "Gasse",
+  "artist": "JONNY5",
+  "album": "Unknown Album",
+  "album_artist": "JONNY5",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 125.95,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 8.03,
+    "end": 28.03,
+    "length": 20.0,
+    "score": 0.5952
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#7d7d7d",
+    "rgb": [
+      125,
+      125,
+      125
+    ],
+    "hsl": [
+      0,
+      0,
+      49
+    ]
+  },
+  "analysis": {
+    "bpm": 162,
+    "key": "C#",
+    "energy": 0.5787,
+    "brightness": 0.4086,
+    "danceability": 0.8888,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.8753,
+    "vocal_ratio": 0.4064
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 118144
+  }
+}

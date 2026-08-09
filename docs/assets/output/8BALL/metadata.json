@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "8BALL",
+  "artist": "Rrotzer",
+  "album": "Unknown Album",
+  "album_artist": "Rrotzer",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 101.82,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 75.95,
+    "end": 95.95,
+    "length": 20.0,
+    "score": 0.6383
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#1f2aca",
+    "rgb": [
+      31,
+      42,
+      202
+    ],
+    "hsl": [
+      236,
+      73,
+      46
+    ]
+  },
+  "analysis": {
+    "bpm": 118,
+    "key": "Cm",
+    "energy": 0.4931,
+    "brightness": 0.5724,
+    "danceability": 0.8901,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.7579,
+    "vocal_ratio": 0.4519
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 87568
+  }
+}

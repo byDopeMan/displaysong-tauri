@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "guten morgen",
+  "artist": "Sampagne, Nizi19",
+  "album": "guten morgen",
+  "album_artist": "Sampagne, Nizi19",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 112.81,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 19.18,
+    "end": 41.18,
+    "length": 22.0,
+    "score": 0.5722
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#6f433f",
+    "rgb": [
+      111,
+      67,
+      63
+    ],
+    "hsl": [
+      5,
+      28,
+      34
+    ]
+  },
+  "analysis": {
+    "bpm": 152,
+    "key": "Cm",
+    "energy": 0.5105,
+    "brightness": 0.5196,
+    "danceability": 0.89,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.6863,
+    "vocal_ratio": 0.4867
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 251067
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "tattoo",
+  "artist": "Hank",
+  "album": "tattoo",
+  "album_artist": "Hank",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 150.01,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 126.73,
+    "end": 147.73,
+    "length": 21.0,
+    "score": 0.6326
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#25314f",
+    "rgb": [
+      37,
+      49,
+      79
+    ],
+    "hsl": [
+      223,
+      36,
+      23
+    ]
+  },
+  "analysis": {
+    "bpm": 89,
+    "key": "G#m",
+    "energy": 0.4796,
+    "brightness": 0.5799,
+    "danceability": 0.8904,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.522,
+    "vocal_ratio": 0.6089
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 240394
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "Whole Melt",
+  "artist": "Wellconnected_G",
+  "album": "Unknown Album",
+  "album_artist": "Wellconnected_G",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 195.73,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 110.13,
+    "end": 130.13,
+    "length": 20.0,
+    "score": 0.6178
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#e8de74",
+    "rgb": [
+      232,
+      222,
+      116
+    ],
+    "hsl": [
+      55,
+      72,
+      68
+    ]
+  },
+  "analysis": {
+    "bpm": 103,
+    "key": "G",
+    "energy": 0.4565,
+    "brightness": 0.5729,
+    "danceability": 0.888,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.7674,
+    "vocal_ratio": 0.5177
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 133628
+  }
+}

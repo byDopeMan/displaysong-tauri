@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "Heisenberg",
+  "artist": "Chad & Wob",
+  "album": "Unknown Album",
+  "album_artist": "Chad & Wob",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 120.94,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 29.16,
+    "end": 49.16,
+    "length": 20.0,
+    "score": 0.6558
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#9c6a48",
+    "rgb": [
+      156,
+      106,
+      72
+    ],
+    "hsl": [
+      24,
+      37,
+      45
+    ]
+  },
+  "analysis": {
+    "bpm": 129,
+    "key": "E",
+    "energy": 0.6634,
+    "brightness": 0.6307,
+    "danceability": 0.8898,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.7049,
+    "vocal_ratio": 0.5082
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 145368
+  }
+}

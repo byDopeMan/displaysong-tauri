@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "ZAHLTAG",
+  "artist": "Boondawg",
+  "album": "KULT",
+  "album_artist": "Boondawg",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 137.61,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 47.97,
+    "end": 67.97,
+    "length": 20.0,
+    "score": 0.5809
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#82addd",
+    "rgb": [
+      130,
+      173,
+      221
+    ],
+    "hsl": [
+      212,
+      57,
+      69
+    ]
+  },
+  "analysis": {
+    "bpm": 152,
+    "key": "D#m",
+    "energy": 0.3891,
+    "brightness": 0.5401,
+    "danceability": 0.8916,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.648,
+    "vocal_ratio": 0.5735
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 233432
+  }
+}

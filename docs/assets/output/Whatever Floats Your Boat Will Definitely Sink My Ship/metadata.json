@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "Whatever Floats Your Boat Will Definitely Sink My Ship",
+  "artist": "$uicideboy$",
+  "album": "THY WILL BE DONE",
+  "album_artist": "$uicideboy$",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 162.32,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 24.82,
+    "end": 46.82,
+    "length": 22.0,
+    "score": 0.6574
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#a7906b",
+    "rgb": [
+      167,
+      144,
+      107
+    ],
+    "hsl": [
+      37,
+      25,
+      54
+    ]
+  },
+  "analysis": {
+    "bpm": 152,
+    "key": "C#m",
+    "energy": 0.6011,
+    "brightness": 0.5831,
+    "danceability": 0.8931,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.7155,
+    "vocal_ratio": 0.5674
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 240894
+  }
+}

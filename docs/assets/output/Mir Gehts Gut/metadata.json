@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "Mir Gehts Gut",
+  "artist": "CoZmoNetZ",
+  "album": "Mir Gehts Gut",
+  "album_artist": "CoZmoNetZ",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 130.09,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 108.95,
+    "end": 128.95,
+    "length": 20.0,
+    "score": 0.6199
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#8090a1",
+    "rgb": [
+      128,
+      144,
+      161
+    ],
+    "hsl": [
+      211,
+      15,
+      57
+    ]
+  },
+  "analysis": {
+    "bpm": 99,
+    "key": "G#m",
+    "energy": 0.6863,
+    "brightness": 0.3079,
+    "danceability": 0.8936,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.6354,
+    "vocal_ratio": 0.3972
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 228578
+  }
+}

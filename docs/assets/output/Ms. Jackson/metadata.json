@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "title": "Ms. Jackson",
+  "artist": "Pashanim",
+  "album": "Ms. Jackson",
+  "album_artist": "Pashanim",
+  "genre": null,
+  "year": null,
+  "track_number": null,
+  "duration": 147.6,
+  "preview": {
+    "file": "preview.mp3",
+    "start": 50.09,
+    "end": 71.09,
+    "length": 21.0,
+    "score": 0.65
+  },
+  "cover": "cover.webp",
+  "cover_generated": false,
+  "waveform": "waveform.png",
+  "theme": {
+    "hex": "#896041",
+    "rgb": [
+      137,
+      96,
+      65
+    ],
+    "hsl": [
+      26,
+      36,
+      40
+    ]
+  },
+  "analysis": {
+    "bpm": 162,
+    "key": "B",
+    "energy": 0.5701,
+    "brightness": 0.6505,
+    "danceability": 0.8939,
+    "chorus_confidence": 1.0,
+    "dynamic_range": 0.8106,
+    "vocal_ratio": 0.4883
+  },
+  "source": {
+    "sample_rate": 44100,
+    "channels": 2,
+    "bitrate": 256543
+  }
+}
