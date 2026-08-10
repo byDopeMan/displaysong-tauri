@@ -367,7 +367,7 @@ footer a:hover{color:var(--text);}
 </div>
 
 <button id="soundFab" type="button">
-  <span id="soundFabIcon">🔊</span>
+  <svg id="soundFabIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
   <span id="soundFabLabel">Ton an</span>
   <span class="now" id="soundFabNow"></span>
 </button>
@@ -385,7 +385,7 @@ footer a:hover{color:var(--text);}
     <p>Universal Now Playing Widget für OBS. Erkennt automatisch, was gerade läuft — egal welcher Player, egal welche Plattform.</p>
     <div class="cta">
       <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download v4.2.0</a>
-      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0-plugins">🔌 Plugin-Version</a>
+      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0-plugins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><path d="M4 7h3a2 2 0 0 0 2-2V4M20 7h-3a2 2 0 0 1-2-2V4M4 17h3a2 2 0 0 1 2 2v1M20 17h-3a2 2 0 0 0-2 2v1M9 9h6v6H9z"></path></svg>Plugin-Version</a>
       <a class="btn btn-secondary" href="#app">Reinschauen ↓</a>
     </div>
     <p style="font-size:12px; color:var(--text-dim); margin-top:14px;">Zwei Release-Reihen: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">v4.2.0</code> (Standard, Auto-Update) und <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">v4.2.0-plugins</code> (mit Plugin-API, manuelles Update).</p>
@@ -430,9 +430,13 @@ footer a:hover{color:var(--text);}
       <div class="tabpanel" id="tab-history">
         <div class="history-header">
           <div><h2>Verlauf</h2><div class="history-subtitle" id="historySubtitle">Letzte Tracks</div></div>
-          <div class="history-design-toggle">
-            <button class="design-toggle-btn active" title="Liste"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
-            <button class="design-toggle-btn" title="Eingebettet"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></button>
+          <div class="history-controls">
+            <select class="history-filter-select"><option>Alle Quellen</option><option>Nur Spotify</option></select>
+            <div class="history-design-toggle">
+              <button class="design-toggle-btn active" title="Liste"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
+              <button class="design-toggle-btn" title="Eingebettet"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></button>
+            </div>
+            <button class="btn-icon-sm" id="btn-open-blocklist"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> Blockiert</button>
           </div>
         </div>
         <div class="history-list" id="historyListDynamic"></div>
@@ -460,39 +464,25 @@ footer a:hover{color:var(--text);}
         <div class="plugins-header">
           <h2>Plugins</h2>
           <div class="plugins-actions">
-            <button class="btn-icon" title="Ordner öffnen">📁</button>
-            <button class="btn-icon" title="ZIP importieren">📦</button>
-            <button class="btn-icon" title="Liste aktualisieren">↻</button>
+            <button class="btn-icon" title="Ordner öffnen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></button>
+            <button class="btn-icon" title="ZIP importieren"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+            <button class="btn-icon" title="Liste aktualisieren"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button>
           </div>
         </div>
-        <p class="plugins-intro">Erweitere DisplaySong mit eigenem Code — Track-Events, Twitch-Events, eigene Fenster.</p>
-        <div class="plugin-card enabled">
-          <div class="plugin-main">
-            <div class="plugin-info">
-              <span class="plugin-name">Twitch Song Request Queue</span>
-              <span class="plugin-version">1.2.0</span>
-            </div>
-            <div class="plugin-actions">
-              <button class="plugin-btn" title="Einstellungen">⚙</button>
-              <button class="plugin-btn" title="Löschen">🗑</button>
-              <div class="toggle on"></div>
-            </div>
-          </div>
-          <div class="plugin-meta"><span class="plugin-author">von Community</span><span class="plugin-desc">Eigenes Queue-Fenster + Channel-Points-Anbindung für Song Requests.</span></div>
-        </div>
+        <p class="plugins-intro">Erweitere DisplaySong mit eigenem Code — Track-Events, Twitch-Events, eigene Fenster. Twitch-Song-Requests, Verlauf & Widgets sind fest eingebaut, keine Plugins.</p>
         <div class="plugin-card">
           <div class="plugin-main">
             <div class="plugin-info">
-              <span class="plugin-name">Discord Rich Presence</span>
-              <span class="plugin-version">0.4.1</span>
+              <span class="plugin-name">Beispiel-Plugin</span>
+              <span class="plugin-version">1.0.0</span>
             </div>
             <div class="plugin-actions">
-              <button class="plugin-btn" title="Einstellungen">⚙</button>
-              <button class="plugin-btn" title="Löschen">🗑</button>
+              <button class="plugin-btn" title="Einstellungen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+              <button class="plugin-btn" title="Löschen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
               <div class="toggle off"></div>
             </div>
           </div>
-          <div class="plugin-meta"><span class="plugin-author">von Community</span><span class="plugin-desc">Zeigt den aktuellen Track als Discord-Status.</span></div>
+          <div class="plugin-meta"><span class="plugin-author">manuell installiert</span><span class="plugin-desc">Eigene Plugins landen hier, sobald sie im Plugin-Ordner liegen (manifest.json + index.js).</span></div>
         </div>
       </div>
 
@@ -501,7 +491,7 @@ footer a:hover{color:var(--text);}
         <div class="settings-section">
           <h3>Verbindungen</h3>
           <div class="connection-item">
-            <div class="connection-info"><div class="connection-icon">♪</div><div><div class="connection-name">Spotify</div><div class="connection-status">Verbunden</div></div></div>
+            <div class="connection-info"><div class="connection-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></div><div><div class="connection-name">Spotify</div><div class="connection-status">Verbunden</div></div></div>
           </div>
           <div class="connection-item">
             <div class="connection-info"><div class="connection-icon twitch">T</div><div><div class="connection-name">Twitch</div><div class="connection-status" style="color:var(--text-dim);">Nicht verbunden</div></div></div>
@@ -713,35 +703,55 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
 // ---- album focus: loads real assets from the generator output ----
 // Erwartete Struktur pro Track: assets/output/<Song Name>/{preview.mp3, cover.webp,
-// metadata.json}. Die Ordnerliste wird automatisch über die öffentliche GitHub-
-// Contents-API ermittelt — einfach einen neuen Ordner unter assets/output/
-// anlegen, committen, pushen, fertig. FALLBACK_SONG_LIST greift nur, falls die
-// API mal nicht erreichbar ist (z.B. Rate-Limit) oder file:// lokal getestet wird.
+// metadata.json}. Reihenfolge der Erkennung:
+//   1. assets/output/manifest.json — ein simples JSON-Array mit Ordnernamen,
+//      liegt auf demselben Origin (kein CORS-Risiko, kein Rate-Limit).
+//      Wird bei jedem neuen Song aktualisiert (Script/Generator schreibt es mit).
+//   2. GitHub Contents API — nur als Rückfallebene (unauthentifiziert nur
+//      60 Requests/Stunde/IP; bei Überschreitung liefert GitHub eine Antwort
+//      OHNE CORS-Header, was der Browser fälschlich als "CORS blockiert" statt
+//      als 429 meldet).
+//   3. FALLBACK_SONG_LIST — hart codiert, greift nur wenn beides scheitert.
 const GITHUB_REPO = 'byDopeMan/displaysong-tauri';
 const GITHUB_BRANCH = 'main';
 const GITHUB_OUTPUT_PATH = 'docs/assets/output'; // Pfad ab Repo-Root, nicht ab docs/
 const OUTPUT_BASE = 'assets/output/';
 
 const FALLBACK_SONG_LIST = [
-  '8BALL', 'designerfrust', 'Gasse', 'guten morgen', 'Heisenberg', "IN KLEIN' SCHEINEN", 
-  'Mir Gehts Gut', 'Ms. Jackson', 'tattoo', 'Toxisch', 'Whatever Floats Your Boat Will Definitely Sink My Ship',
-  'Whole Melt', 'ZAHLTAG',
+  '8BALL', 'designerfrust', 'Gasse', 'guten morgen', 'Heisenberg', "IN KLEIN' SCHEINEN",
+  'Mir Gehts Gut', 'Ms. Jackson', 'tattoo', 'Toxisch', 
+  'Whatever Floats Your Boat Will Definitely Sink My Ship', 'Whole Melt', 'ZAHLTAG',
 ];
 
-/** Listet die Unterordner von assets/output/ live über die GitHub API auf.
- * Läuft nur über http(s) (nicht file://) und braucht ein öffentliches Repo. */
+async function loadManifest(){
+  const res = await fetch(OUTPUT_BASE + 'manifest.json', { cache: 'no-store' });
+  if (!res.ok) throw new Error('manifest.json not found: ' + res.status);
+  const list = await res.json();
+  if (!Array.isArray(list) || list.length === 0) throw new Error('manifest.json empty');
+  return list;
+}
+
+async function loadFromGithubApi(){
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_OUTPUT_PATH}?ref=${GITHUB_BRANCH}`;
+  const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } });
+  if (!res.ok) throw new Error('GitHub API response not ok: ' + res.status);
+  const items = await res.json();
+  const folders = items.filter((i) => i.type === 'dir').map((i) => i.name);
+  if (folders.length === 0) throw new Error('no folders found');
+  return folders;
+}
+
 async function discoverSongFolders(){
   try {
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_OUTPUT_PATH}?ref=${GITHUB_BRANCH}`;
-    const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } });
-    if (!res.ok) throw new Error('GitHub API response not ok: ' + res.status);
-    const items = await res.json();
-    const folders = items.filter((i) => i.type === 'dir').map((i) => i.name);
-    if (folders.length === 0) throw new Error('no folders found');
-    return folders;
-  } catch (e) {
-    console.warn('[DisplaySong] Automatische Song-Erkennung fehlgeschlagen, nutze Fallback-Liste:', e);
-    return FALLBACK_SONG_LIST;
+    return await loadManifest();
+  } catch (e1) {
+    console.warn('[DisplaySong] manifest.json nicht gefunden, versuche GitHub API:', e1);
+    try {
+      return await loadFromGithubApi();
+    } catch (e2) {
+      console.warn('[DisplaySong] GitHub API auch nicht erreichbar, nutze Fallback-Liste:', e2);
+      return FALLBACK_SONG_LIST;
+    }
   }
 }
 
@@ -872,7 +882,8 @@ const PEAK_VOLUME = 0.16;         // volume when Album Focus is perfectly center
 // this, no matter what computes the target. Nothing can ever get louder than
 // this value, full stop. Raise ONLY this one number if it should be louder.
 const HARD_VOLUME_CEILING = 0.16;
-const PROXIMITY_RANGE_VH = 1.7;   // how many viewport-heights of distance until silence
+const PROXIMITY_RANGE_VH = 1.7;   // how many viewport-heights of distance until it hits the floor
+const FLOOR_VOLUME = 0.025;       // never fully silent anywhere on the page (still audible at the very bottom)
 const FADE_OUT_MS = 700;          // sequential fade: old track goes fully silent first
 const FADE_IN_MS = 700;           // …then the new one fades in from silence
 const VOLUME_EASE = 0.06;         // per-frame smoothing so the proximity fade is gentle
@@ -894,7 +905,7 @@ function computeProximity(){
 
 function computeTargetVolume(){
   if (!entered || !audioEnabled) return 0;
-  return clampVol(PEAK_VOLUME * computeProximity());
+  return clampVol(FLOOR_VOLUME + (PEAK_VOLUME - FLOOR_VOLUME) * computeProximity());
 }
 
 // One rAF loop smooths the *proximity* target continuously (scroll fades) —
@@ -914,12 +925,15 @@ function volumeLoop(){
 }
 requestAnimationFrame(volumeLoop);
 
+const SVG_SOUND_ON = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>';
+const SVG_SOUND_OFF = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+
 function updateSoundFabLabel(){
   const icon = document.getElementById('soundFabIcon');
   const label = document.getElementById('soundFabLabel');
   if (!icon || !label) return;
   const on = entered && audioEnabled;
-  icon.textContent = on ? '🔊' : '🔇';
+  icon.innerHTML = on ? SVG_SOUND_ON : SVG_SOUND_OFF;
   label.textContent = on ? 'Ton an' : 'Ton stumm';
 }
 
