@@ -6,6 +6,19 @@
 <title>DisplaySong by byDopeMan – Universal Now Playing Widget für OBS</title>
 <meta name="description" content="DisplaySong von byDopeMan: Universal Now Playing Widget für OBS. Zeigt den aktuell spielenden Track als elegantes Widget an – funktioniert mit Spotify, YouTube, VLC und allen Musik-Playern." />
 <meta name="google-site-verification" content="ziONzzSPZX5U-8ZD34mKFtU-XYVaH4KNcqij2yZwXZs" />
+<!-- DisplaySong app icon as favicon -->
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="apple-touch-icon" href="favicon.png" />
+<meta name="theme-color" content="#1db954" />
+<!-- Canonical + social/search preview -->
+<link rel="canonical" href="https://bydopeman.github.io/displaysong-tauri/" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://bydopeman.github.io/displaysong-tauri/" />
+<meta property="og:title" content="DisplaySong – Now Playing Widget für OBS" />
+<meta property="og:description" content="Zeigt den aktuell spielenden Track als elegantes Widget in OBS – für Spotify, YouTube, VLC und alle Musik-Player." />
+<meta property="og:image" content="https://bydopeman.github.io/displaysong-tauri/favicon.png" />
+<meta name="twitter:card" content="summary" />
 <style>
 :root{
   --bg:#0a0a0a; --surface:#141414; --surface-hover:#1a1a1a; --border:#2a2a2a;
@@ -92,7 +105,10 @@ section{padding:70px 0;}
 .section-head p{color:var(--text-dim); font-size:15.5px; max-width:520px; margin:0 auto; line-height:1.6;}
 
 /* ============ APP CHROME (functional tabs) ============ */
-.app-frame{border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 40px 80px -30px rgba(0,0,0,0.7); background:var(--bg);}
+/* Fixed to the real DisplaySong window size (420×540, not resizable) so the
+   frame no longer grows/shrinks when you switch tabs — the tab content scrolls
+   inside instead, exactly like the app. */
+.app-frame{width:420px; max-width:100%; margin-left:auto; margin-right:auto; border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:0 40px 80px -30px rgba(0,0,0,0.7); background:var(--bg);}
 .titlebar{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--surface);}
 .titlebar .title{font-size:13px; color:var(--text-dim); font-weight:600;}
 .tb-controls{display:flex; gap:8px;}
@@ -102,7 +118,9 @@ section{padding:70px 0;}
 .tabbtn{padding:7px 12px; font-size:12px; color:var(--text-dim); border-radius:6px; background:none; border:none; cursor:pointer; font-family:inherit;}
 .tabbtn:hover{color:var(--text);}
 .tabbtn.active{color:var(--accent); background:rgba(var(--accent-rgb),0.1);}
-.tabpanel{display:none; padding:24px 22px 40px;}
+.tabpanel{display:none; padding:20px 18px; height:456px; box-sizing:border-box; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent;}
+.tabpanel::-webkit-scrollbar{width:8px;}
+.tabpanel::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
 .tabpanel.active{display:block;}
 
 /* player tab — matches views.css .player-container / .cover-image / .status-badge / .track-title etc. exactly */
@@ -183,6 +201,17 @@ section{padding:70px 0;}
 .widget-tag{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:var(--surface); border-radius:6px; font-size:12px; margin:0 6px 6px 0;}
 .close-widget{background:none; border:none; color:var(--text-dim); font-size:14px; line-height:1; cursor:pointer;}
 .btn-show:hover{background:var(--accent-hover);}
+.tab-title{font-size:17px; font-weight:600; margin:0 0 14px;}
+.designs-global-option{justify-content:flex-start; margin-bottom:10px;}
+.design-options{margin-bottom:10px;}
+.design-preview.design-custom{color:var(--text-dim); font-weight:700; font-size:15px; letter-spacing:1px;}
+.custom-widgets-hint{margin-top:24px; padding-top:18px; border-top:1px solid var(--border);}
+.custom-widgets-hint h3{font-size:14px; margin:0 0 6px; color:var(--text-dim); font-weight:600;}
+.custom-widgets-hint p{font-size:12px; color:var(--text-dim); margin:0 0 12px;}
+.btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+.btn-icon-sm{display:inline-flex; align-items:center; gap:6px; padding:7px 12px; background:var(--surface); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; cursor:pointer;}
+.btn-icon-sm:hover{background:var(--surface-hover);}
+.no-widgets{font-size:12px; color:var(--text-dim);}
 
 /* settings tab — grouped .settings-section blocks like the real Settings.svelte */
 .settings-section{background:var(--surface); border-radius:12px; padding:16px; margin-bottom:16px;}
@@ -218,6 +247,32 @@ section{padding:70px 0;}
 .connection-icon.twitch{background:rgba(145,70,255,0.15); color:#9146ff;}
 .connection-name{font-size:13px; font-weight:500;}
 .connection-status{font-size:11px; color:var(--accent);}
+.connection-status.dim{color:var(--text-dim);}
+.connection-details{display:flex; flex-direction:column;}
+/* settings: collapsible section headers, selects, sliders, connection buttons, about */
+.section-toggle{display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom:0;}
+.section-toggle h3{margin:0;}
+.section-chevron{flex-shrink:0; opacity:.6;}
+.section-content{padding-top:14px;}
+.setting-row label{color:var(--text); font-size:14px;}
+.setting-select{background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:7px; padding:6px 10px; font-size:13px; font-family:inherit; cursor:pointer; min-width:150px;}
+.slider-row{display:flex; align-items:center; gap:10px;}
+.slider-row span{font-size:12px; color:var(--text-dim); min-width:36px; text-align:right;}
+.setting-slider{accent-color:var(--accent); width:120px;}
+.btn-small{padding:6px 14px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; font-family:inherit;}
+.btn-primary{background:var(--accent); color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:var(--surface-hover); color:var(--text); border:1px solid var(--border);}
+.accent-swatches{display:flex; gap:8px;}
+.accent-swatch{width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent;}
+.accent-swatch.active{border-color:#fff;}
+.about-info{text-align:center; padding:8px 0 14px;}
+.about-info .app-name{font-size:16px; font-weight:700; margin:0 0 2px;}
+.about-info .app-version{font-size:12px; color:var(--text-dim); margin:0 0 4px;}
+.about-info .app-desc{font-size:12px; color:var(--text-dim); margin:0;}
+.about-links{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
+.btn-text{display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; font-family:inherit; padding:4px 6px;}
+.btn-text:hover{color:var(--accent-hover);}
 
 /* ============ ALBUM FOCUS CAROUSEL ============ */
 .carousel-wrap{display:flex; flex-direction:column; align-items:center;}
@@ -493,19 +548,48 @@ footer a:hover{color:var(--text);}
         <div class="history-list" id="historyListDynamic"></div>
       </div>
 
-      <!-- DESIGNS TAB -->
+      <!-- DESIGNS TAB — 1:1 mit Designs.svelte -->
       <div class="tabpanel" id="tab-designs">
+        <h2 class="tab-title">Widget Designs</h2>
+        <label class="checkbox-label designs-global-option"><input type="checkbox" checked> <span>Requester bei Song-Requests in Widgets anzeigen</span></label>
+        <label class="checkbox-label designs-global-option"><input type="checkbox" checked> <span>Ausblenden wenn pausiert</span></label>
         <div class="design-grid">
-          <div class="design-card"><div class="design-preview"><div class="preview-bar"></div></div><h3>Compact Bar</h3><p class="design-desc">Horizontal, minimalistisch</p><label class="checkbox-label"><input type="checkbox" checked> Akzentfarbe vom Cover</label><button class="btn-show">Anzeigen</button></div>
-          <div class="design-card"><div class="design-preview"><div class="preview-square"></div></div><h3>Album Focus</h3><p class="design-desc">Großes Cover, vertikal</p><label class="checkbox-label"><input type="checkbox" checked> Akzentfarbe vom Cover</label><button class="btn-show">Anzeigen</button></div>
-          <div class="design-card"><div class="design-preview"><div class="preview-custom" style="transform:scale(.44);"><div class="cw1" style="pointer-events:none;"><div class="cw1-cover" id="designsCw1Cover"></div></div></div></div><h3>Custom 1</h3><p class="design-desc">Rundes Cover, Status-Dot</p><button class="btn-show">Anzeigen</button></div>
-          <div class="design-card"><div class="design-preview"><div class="preview-custom" style="transform:scale(.36);"><div class="cw2" style="pointer-events:none;"><div class="cw2-cover" id="designsCw2Cover"></div></div></div></div><h3>Custom 2</h3><p class="design-desc">Neon Pill-Bar</p><button class="btn-show">Anzeigen</button></div>
+          <div class="design-card">
+            <div class="design-preview design-1"><div class="preview-bar"></div></div>
+            <h3>Compact Bar</h3><p class="design-desc">Horizontal, minimalistisch</p>
+            <div class="design-options"><label class="checkbox-label"><input type="checkbox"> <span>Akzentfarbe</span></label></div>
+            <button class="btn btn-show">Anzeigen</button>
+          </div>
+          <div class="design-card">
+            <div class="design-preview design-2"><div class="preview-square"></div></div>
+            <h3>Album Focus</h3><p class="design-desc">Großes Cover, vertikal</p>
+            <div class="design-options"><label class="checkbox-label"><input type="checkbox" checked> <span>Akzentfarbe</span></label></div>
+            <button class="btn btn-show">Anzeigen</button>
+          </div>
+          <div class="design-card">
+            <div class="design-preview design-custom"><span>C1</span></div>
+            <h3>Custom 1</h3><p class="design-desc">Anpassbar im Editor</p>
+            <button class="btn btn-show">Anzeigen</button>
+          </div>
+          <div class="design-card">
+            <div class="design-preview design-custom"><span>C2</span></div>
+            <h3>Custom 2</h3><p class="design-desc">Anpassbar im Editor</p>
+            <button class="btn btn-show">Anzeigen</button>
+          </div>
         </div>
         <div class="active-widgets">
           <h3>Aktive Widgets</h3>
           <div id="widget-list">
             <span class="widget-tag">Compact Bar <button class="close-widget">×</button></span>
             <span class="widget-tag">Album Focus <button class="close-widget">×</button></span>
+          </div>
+        </div>
+        <div class="custom-widgets-hint">
+          <h3>Eigene Designs</h3>
+          <p>Du kannst die Custom-Widgets mit einem Texteditor anpassen.</p>
+          <div class="btn-row">
+            <button class="btn-icon-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Widget-Ordner</button>
+            <button class="btn-icon-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Neu laden</button>
           </div>
         </div>
       </div>
@@ -537,22 +621,50 @@ footer a:hover{color:var(--text);}
         </div>
       </div>
 
-      <!-- SETTINGS TAB -->
+      <!-- SETTINGS TAB — 1:1 mit Settings.svelte (Verbindungen · Design-Verhalten · Aussehen und System · Über) -->
       <div class="tabpanel" id="tab-settings">
         <div class="settings-section">
-          <h3>Verbindungen</h3>
-          <div class="connection-item">
-            <div class="connection-info"><div class="connection-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></div><div><div class="connection-name">Spotify</div><div class="connection-status">Verbunden</div></div></div>
-          </div>
-          <div class="connection-item">
-            <div class="connection-info"><div class="connection-icon twitch">T</div><div><div class="connection-name">Twitch</div><div class="connection-status" style="color:var(--text-dim);">Nicht verbunden</div></div></div>
+          <div class="section-toggle"><h3>Verbindungen</h3><svg class="section-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+          <div class="section-content">
+            <div class="connection-item">
+              <div class="connection-info"><span class="connection-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></span><div class="connection-details"><span class="connection-name">Spotify</span><span class="connection-status">Verbunden</span></div></div>
+              <button class="btn-small btn-secondary">Trennen</button>
+            </div>
+            <div class="connection-item">
+              <div class="connection-info"><span class="connection-icon twitch"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg></span><div class="connection-details"><span class="connection-name">Twitch</span><span class="connection-status dim">Nicht verbunden</span></div></div>
+              <button class="btn-small btn-primary">Verbinden</button>
+            </div>
           </div>
         </div>
         <div class="settings-section">
-          <h3>Widget-Verhalten</h3>
-          <div class="setting-row"><span>Ausblenden wenn pausiert</span><div class="toggle on"></div></div>
-          <div class="setting-row"><span>Requester in Widgets anzeigen</span><div class="toggle off"></div></div>
-          <div class="setting-row"><span>Positionen merken</span><div class="toggle on"></div></div>
+          <div class="section-toggle"><h3>Design-Verhalten</h3><svg class="section-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+          <div class="section-content">
+            <div class="setting-row"><label>Aktualisierungsrate</label><select class="setting-select"><option>1 Sekunde</option><option selected>2 Sekunden</option><option>5 Sekunden</option><option>10 Sekunden</option></select></div>
+            <div class="setting-row"><label>Design-Transparenz</label><div class="slider-row"><input type="range" class="setting-slider" min="50" max="100" value="100"><span>100%</span></div></div>
+            <div class="setting-row"><label>Designs beim Start öffnen</label><div class="toggle off"></div></div>
+            <div class="setting-row"><label>Design-Positionen merken</label><div class="toggle on"></div></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="section-toggle"><h3>Aussehen und System</h3><svg class="section-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+          <div class="section-content">
+            <div class="setting-row"><label>Theme</label><select class="setting-select"><option>Dunkel</option><option>Hell</option></select></div>
+            <div class="setting-row"><label>Sprache</label><select class="setting-select"><option>Deutsch</option><option>English</option></select></div>
+            <div class="setting-row"><label>Akzentfarbe</label><div class="accent-swatches"><span class="accent-swatch active" style="background:#1db954"></span><span class="accent-swatch" style="background:#3b82f6"></span><span class="accent-swatch" style="background:#8b5cf6"></span><span class="accent-swatch" style="background:#ec4899"></span><span class="accent-swatch" style="background:#f97316"></span></div></div>
+            <div class="setting-row"><label>Player Tab anzeigen</label><div class="toggle on"></div></div>
+            <div class="setting-row"><label>Verlauf Tab anzeigen</label><div class="toggle on"></div></div>
+            <div class="setting-row"><label>Aktiver Provider</label><select class="setting-select"><option>Windows Audio (Universal)</option><option>Spotify API</option></select></div>
+            <div class="setting-row"><label>Mit Windows starten</label><div class="toggle off"></div></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Über</h3>
+          <div class="about-info"><p class="app-name">DisplaySong</p><p class="app-version">Version 4.2.0</p><p class="app-desc">Now Playing Widget für OBS</p></div>
+          <div class="about-links">
+            <button class="btn-text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> Changelog</button>
+            <button class="btn-text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Lizenzen</button>
+            <button class="btn-text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Logs öffnen</button>
+          </div>
         </div>
       </div>
     </div>
@@ -911,13 +1023,25 @@ function startTiming(t, activeAudio){
   const total = t.durSec; // real full-song length from metadata, or null
 
   if (t.previewFile && activeAudio) {
+    activeAudio._advancing = false;
     activeAudio.ontimeupdate = () => {
+      // Once we've handed over to the next track, stop driving the display from
+      // this (old) channel — the new track's channel owns it during the overlap.
+      if (activeAudio._advancing) return;
       const cur = t.previewStart + activeAudio.currentTime;
       aboxCur.textContent = fmtTime(total != null ? Math.min(cur, total) : cur);
       const pctBase = total != null ? total : (activeAudio.duration && isFinite(activeAudio.duration) ? activeAudio.duration : t.previewLength);
       aboxFill.style.width = Math.min(100, (cur / pctBase) * 100) + '%';
+      // Kick off the next track CROSSFADE_SEC before this one ends, so the 5 s
+      // crossfade overlaps the tail of this track instead of starting from silence.
+      const dur = (activeAudio.duration && isFinite(activeAudio.duration)) ? activeAudio.duration : t.previewLength;
+      if (activeAudio.currentTime >= Math.max(0.6, dur - CROSSFADE_SEC)) {
+        activeAudio._advancing = true;
+        advance();
+      }
     };
-    activeAudio.onended = () => advance();
+    // Safety net if the early trigger didn't fire (e.g. unknown duration).
+    activeAudio.onended = () => { if (!activeAudio._advancing) { activeAudio._advancing = true; advance(); } };
   } else {
     const startedAt = performance.now();
     fallbackTimerId = setInterval(() => {
@@ -945,14 +1069,15 @@ let fadeToken = 0;            // cancels an in-flight fade when a new one starts
 // viewport center — loud when centered, fading out smoothly the further you
 // scroll away in EITHER direction, silent again a couple of screens away
 // (so it's not still audible way down at Plugin API / Twitch).
-const PEAK_VOLUME = 0.12;         // volume when Album Focus is perfectly centered
+const PEAK_VOLUME = 0.065;         // volume when Album Focus is perfectly centered
 // HARD safety ceiling — every single volume assignment in this file clamps to
 // this, no matter what computes the target. Nothing can ever get louder than
 // this value, full stop. Raise ONLY this one number if it should be louder.
 const HARD_VOLUME_CEILING = 0.12;
 const PROXIMITY_RANGE_VH = 1.7;   // how many viewport-heights of distance until it hits the floor
-const FLOOR_VOLUME = 0.025;       // never fully silent anywhere on the page (still audible at the very bottom)
-const CROSSFADE_MS = 650;         // overlapping equal-power crossfade between tracks (seamless)
+const FLOOR_VOLUME = 0.015;       // never fully silent anywhere on the page (still audible at the very bottom)
+const CROSSFADE_MS = 2200;        // long 5 s overlapping equal-power crossfade between tracks
+const CROSSFADE_SEC = CROSSFADE_MS / 1000; // …so the next track starts this early (real overlap)
 const FADE_IN_MS = 650;           // fade-in for the very first track (nothing to fade out yet)
 const VOLUME_EASE = 0.06;         // per-frame smoothing so the proximity fade is gentle
 function clampVol(v){ return Math.max(0, Math.min(HARD_VOLUME_CEILING, v)); }
