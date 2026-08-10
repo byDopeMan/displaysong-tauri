@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bydopeman.github.io/displaysong-tauri/sitemap.xml
