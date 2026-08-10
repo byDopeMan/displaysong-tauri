@@ -704,9 +704,11 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 // ---- album focus: loads real assets from the generator output ----
 // Erwartete Struktur pro Track: assets/output/<Song Name>/{preview.mp3, cover.webp,
 // metadata.json}. Reihenfolge der Erkennung:
-//   1. assets/output/manifest.json — ein simples JSON-Array mit Ordnernamen,
-//      liegt auf demselben Origin (kein CORS-Risiko, kein Rate-Limit).
-//      Wird bei jedem neuen Song aktualisiert (Script/Generator schreibt es mit).
+//   1. assets/output/manifest.json — ein JSON-Array, das pro Song gleich die
+//      KOMPLETTE metadata.json einbettet (+ "folder"-Feld). Ein einziger Fetch,
+//      egal wie viele Songs — kein N+1-Pattern mehr. Liegt auf demselben Origin
+//      (kein CORS-Risiko, kein Rate-Limit). Wird von update-manifest.ps1 erzeugt.
+//      (Altes Format = reines Namens-Array wird weiterhin unterstützt.)
 //   2. GitHub Contents API — nur als Rückfallebene (unauthentifiziert nur
 //      60 Requests/Stunde/IP; bei Überschreitung liefert GitHub eine Antwort
 //      OHNE CORS-Header, was der Browser fälschlich als "CORS blockiert" statt
@@ -761,30 +763,45 @@ function fmtTime(totalSeconds){
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
 
+// Build a track object from a parsed metadata.json — whether it came embedded in
+// manifest.json (the fast path) or was fetched per-folder (fallback). Cover and
+// preview audio live in the song's own folder.
+function buildTrackFromMeta(folder, m){
+  const base = OUTPUT_BASE + encodeURIComponent(folder) + '/';
+  return {
+    title: m.title || folder,
+    artist: m.artist || '',
+    cover: m.cover ? base + m.cover : '',
+    previewFile: m.preview?.file ? base + m.preview.file : null,
+    previewStart: m.preview?.start ?? 0,
+    previewLength: m.preview?.length ?? (m.preview?.end != null && m.preview?.start != null ? m.preview.end - m.preview.start : 22),
+    durSec: typeof m.duration === 'number' ? m.duration : null,
+    r: m.theme?.rgb?.[0] ?? 29, g: m.theme?.rgb?.[1] ?? 185, b: m.theme?.rgb?.[2] ?? 84,
+  };
+}
+
+// Neutral placeholder when a song has no (readable) metadata — no guessed values
+// (those led to wrong end-times before).
+function placeholderTrack(folder){
+  return {
+    title: folder, artist: '', cover: '', previewFile: null,
+    previewStart: 0, previewLength: 22, durSec: null,
+    r: 29, g: 185, b: 84,
+  };
+}
+
+// Fetch a single song's metadata.json. Only used for the fallback discovery
+// paths that yield folder NAMES (GitHub API / hardcoded list); the manifest
+// itself now embeds every song's metadata, so the normal path fetches nothing
+// extra (see init).
 async function loadTrack(folder){
   const base = OUTPUT_BASE + encodeURIComponent(folder) + '/';
   try {
     const res = await fetch(base + 'metadata.json');
     if (!res.ok) throw new Error('metadata.json not found');
-    const m = await res.json();
-    return {
-      title: m.title || folder,
-      artist: m.artist || '',
-      cover: m.cover ? base + m.cover : '',
-      previewFile: m.preview?.file ? base + m.preview.file : null,
-      previewStart: m.preview?.start ?? 0,
-      previewLength: m.preview?.length ?? (m.preview?.end != null && m.preview?.start != null ? m.preview.end - m.preview.start : 22),
-      durSec: typeof m.duration === 'number' ? m.duration : null,
-      r: m.theme?.rgb?.[0] ?? 29, g: m.theme?.rgb?.[1] ?? 185, b: m.theme?.rgb?.[2] ?? 84,
-    };
+    return buildTrackFromMeta(folder, await res.json());
   } catch (e) {
-    // Kein metadata.json (noch) vorhanden — neutraler Platzhalter, keine
-    // geratenen Werte (die führten vorher zu falschen End-Zeiten).
-    return {
-      title: folder, artist: '', cover: '', previewFile: null,
-      previewStart: 0, previewLength: 22, durSec: null,
-      r: 29, g: 185, b: 84,
-    };
+    return placeholderTrack(folder);
   }
 }
 
@@ -1134,8 +1151,18 @@ function populateStaticPreviews(){
 
 // ---- init ----
 (async () => {
-  const songFolders = await discoverSongFolders();
-  tracks = await Promise.all(songFolders.map(loadTrack));
+  const entries = await discoverSongFolders();
+  // The manifest embeds each song's metadata (entries are objects) → build the
+  // tracks directly, no per-song metadata.json fetch. This kills the N+1 request
+  // pattern that stalled for seconds under HTTP/1.1 (6-connection limit) once
+  // there were more than ~6 songs. Fallback discovery paths (GitHub API /
+  // hardcoded list) still yield folder-name strings → fetch metadata for those.
+  tracks = await Promise.all(entries.map((entry) => {
+    if (entry && typeof entry === 'object') {
+      return buildTrackFromMeta(entry.folder || entry.title || '', entry);
+    }
+    return loadTrack(entry);
+  }));
   populateStaticPreviews();
 
   // Blurred cover backdrop on the enter overlay, once available.

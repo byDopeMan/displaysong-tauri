@@ -1,15 +1,652 @@
 [
-  "8BALL",
-  "designerfrust",
-  "Gasse",
-  "guten morgen",
-  "Heisenberg",
-  "IN KLEIN' SCHEINEN",
-  "Mir Gehts Gut",
-  "Ms. Jackson",
-  "tattoo",
-  "Toxisch",
-  "Whatever Floats Your Boat Will Definitely Sink My Ship",
-  "Whole Melt",
-  "ZAHLTAG"
+    {
+        "schema_version":  1,
+        "title":  "8BALL",
+        "artist":  "Rrotzer",
+        "album":  "Unknown Album",
+        "album_artist":  "Rrotzer",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  101.82,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  75.95,
+                        "end":  95.95,
+                        "length":  20.0,
+                        "score":  0.6383
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#1f2aca",
+                      "rgb":  [
+                                  31,
+                                  42,
+                                  202
+                              ],
+                      "hsl":  [
+                                  236,
+                                  73,
+                                  46
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  118,
+                         "key":  "Cm",
+                         "energy":  0.4931,
+                         "brightness":  0.5724,
+                         "danceability":  0.8901,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.7579,
+                         "vocal_ratio":  0.4519
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  87568
+                   },
+        "folder":  "8BALL"
+    },
+    {
+        "schema_version":  1,
+        "title":  "designerfrust",
+        "artist":  "nullnull",
+        "album":  "Unknown Album",
+        "album_artist":  "nullnull",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  151.72,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  128.22,
+                        "end":  149.22,
+                        "length":  21.0,
+                        "score":  0.6058
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#6a6a69",
+                      "rgb":  [
+                                  106,
+                                  106,
+                                  105
+                              ],
+                      "hsl":  [
+                                  60,
+                                  0,
+                                  41
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  118,
+                         "key":  "C#m",
+                         "energy":  0.5163,
+                         "brightness":  0.5086,
+                         "danceability":  0.892,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.592,
+                         "vocal_ratio":  0.5131
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  134295
+                   },
+        "folder":  "designerfrust"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Gasse",
+        "artist":  "JONNY5",
+        "album":  "Unknown Album",
+        "album_artist":  "JONNY5",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  125.95,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  8.03,
+                        "end":  28.03,
+                        "length":  20.0,
+                        "score":  0.5952
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#7d7d7d",
+                      "rgb":  [
+                                  125,
+                                  125,
+                                  125
+                              ],
+                      "hsl":  [
+                                  0,
+                                  0,
+                                  49
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  162,
+                         "key":  "C#",
+                         "energy":  0.5787,
+                         "brightness":  0.4086,
+                         "danceability":  0.8888,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.8753,
+                         "vocal_ratio":  0.4064
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  118144
+                   },
+        "folder":  "Gasse"
+    },
+    {
+        "schema_version":  1,
+        "title":  "guten morgen",
+        "artist":  "Sampagne, Nizi19",
+        "album":  "guten morgen",
+        "album_artist":  "Sampagne, Nizi19",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  112.81,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  19.18,
+                        "end":  41.18,
+                        "length":  22.0,
+                        "score":  0.5722
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#6f433f",
+                      "rgb":  [
+                                  111,
+                                  67,
+                                  63
+                              ],
+                      "hsl":  [
+                                  5,
+                                  28,
+                                  34
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  152,
+                         "key":  "Cm",
+                         "energy":  0.5105,
+                         "brightness":  0.5196,
+                         "danceability":  0.89,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.6863,
+                         "vocal_ratio":  0.4867
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  251067
+                   },
+        "folder":  "guten morgen"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Heisenberg",
+        "artist":  "Chad \u0026 Wob",
+        "album":  "Unknown Album",
+        "album_artist":  "Chad \u0026 Wob",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  120.94,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  29.16,
+                        "end":  49.16,
+                        "length":  20.0,
+                        "score":  0.6558
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#9c6a48",
+                      "rgb":  [
+                                  156,
+                                  106,
+                                  72
+                              ],
+                      "hsl":  [
+                                  24,
+                                  37,
+                                  45
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  129,
+                         "key":  "E",
+                         "energy":  0.6634,
+                         "brightness":  0.6307,
+                         "danceability":  0.8898,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.7049,
+                         "vocal_ratio":  0.5082
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  145368
+                   },
+        "folder":  "Heisenberg"
+    },
+    {
+        "schema_version":  1,
+        "title":  "IN KLEIN\u0027 SCHEINEN",
+        "artist":  "DXVE",
+        "album":  "Unknown Album",
+        "album_artist":  "DXVE",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  102.54,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  29.81,
+                        "end":  49.81,
+                        "length":  20.0,
+                        "score":  0.6428
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#bcbcbc",
+                      "rgb":  [
+                                  188,
+                                  188,
+                                  188
+                              ],
+                      "hsl":  [
+                                  0,
+                                  0,
+                                  74
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  162,
+                         "key":  "F#",
+                         "energy":  0.5279,
+                         "brightness":  0.451,
+                         "danceability":  0.8947,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.7775,
+                         "vocal_ratio":  0.5197
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  129499
+                   },
+        "folder":  "IN KLEIN\u0027 SCHEINEN"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Mir Gehts Gut",
+        "artist":  "CoZmoNetZ",
+        "album":  "Mir Gehts Gut",
+        "album_artist":  "CoZmoNetZ",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  130.09,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  108.95,
+                        "end":  128.95,
+                        "length":  20.0,
+                        "score":  0.6199
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#8090a1",
+                      "rgb":  [
+                                  128,
+                                  144,
+                                  161
+                              ],
+                      "hsl":  [
+                                  211,
+                                  15,
+                                  57
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  99,
+                         "key":  "G#m",
+                         "energy":  0.6863,
+                         "brightness":  0.3079,
+                         "danceability":  0.8936,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.6354,
+                         "vocal_ratio":  0.3972
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  228578
+                   },
+        "folder":  "Mir Gehts Gut"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Ms. Jackson",
+        "artist":  "Pashanim",
+        "album":  "Ms. Jackson",
+        "album_artist":  "Pashanim",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  147.6,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  50.09,
+                        "end":  71.09,
+                        "length":  21.0,
+                        "score":  0.65
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#896041",
+                      "rgb":  [
+                                  137,
+                                  96,
+                                  65
+                              ],
+                      "hsl":  [
+                                  26,
+                                  36,
+                                  40
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  162,
+                         "key":  "B",
+                         "energy":  0.5701,
+                         "brightness":  0.6505,
+                         "danceability":  0.8939,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.8106,
+                         "vocal_ratio":  0.4883
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  256543
+                   },
+        "folder":  "Ms. Jackson"
+    },
+    {
+        "schema_version":  1,
+        "title":  "tattoo",
+        "artist":  "Hank",
+        "album":  "tattoo",
+        "album_artist":  "Hank",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  150.01,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  126.73,
+                        "end":  147.73,
+                        "length":  21.0,
+                        "score":  0.6326
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#25314f",
+                      "rgb":  [
+                                  37,
+                                  49,
+                                  79
+                              ],
+                      "hsl":  [
+                                  223,
+                                  36,
+                                  23
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  89,
+                         "key":  "G#m",
+                         "energy":  0.4796,
+                         "brightness":  0.5799,
+                         "danceability":  0.8904,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.522,
+                         "vocal_ratio":  0.6089
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  240394
+                   },
+        "folder":  "tattoo"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Toxisch",
+        "artist":  "Keanu",
+        "album":  "Unknown Album",
+        "album_artist":  "Keanu",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  147.93,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  47.23,
+                        "end":  71.23,
+                        "length":  24.0,
+                        "score":  0.5567
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#655c52",
+                      "rgb":  [
+                                  101,
+                                  92,
+                                  82
+                              ],
+                      "hsl":  [
+                                  32,
+                                  10,
+                                  36
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  129,
+                         "key":  "C#m",
+                         "energy":  0.3912,
+                         "brightness":  0.6487,
+                         "danceability":  0.8884,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.7713,
+                         "vocal_ratio":  0.5126
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  141874
+                   },
+        "folder":  "Toxisch"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Whatever Floats Your Boat Will Definitely Sink My Ship",
+        "artist":  "$uicideboy$",
+        "album":  "THY WILL BE DONE",
+        "album_artist":  "$uicideboy$",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  162.32,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  24.82,
+                        "end":  46.82,
+                        "length":  22.0,
+                        "score":  0.6574
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#a7906b",
+                      "rgb":  [
+                                  167,
+                                  144,
+                                  107
+                              ],
+                      "hsl":  [
+                                  37,
+                                  25,
+                                  54
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  152,
+                         "key":  "C#m",
+                         "energy":  0.6011,
+                         "brightness":  0.5831,
+                         "danceability":  0.8931,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.7155,
+                         "vocal_ratio":  0.5674
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  240894
+                   },
+        "folder":  "Whatever Floats Your Boat Will Definitely Sink My Ship"
+    },
+    {
+        "schema_version":  1,
+        "title":  "Whole Melt",
+        "artist":  "Wellconnected_G",
+        "album":  "Unknown Album",
+        "album_artist":  "Wellconnected_G",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  195.73,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  110.13,
+                        "end":  130.13,
+                        "length":  20.0,
+                        "score":  0.6178
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#e8de74",
+                      "rgb":  [
+                                  232,
+                                  222,
+                                  116
+                              ],
+                      "hsl":  [
+                                  55,
+                                  72,
+                                  68
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  103,
+                         "key":  "G",
+                         "energy":  0.4565,
+                         "brightness":  0.5729,
+                         "danceability":  0.888,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.7674,
+                         "vocal_ratio":  0.5177
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  133628
+                   },
+        "folder":  "Whole Melt"
+    },
+    {
+        "schema_version":  1,
+        "title":  "ZAHLTAG",
+        "artist":  "Boondawg",
+        "album":  "KULT",
+        "album_artist":  "Boondawg",
+        "genre":  null,
+        "year":  null,
+        "track_number":  null,
+        "duration":  137.61,
+        "preview":  {
+                        "file":  "preview.mp3",
+                        "start":  47.97,
+                        "end":  67.97,
+                        "length":  20.0,
+                        "score":  0.5809
+                    },
+        "cover":  "cover.webp",
+        "cover_generated":  false,
+        "waveform":  "waveform.png",
+        "theme":  {
+                      "hex":  "#82addd",
+                      "rgb":  [
+                                  130,
+                                  173,
+                                  221
+                              ],
+                      "hsl":  [
+                                  212,
+                                  57,
+                                  69
+                              ]
+                  },
+        "analysis":  {
+                         "bpm":  152,
+                         "key":  "D#m",
+                         "energy":  0.3891,
+                         "brightness":  0.5401,
+                         "danceability":  0.8916,
+                         "chorus_confidence":  1.0,
+                         "dynamic_range":  0.648,
+                         "vocal_ratio":  0.5735
+                     },
+        "source":  {
+                       "sample_rate":  44100,
+                       "channels":  2,
+                       "bitrate":  233432
+                   },
+        "folder":  "ZAHLTAG"
+    }
 ]
