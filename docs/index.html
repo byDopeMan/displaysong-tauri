@@ -132,6 +132,37 @@ section{padding:70px 0;}
 .history-info{flex:1; min-width:0;}
 .history-title{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .history-artist{font-size:12px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.history-empty{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:44px 16px; color:var(--text-dim); text-align:center;}
+.history-empty .empty-icon{opacity:.45;}
+.platform-radial{flex-shrink:0;}
+.platform-radial-trigger{width:34px; height:34px; border-radius:8px; border:none; background:var(--surface-hover); color:var(--text-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s ease, color .15s ease;}
+.platform-radial-trigger:hover{background:var(--accent); color:#fff;}
+
+/* queue under the player (Player tab, when the Player tab is enabled — matches
+   queue.css .player-queue-container / .queue-item; with the Player tab off the
+   real app moves this into its own Queue tab). */
+.player-queue{margin-top:18px;}
+.queue-divider{height:1px; background:rgba(255,255,255,.08); margin:0 0 14px;}
+.queue-header{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+.queue-title{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; margin:0;}
+.queue-title-icon{display:flex; color:var(--accent);}
+.queue-count{background:var(--accent); color:#fff; font-size:11px; font-weight:700; min-width:18px; height:18px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; padding:0 5px;}
+.queue-header-actions{display:flex; align-items:center; gap:10px;}
+.queue-autoplay-label{font-size:12px; color:var(--text-dim);}
+.queue-clear-btn{background:rgba(224,36,94,.14); color:#e0245e; border:none; border-radius:7px; padding:5px 11px; font-size:12px; font-weight:600; cursor:pointer;}
+.queue-item{display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--surface); border-radius:10px; margin-bottom:8px;}
+.queue-item-position{font-size:12px; color:var(--text-dim); width:18px; text-align:right; flex-shrink:0;}
+.queue-item-cover{width:44px; height:44px; border-radius:6px; overflow:hidden; flex-shrink:0; background:#333;}
+.queue-item-cover img{width:100%; height:100%; object-fit:cover; display:block;}
+.queue-item-info{flex:1; min-width:0;}
+.queue-item-title{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;}
+.queue-item-meta{font-size:12px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.queue-item-requester{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:3px;}
+.queue-item-source{display:flex;}
+.queue-item-actions{display:flex; gap:6px; flex-shrink:0;}
+.queue-btn{width:30px; height:30px; border-radius:7px; border:none; background:var(--surface-hover); color:var(--text-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s ease, color .15s ease;}
+.queue-btn-play:hover{background:var(--accent); color:#fff;}
+.queue-btn-remove:hover{background:#e0245e; color:#fff;}
 
 /* designs tab — matches views.css .design-grid / .design-card exactly, plus Aktive-Widgets section */
 .design-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:16px;}
@@ -423,6 +454,26 @@ footer a:hover{color:var(--text);}
           <div class="artist" id="playerMockArtist">—</div>
           <div class="progress-bar-bg"><div class="progress-bar"></div></div>
           <div class="progress-times"><span>1:14</span><span id="playerMockDur">—</span></div>
+        </div>
+
+        <!-- Song Request Queue lives right here under the player while the
+             "Player" tab is enabled (Einstellungen). Turn the Player tab off and
+             the real app shows this as its own "Queue" tab in the nav instead. -->
+        <div class="player-queue">
+          <div class="queue-divider"></div>
+          <div class="queue-header">
+            <h3 class="queue-title">
+              <span class="queue-title-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>
+              <span>Song Request Queue</span>
+              <span class="queue-count" id="playerQueueCount">0</span>
+            </h3>
+            <div class="queue-header-actions">
+              <span class="queue-autoplay-label">Auto-Play</span>
+              <div class="toggle on"></div>
+              <button class="queue-clear-btn">Queue leeren</button>
+            </div>
+          </div>
+          <div id="playerQueueList"></div>
         </div>
       </div>
 
@@ -894,15 +945,15 @@ let fadeToken = 0;            // cancels an in-flight fade when a new one starts
 // viewport center — loud when centered, fading out smoothly the further you
 // scroll away in EITHER direction, silent again a couple of screens away
 // (so it's not still audible way down at Plugin API / Twitch).
-const PEAK_VOLUME = 0.16;         // volume when Album Focus is perfectly centered
+const PEAK_VOLUME = 0.12;         // volume when Album Focus is perfectly centered
 // HARD safety ceiling — every single volume assignment in this file clamps to
 // this, no matter what computes the target. Nothing can ever get louder than
 // this value, full stop. Raise ONLY this one number if it should be louder.
-const HARD_VOLUME_CEILING = 0.16;
+const HARD_VOLUME_CEILING = 0.12;
 const PROXIMITY_RANGE_VH = 1.7;   // how many viewport-heights of distance until it hits the floor
 const FLOOR_VOLUME = 0.025;       // never fully silent anywhere on the page (still audible at the very bottom)
-const FADE_OUT_MS = 700;          // sequential fade: old track goes fully silent first
-const FADE_IN_MS = 700;           // …then the new one fades in from silence
+const CROSSFADE_MS = 650;         // overlapping equal-power crossfade between tracks (seamless)
+const FADE_IN_MS = 650;           // fade-in for the very first track (nothing to fade out yet)
 const VOLUME_EASE = 0.06;         // per-frame smoothing so the proximity fade is gentle
 function clampVol(v){ return Math.max(0, Math.min(HARD_VOLUME_CEILING, v)); }
 
@@ -926,7 +977,7 @@ function computeTargetVolume(){
 }
 
 // One rAF loop smooths the *proximity* target continuously (scroll fades) —
-// track-to-track transitions are handled separately below (sequential fade).
+// track-to-track transitions are handled separately below (equal-power crossfade).
 let smoothedVolume = 0;
 let manualFadeActive = false; // true while a sequential track-switch fade is running
 function volumeLoop(){
@@ -954,41 +1005,80 @@ function updateSoundFabLabel(){
   label.textContent = on ? 'Ton an' : 'Ton stumm';
 }
 
-/** Sequential fade: current track fades ALL THE WAY to silence and pauses,
- * then (only after that) the next track starts and fades in — a real
- * fade-out/fade-in, not an overlapping crossfade. */
-function fadeOutThenIn(outEl, nextEl){
+/** Seamless crossfade: the next track fades IN while the current one fades OUT,
+ * overlapping, using an equal-power (cos/sin) curve so the perceived loudness
+ * stays constant through the blend — no silent dip, no hard cut. Both channels
+ * play at once for CROSSFADE_MS, then the old one pauses. */
+function crossfade(outEl, nextEl){
   const myToken = ++fadeToken;
   manualFadeActive = true;
   const startOut = outEl.volume;
-  const outStart = performance.now();
+  const targetIn = clampVol(computeTargetVolume());
+  nextEl.volume = 0;
+  const start = performance.now();
 
-  function stepOut(now){
+  function step(now){
     if (myToken !== fadeToken) return;
-    const t = Math.min(1, (now - outStart) / FADE_OUT_MS);
-    outEl.volume = startOut * (1 - t);
-    if (t < 1) { requestAnimationFrame(stepOut); return; }
+    const t = Math.min(1, (now - start) / CROSSFADE_MS);
+    // Equal-power crossfade: cos out, sin in → constant loudness across the blend.
+    outEl.volume  = clampVol(startOut * Math.cos(t * Math.PI / 2));
+    nextEl.volume = clampVol(targetIn * Math.sin(t * Math.PI / 2));
+    smoothedVolume = nextEl.volume;
+    if (t < 1) { requestAnimationFrame(step); return; }
     outEl.pause();
-    startIn();
+    outEl.volume = 0;
+    manualFadeActive = false;
   }
 
-  function startIn(){
-    if (myToken !== fadeToken) return;
-    nextEl.volume = 0;
-    const targetIn = clampVol(computeTargetVolume());
-    const inStart = performance.now();
-    function stepIn(now){
-      if (myToken !== fadeToken) return;
-      const t = Math.min(1, (now - inStart) / FADE_IN_MS);
-      nextEl.volume = targetIn * t;
-      smoothedVolume = nextEl.volume;
-      if (t < 1) { requestAnimationFrame(stepIn); return; }
-      manualFadeActive = false;
-    }
-    requestAnimationFrame(stepIn);
-  }
+  requestAnimationFrame(step);
+}
 
-  requestAnimationFrame(stepOut);
+// ---- Verlauf tab: fills as songs play, like the real History view ----
+// Newest first; each carousel song-switch prepends an entry (matches
+// History.svelte: .history-item → index / cover / info / platform-radial).
+const historyEntries = [];
+const HISTORY_MAX = 12;
+const HISTORY_LINK_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
+function renderHistory(){
+  const list = document.getElementById('historyListDynamic');
+  const sub = document.getElementById('historySubtitle');
+  if (!list) return;
+  list.innerHTML = '';
+  if (historyEntries.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'history-empty';
+    empty.innerHTML = '<svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg><p>Noch keine Songs gespielt</p>';
+    list.appendChild(empty);
+    if (sub) sub.textContent = 'Letzte Tracks';
+    return;
+  }
+  historyEntries.forEach((e, i) => {
+    const item = document.createElement('div'); item.className = 'history-item';
+    const idx = document.createElement('span'); idx.className = 'history-index'; idx.textContent = String(i + 1);
+    const cover = document.createElement('div'); cover.className = 'history-cover';
+    if (e.cover) cover.style.backgroundImage = `url('${e.cover}')`;
+    const info = document.createElement('div'); info.className = 'history-info';
+    const title = document.createElement('div'); title.className = 'history-title'; title.textContent = e.title;   // textContent → no HTML injection
+    const artist = document.createElement('div'); artist.className = 'history-artist'; artist.textContent = e.artist;
+    info.append(title, artist);
+    const radial = document.createElement('div'); radial.className = 'platform-radial';
+    const trigger = document.createElement('button'); trigger.className = 'platform-radial-trigger'; trigger.title = 'Öffnen auf...';
+    trigger.innerHTML = HISTORY_LINK_ICON;
+    radial.appendChild(trigger);
+    item.append(idx, cover, info, radial);
+    list.appendChild(item);
+  });
+  if (sub) sub.textContent = historyEntries.length === 1 ? '1 Track' : historyEntries.length + ' Tracks';
+}
+
+function pushHistory(track){
+  if (!track) return;
+  const top = historyEntries[0];
+  if (top && top.title === track.title && top.artist === track.artist) return; // skip immediate repeats
+  historyEntries.unshift({ title: track.title, artist: track.artist, cover: track.cover });
+  if (historyEntries.length > HISTORY_MAX) historyEntries.length = HISTORY_MAX;
+  renderHistory();
 }
 
 function playTrack(i){
@@ -1007,6 +1097,7 @@ function playTrack(i){
   aboxFill.style.width = '0%';
   setColor(t);
   renderDots();
+  pushHistory(t);   // log the switch into the Verlauf tab
 
   const now = document.getElementById('soundFabNow');
   if (now) now.textContent = t.title;
@@ -1019,6 +1110,7 @@ function playTrack(i){
     next.src = t.previewFile;
     next.currentTime = 0;
     next.muted = false;
+    next.volume = 0;              // start silent; the crossfade ramps it up
     next.play().catch(() => {});
   }
 
@@ -1038,7 +1130,7 @@ function playTrack(i){
       manualFadeActive = false;
     })(start);
   } else {
-    fadeOutThenIn(outEl, next);
+    crossfade(outEl, next);
   }
 
   activeChannel = activeChannel === 'A' ? 'B' : 'A';
@@ -1104,6 +1196,38 @@ function uniqueTrackPicker(){
   };
 }
 
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+const QUEUE_PLAY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+const QUEUE_TRASH_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+const QUEUE_CHAT_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+const QUEUE_REQUESTERS = [{ user: 'viewer123', time: 'vor 1 Min.' }, { user: 'streamfan22', time: 'vor 4 Min.' }];
+
+// Song Request Queue under the player — matches Queue.svelte .queue-item markup.
+function buildPlayerQueue(queueTracks){
+  const list = document.getElementById('playerQueueList');
+  const count = document.getElementById('playerQueueCount');
+  if (!list) return;
+  list.innerHTML = queueTracks.map((t, i) => {
+    const req = QUEUE_REQUESTERS[i % QUEUE_REQUESTERS.length];
+    const cover = t.cover ? `<img src="${esc(t.cover)}" alt="Cover">` : '';
+    return `<div class="queue-item">
+      <div class="queue-item-position">${i + 1}</div>
+      <div class="queue-item-cover">${cover}</div>
+      <div class="queue-item-info">
+        <div class="queue-item-track"><span class="queue-item-title">${esc(t.title)}</span></div>
+        <div class="queue-item-meta"><span class="queue-item-artist">${esc(t.artist)}</span></div>
+        <div class="queue-item-requester"><span class="queue-item-source">${QUEUE_CHAT_ICON}</span><span class="queue-item-user">${esc(req.user)}</span><span class="queue-item-time">${esc(req.time)}</span></div>
+      </div>
+      <div class="queue-item-actions">
+        <button class="queue-btn queue-btn-play" title="Jetzt abspielen">${QUEUE_PLAY_ICON}</button>
+        <button class="queue-btn queue-btn-remove" title="Entfernen">${QUEUE_TRASH_ICON}</button>
+      </div>
+    </div>`;
+  }).join('');
+  if (count) count.textContent = String(queueTracks.length);
+}
+
 function populateStaticPreviews(){
   if (tracks.length === 0) return;
   const next = uniqueTrackPicker(); // hands out a fresh, shuffled track each call
@@ -1118,19 +1242,11 @@ function populateStaticPreviews(){
   set('playerMockArtist', 'textContent', tPlayer.artist);
   set('playerMockDur', 'textContent', fmtTime(tPlayer.durSec));
 
-  // History tab — the whole library, most tracks shown (not just 4)
-  const historyList = document.getElementById('historyListDynamic');
-  if (historyList) {
-    const shuffledAll = [...tracks].sort(() => Math.random() - 0.5).slice(0, Math.min(tracks.length, 10));
-    historyList.innerHTML = shuffledAll.map((t, i) => `
-      <div class="history-item">
-        <span class="history-index">${i + 1}</span>
-        <div class="history-cover" style="background-image:url('${t.cover}')"></div>
-        <div class="history-info"><div class="history-title">${t.title}</div><div class="history-artist">${t.artist}</div></div>
-      </div>`).join('');
-  }
-  const historySubtitle = document.getElementById('historySubtitle');
-  if (historySubtitle) historySubtitle.textContent = `${tracks.length} Track${tracks.length === 1 ? '' : 's'}`;
+  // History (Verlauf) fills dynamically as songs play — see pushHistory() in
+  // playTrack + renderHistory(); nothing to pre-fill here.
+
+  // Player-tab Song Request Queue — two example requests from real tracks.
+  buildPlayerQueue([next(), next()]);
 
   // Designs tab mini previews — two more distinct tracks
   const tD1 = next(), tD2 = next();
@@ -1164,6 +1280,7 @@ function populateStaticPreviews(){
     return loadTrack(entry);
   }));
   populateStaticPreviews();
+  renderHistory();   // show the empty Verlauf state until songs start playing
 
   // Blurred cover backdrop on the enter overlay, once available.
   const backdrop = document.getElementById('enterBackdrop');
