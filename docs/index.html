@@ -194,7 +194,7 @@ section{padding:70px 0;}
 .design-card h3{font-size:14px; margin:0 0 4px;}
 .design-desc{font-size:11px; color:var(--text-dim); margin:0 0 12px;}
 .checkbox-label{display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; color:var(--text-dim); margin-bottom:10px;}
-.checkbox-label input{width:14px; height:14px; accent-color:var(--accent);}
+.checkbox-label input:not(.setting-checkbox){width:14px; height:14px; accent-color:var(--accent);}
 .btn-show{padding:8px 16px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-size:13px; cursor:pointer; font-family:inherit;}
 .active-widgets{margin-top:24px;}
 .active-widgets h3{font-size:14px; margin-bottom:12px; color:var(--text-dim); font-weight:600;}
@@ -270,10 +270,21 @@ section{padding:70px 0;}
 .section-chevron{flex-shrink:0; opacity:.6;}
 .section-content{padding-top:14px;}
 .setting-row label{color:var(--text); font-size:14px;}
-.setting-select{background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:7px; padding:6px 10px; font-size:13px; font-family:inherit; cursor:pointer; min-width:150px;}
+/* app-getreue Controls (forms.css): Checkbox, Select, Slider */
+.setting-checkbox{-webkit-appearance:none; appearance:none; width:20px; height:20px; background:var(--surface); border:2px solid var(--border); border-radius:6px; cursor:pointer; position:relative; transition:all .2s; flex-shrink:0;}
+.setting-checkbox:hover{border-color:var(--text-dim);}
+.setting-checkbox:checked{background:var(--accent); border-color:var(--accent);}
+.setting-checkbox:checked::after{content:''; position:absolute; left:50%; top:50%; width:5px; height:9px; border:solid #fff; border-width:0 2px 2px 0; transform:translate(-50%,-60%) rotate(45deg);}
+.setting-select{-webkit-appearance:none; appearance:none; background:var(--surface); border:2px solid var(--border); border-radius:8px; padding:8px 34px 8px 12px; color:var(--text); font-size:13px; font-family:inherit; cursor:pointer; min-width:150px; transition:all .2s; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center;}
+.setting-select:hover{border-color:var(--text-dim);}
+.setting-select:focus{outline:none; border-color:var(--accent);}
 .slider-row{display:flex; align-items:center; gap:10px;}
 .slider-row span{font-size:12px; color:var(--text-dim); min-width:36px; text-align:right;}
-.setting-slider{accent-color:var(--accent); width:120px;}
+.setting-slider{-webkit-appearance:none; appearance:none; width:130px; height:6px; background:var(--border); border-radius:3px; cursor:pointer; transition:background .2s;}
+.setting-slider:hover{background:var(--text-dim);}
+.setting-slider::-webkit-slider-thumb{-webkit-appearance:none; width:18px; height:18px; background:var(--accent); border-radius:50%; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3); transition:transform .2s;}
+.setting-slider::-webkit-slider-thumb:hover{transform:scale(1.15);}
+.setting-slider::-moz-range-thumb{width:18px; height:18px; background:var(--accent); border:none; border-radius:50%; cursor:pointer;}
 .btn-small{padding:6px 14px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; font-family:inherit;}
 .btn-primary{background:var(--accent); color:#fff;}
 .btn-primary:hover{background:var(--accent-hover);}
@@ -485,11 +496,11 @@ footer a:hover{color:var(--text);}
     <h1>Dein Track, direkt<br>auf <span>Sendung.</span></h1>
     <p>Universal Now Playing Widget für OBS. Erkennt automatisch, was gerade läuft — egal welcher Player, egal welche Plattform.</p>
     <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download v4.2.0</a>
-      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0-plugins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><path d="M4 7h3a2 2 0 0 0 2-2V4M20 7h-3a2 2 0 0 1-2-2V4M4 17h3a2 2 0 0 1 2 2v1M20 17h-3a2 2 0 0 0-2 2v1M9 9h6v6H9z"></path></svg>Plugin-Version</a>
+      <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/latest">Download</a>
+      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><path d="M4 7h3a2 2 0 0 0 2-2V4M20 7h-3a2 2 0 0 1-2-2V4M4 17h3a2 2 0 0 1 2 2v1M20 17h-3a2 2 0 0 0-2 2v1M9 9h6v6H9z"></path></svg>Plugin-Version</a>
       <a class="btn btn-secondary" href="#app">Reinschauen ↓</a>
     </div>
-    <p style="font-size:12px; color:var(--text-dim); margin-top:14px;">Zwei Release-Reihen: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">v4.2.0</code> (Standard, Auto-Update) und <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">v4.2.0-plugins</code> (mit Plugin-API, manuelles Update).</p>
+    <p style="font-size:12px; color:var(--text-dim); margin-top:14px;">Zwei Release-Reihen: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">Standard</code> (Auto-Update) und <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">-plugins</code> (mit Plugin-API, manuelles Update). Die jeweils neueste findest du auf der <a href="https://github.com/byDopeMan/displaysong-tauri/releases" style="color:var(--accent); text-decoration:none;">Releases-Seite</a>.</p>
   </div>
 </header>
 
@@ -566,19 +577,19 @@ footer a:hover{color:var(--text);}
       <!-- DESIGNS TAB — 1:1 mit Designs.svelte -->
       <div class="tabpanel" id="tab-designs">
         <h2 class="tab-title">Widget Designs</h2>
-        <label class="checkbox-label designs-global-option"><input type="checkbox" checked> <span>Requester bei Song-Requests in Widgets anzeigen</span></label>
-        <label class="checkbox-label designs-global-option"><input type="checkbox" checked> <span>Ausblenden wenn pausiert</span></label>
+        <label class="checkbox-label designs-global-option"><input type="checkbox" class="setting-checkbox" checked> <span>Requester bei Song-Requests in Widgets anzeigen</span></label>
+        <label class="checkbox-label designs-global-option"><input type="checkbox" class="setting-checkbox" checked> <span>Ausblenden wenn pausiert</span></label>
         <div class="design-grid">
           <div class="design-card">
             <div class="design-preview design-1"><div class="preview-bar"></div></div>
             <h3>Compact Bar</h3><p class="design-desc">Horizontal, minimalistisch</p>
-            <div class="design-options"><label class="checkbox-label"><input type="checkbox"> <span>Akzentfarbe</span></label></div>
+            <div class="design-options"><label class="checkbox-label"><input type="checkbox" class="setting-checkbox"> <span>Akzentfarbe</span></label></div>
             <button class="btn btn-show">Anzeigen</button>
           </div>
           <div class="design-card">
             <div class="design-preview design-2"><div class="preview-square"></div></div>
             <h3>Album Focus</h3><p class="design-desc">Großes Cover, vertikal</p>
-            <div class="design-options"><label class="checkbox-label"><input type="checkbox" checked> <span>Akzentfarbe</span></label></div>
+            <div class="design-options"><label class="checkbox-label"><input type="checkbox" class="setting-checkbox" checked> <span>Akzentfarbe</span></label></div>
             <button class="btn btn-show">Anzeigen</button>
           </div>
           <div class="design-card">
@@ -762,7 +773,7 @@ footer a:hover{color:var(--text);}
     <div class="section-head reveal">
       <p class="eyebrow">Custom 1 &amp; 2</p>
       <h2>Baust du lieber selbst?</h2>
-      <p>Zwei Widget-Slots sind komplett frei — eigenes HTML/CSS, direkt im integrierten Editor bearbeitet. DisplaySong liefert dir die Track-Daten als JSON und Live-Events, den Rest gestaltest du.</p>
+      <p>Zwei Widget-Slots sind komplett frei — eigenes HTML/CSS. Du bearbeitest die Dateien direkt im Widget-Ordner mit deinem Texteditor (Notepad, VS Code, …). DisplaySong liefert dir die Track-Daten als JSON und Live-Events, den Rest gestaltest du.</p>
     </div>
     <div class="custom-grid reveal">
       <div class="editor-mock"><span class="ln">1</span><span class="k">window</span>.__TAURI__.event.<span class="p">listen</span>(<span class="s">'track-update'</span>, (e) => {<br>
@@ -828,7 +839,7 @@ footer a:hover{color:var(--text);}
       </div>
     </div>
     <p style="font-size:12.5px; color:var(--text-dim); text-align:center; margin:22px 0 8px;">Neu ab v4.2.1: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">onChatMessage</code>, <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">openModal</code>, <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">onSettingChange</code> und Capability-Checks über <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">api.has()</code>.</p>
-    <p style="text-align:center;"><a href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0-plugins" style="color:var(--accent); text-decoration:none; font-size:13px; font-weight:600;">→ Plugin-Version herunterladen (v4.2.0-plugins)</a></p>
+    <p style="text-align:center;"><a href="https://github.com/byDopeMan/displaysong-tauri/releases" style="color:var(--accent); text-decoration:none; font-size:13px; font-weight:600;">→ Plugin-Version herunterladen (neuestes <code style="background:var(--surface); padding:1px 5px; border-radius:4px;">-plugins</code>-Release)</a></p>
   </div>
 </section>
 
@@ -840,7 +851,7 @@ footer a:hover{color:var(--text);}
         <span class="tag-pill">● Twitch Integration</span>
         <h2 style="font-size:clamp(26px,4vw,38px); font-weight:700; letter-spacing:-0.8px; margin:0 0 16px; line-height:1.1;">Dein Chat wählt<br>die Playlist.</h2>
         <p style="color:var(--text-dim); font-size:15.5px; line-height:1.6; margin-bottom:24px;">Viewer fordern Songs direkt im Chat an — DisplaySong konvertiert YouTube-, Apple-Music- und SoundCloud-Links automatisch zu Spotify. Ein kurzer <code style="background:var(--surface); padding:2px 6px; border-radius:4px; font-size:13px;">!sr</code> gibt per Twitch-„Permit" 60 Sekunden frei, damit der Link selbst keinen automatischen Chat-Timeout auslöst.</p>
-        <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download v4.2.0</a>
+        <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/latest">Download</a>
       </div>
       <div class="chat-mock">
         <div class="row"><span class="sender">streamfan22:&nbsp;</span><span class="msg">!sr</span></div><hr>
