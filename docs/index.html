@@ -257,6 +257,20 @@ section{padding:70px 0;}
 .plugins-docs p{font-size:12px; color:var(--text-dim); margin:0 0 4px; line-height:1.5;}
 .plugins-docs a{color:var(--accent); text-decoration:none;}
 .plugins-docs code{background:var(--surface-hover); padding:2px 5px; border-radius:4px; font-size:11px;}
+/* light theme — scoped to the app-frame (toggled via the Theme select) */
+.app-frame.light{--bg:#ffffff; --surface:#f3f3f6; --surface-hover:#e9e9ee; --border:#dddde2; --text:#1a1a1c; --text-dim:#6c6c74;}
+/* Twitch gear button + slide-in demo panels (plugin/Twitch settings) */
+.btn-gear{width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--surface-hover); border:1px solid var(--border); border-radius:8px; color:var(--text-dim); cursor:pointer; flex-shrink:0;}
+.btn-gear:hover{color:var(--text); border-color:var(--text-dim);}
+.demo-panel{animation:demo-slide .2s ease;}
+@keyframes demo-slide{from{opacity:0; transform:translateX(14px);} to{opacity:1; transform:none;}}
+.demo-back{display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; font-family:inherit; padding:0 0 14px;}
+.demo-back:hover{color:var(--text);}
+.demo-title{font-size:16px; font-weight:600; margin:0 0 14px;}
+.demo-input{background:var(--surface); border:2px solid var(--border); border-radius:8px; padding:8px 12px; color:var(--text); font-size:13px; font-family:inherit; min-width:170px;}
+.demo-info{font-size:12px; color:var(--text-dim); font-style:italic;}
+.demo-note{font-size:11.5px; color:var(--text-dim); margin:16px 0 0; line-height:1.5; border-top:1px solid var(--border); padding-top:12px;}
+.demo-note code{background:var(--surface-hover); padding:2px 5px; border-radius:4px;}
 .connection-info{display:flex; align-items:center; gap:10px;}
 .connection-icon{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(29,185,84,0.15); color:#1db954; font-size:14px;}
 .connection-icon.twitch{background:rgba(145,70,255,0.15); color:#9146ff;}
@@ -519,11 +533,12 @@ footer a:hover{color:var(--text);}
         <div class="tb-controls"><button class="tb-btn">─</button><button class="tb-btn">□</button><button class="tb-btn">×</button></div>
       </div>
       <div class="tabbar">
-        <button class="tabbtn active" data-tab="player">Player</button>
-        <button class="tabbtn" data-tab="history">Verlauf</button>
+        <button class="tabbtn active" data-tab="player" id="tabbtn-player">Player</button>
+        <button class="tabbtn" data-tab="queue" id="tabbtn-queue" style="display:none;">Queue</button>
+        <button class="tabbtn" data-tab="history" id="tabbtn-history" data-en="History">Verlauf</button>
         <button class="tabbtn" data-tab="designs">Designs</button>
         <button class="tabbtn" data-tab="plugins">Plugins</button>
-        <button class="tabbtn" data-tab="settings">Einstellungen</button>
+        <button class="tabbtn" data-tab="settings" data-en="Settings">Einstellungen</button>
       </div>
 
       <!-- PLAYER TAB -->
@@ -557,6 +572,10 @@ footer a:hover{color:var(--text);}
           <div id="playerQueueList"></div>
         </div>
       </div>
+
+      <!-- QUEUE TAB — only shown when the Player tab is disabled (Einstellungen);
+           the .player-queue element is moved here by JS in that case. -->
+      <div class="tabpanel" id="tab-queue"></div>
 
       <!-- HISTORY TAB -->
       <div class="tabpanel" id="tab-history">
@@ -635,7 +654,7 @@ footer a:hover{color:var(--text);}
             <div class="plugin-main">
               <div class="plugin-info"><span class="plugin-name">Twitch Song-Ansage</span><span class="plugin-version">v1.0.0</span></div>
               <div class="plugin-actions">
-                <button class="plugin-btn plugin-settings" title="Einstellungen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+                <button class="plugin-btn plugin-settings" id="plugin-demo-open" title="Einstellungen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
                 <button class="plugin-btn plugin-delete" title="Löschen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                 <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
               </div>
@@ -661,6 +680,19 @@ footer a:hover{color:var(--text);}
           <p>Plugins sind JavaScript-Module mit einer <code>manifest.json</code>.</p>
           <p>Docs: <a href="https://github.com/byDopeMan/displaysong-tauri/blob/plugins/PLUGIN.md" target="_blank" rel="noopener">PLUGIN.md</a></p>
         </div>
+
+        <!-- Plugin settings demo panel — opened by the gear on an enabled plugin.
+             Shows the field types a plugin registers via api.registerSettings(). -->
+        <div id="plugin-demo-panel" class="demo-panel" style="display:none;">
+          <button class="demo-back" id="plugin-demo-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Zurück</button>
+          <h3 class="demo-title">Twitch Song-Ansage — Einstellungen</h3>
+          <div class="setting-row"><label>Nachricht-Vorlage</label><input type="text" class="demo-input" value="Jetzt läuft: {artist} – {title}"></div>
+          <div class="setting-row"><label>Cooldown</label><select class="setting-select"><option>Kein</option><option selected>30 Sekunden</option><option>1 Minute</option></select></div>
+          <div class="setting-row"><label>Nur bei Song-Requests posten</label><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+          <div class="setting-row"><span class="demo-info">Zuletzt gepostet: „Jetzt läuft: Rrotzer – 8BALL"</span></div>
+          <button class="btn-small btn-primary" style="margin-top:14px;">Test-Nachricht senden</button>
+          <p class="demo-note">Demo — Plugins bauen ihre Einstellungen per <code>api.registerSettings()</code>: Text, Toggle, Select, Button und Info-Zeilen.</p>
+        </div>
       </div>
 
       <!-- SETTINGS TAB — 1:1 mit Settings.svelte (Verbindungen · Design-Verhalten · Aussehen und System · Über) -->
@@ -673,8 +705,8 @@ footer a:hover{color:var(--text);}
               <button class="btn-small btn-secondary">Trennen</button>
             </div>
             <div class="connection-item">
-              <div class="connection-info"><span class="connection-icon twitch"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg></span><div class="connection-details"><span class="connection-name">Twitch</span><span class="connection-status dim">Nicht verbunden</span></div></div>
-              <button class="btn-small btn-primary">Verbinden</button>
+              <div class="connection-info"><span class="connection-icon twitch"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg></span><div class="connection-details"><span class="connection-name">Twitch</span><span class="connection-status">Verbunden als byDopeMan</span></div></div>
+              <button class="btn-gear" id="twitch-settings-btn" title="Twitch-Einstellungen öffnen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
             </div>
           </div>
         </div>
@@ -690,11 +722,11 @@ footer a:hover{color:var(--text);}
         <div class="settings-section">
           <div class="section-toggle"><h3>Aussehen und System</h3><svg class="section-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
           <div class="section-content">
-            <div class="setting-row"><label>Theme</label><select class="setting-select"><option>Dunkel</option><option>Hell</option></select></div>
-            <div class="setting-row"><label>Sprache</label><select class="setting-select"><option>Deutsch</option><option>English</option></select></div>
+            <div class="setting-row"><label>Theme</label><select class="setting-select" id="demo-theme"><option value="dark">Dunkel</option><option value="light">Hell</option></select></div>
+            <div class="setting-row"><label>Sprache</label><select class="setting-select" id="demo-lang"><option value="de">Deutsch</option><option value="en">English</option></select></div>
             <div class="setting-row"><label>Akzentfarbe</label><div class="accent-swatches"><span class="accent-swatch active" style="background:#1db954"></span><span class="accent-swatch" style="background:#3b82f6"></span><span class="accent-swatch" style="background:#8b5cf6"></span><span class="accent-swatch" style="background:#ec4899"></span><span class="accent-swatch" style="background:#f97316"></span></div></div>
-            <div class="setting-row"><label>Player Tab anzeigen</label><div class="toggle on"></div></div>
-            <div class="setting-row"><label>Verlauf Tab anzeigen</label><div class="toggle on"></div></div>
+            <div class="setting-row"><label>Player Tab anzeigen</label><div class="toggle on" id="demo-toggle-player" role="switch" tabindex="0"></div></div>
+            <div class="setting-row"><label>Verlauf Tab anzeigen</label><div class="toggle on" id="demo-toggle-history" role="switch" tabindex="0"></div></div>
             <div class="setting-row"><label>Aktiver Provider</label><select class="setting-select"><option>Windows Audio (Universal)</option><option>Spotify API</option></select></div>
             <div class="setting-row"><label>Mit Windows starten</label><div class="toggle off"></div></div>
           </div>
@@ -707,6 +739,19 @@ footer a:hover{color:var(--text);}
             <button class="btn-text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Lizenzen</button>
             <button class="btn-text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Logs öffnen</button>
           </div>
+        </div>
+
+        <!-- Twitch settings demo panel — opened by the gear in "Verbindungen" -->
+        <div id="twitch-demo-panel" class="demo-panel" style="display:none;">
+          <button class="demo-back" id="twitch-demo-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Zurück</button>
+          <h3 class="demo-title">Twitch-Einstellungen</h3>
+          <div class="setting-row"><label>Song-Request-Modus</label><select class="setting-select"><option>Channel Points</option><option>Chat-Befehl (!sr)</option></select></div>
+          <div class="setting-row"><label>Reward</label><select class="setting-select"><option>Song Request — 100 Punkte</option></select></div>
+          <div class="setting-row"><label>Nur für Subscriber</label><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+          <div class="setting-row"><label>Cooldown</label><div class="slider-row"><input type="range" class="setting-slider" min="0" max="120" value="30"><span>30s</span></div></div>
+          <div class="setting-row"><label>Bot-Account nutzen</label><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <button class="btn-small btn-secondary" style="margin-top:14px;">Chat-Nachrichten anpassen…</button>
+          <p class="demo-note">Demo — in der App steuern diese Optionen echte Twitch-Song-Requests.</p>
         </div>
       </div>
     </div>
@@ -899,6 +944,102 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
   });
 });
+
+// ---- interactive app-mockup demos (theme/accent/language, Player↔Queue tab,
+//      plugin & Twitch settings panels) ----
+(function(){
+  const frame = document.querySelector('.app-frame');
+  if (!frame) return;
+
+  function activateTab(name){
+    document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector('.tabbtn[data-tab="' + name + '"]');
+    if (btn) btn.classList.add('active');
+    const panel = document.getElementById('tab-' + name);
+    if (panel) panel.classList.add('active');
+  }
+
+  // Theme (Dunkel/Hell) — scoped to the app-frame only.
+  const themeSel = document.getElementById('demo-theme');
+  if (themeSel) themeSel.addEventListener('change', () => frame.classList.toggle('light', themeSel.value === 'light'));
+
+  // Accent colour — updates the app-frame's --accent (+ --accent-rgb) live.
+  function hexToRgb(hex){ const n = hex.replace('#',''); const f = n.length===3 ? n.split('').map(c=>c+c).join('') : n; const i = parseInt(f,16); return [(i>>16)&255,(i>>8)&255,i&255]; }
+  document.querySelectorAll('#tab-settings .accent-swatch').forEach((sw) => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('#tab-settings .accent-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      const m = (sw.getAttribute('style') || '').match(/#[0-9a-fA-F]{3,6}/);
+      if (m){ const [r,g,b] = hexToRgb(m[0]); frame.style.setProperty('--accent', m[0]); frame.style.setProperty('--accent-rgb', r + ',' + g + ',' + b); }
+    });
+  });
+
+  // Language (Deutsch/English) — light demo: swaps elements that carry data-en.
+  const langSel = document.getElementById('demo-lang');
+  if (langSel) langSel.addEventListener('change', () => {
+    const en = langSel.value === 'en';
+    frame.querySelectorAll('[data-en]').forEach((el) => {
+      if (!el.dataset.de) el.dataset.de = el.textContent;
+      el.textContent = en ? el.dataset.en : el.dataset.de;
+    });
+  });
+
+  // Player / Verlauf tab visibility. Player OFF → the queue moves into its own
+  // Queue tab (exactly like the app); Player ON → queue sits under the player.
+  function setToggle(el, on){ el.classList.toggle('on', on); el.classList.toggle('off', !on); }
+  const playerToggle = document.getElementById('demo-toggle-player');
+  const historyToggle = document.getElementById('demo-toggle-history');
+  const queueEl = document.querySelector('.player-queue');
+  const playerTabBtn = document.getElementById('tabbtn-player');
+  const queueTabBtn = document.getElementById('tabbtn-queue');
+  const historyTabBtn = document.getElementById('tabbtn-history');
+  const tabPlayer = document.getElementById('tab-player');
+  const tabQueue = document.getElementById('tab-queue');
+
+  if (playerToggle) playerToggle.addEventListener('click', () => {
+    const on = !playerToggle.classList.contains('on');
+    setToggle(playerToggle, on);
+    if (on){
+      playerTabBtn.style.display = '';
+      queueTabBtn.style.display = 'none';
+      if (queueEl && queueEl.parentElement !== tabPlayer) tabPlayer.appendChild(queueEl);
+      if (tabQueue.classList.contains('active')) activateTab('player');
+    } else {
+      playerTabBtn.style.display = 'none';
+      queueTabBtn.style.display = '';
+      if (queueEl) tabQueue.appendChild(queueEl);
+      if (tabPlayer.classList.contains('active')) activateTab('queue');
+    }
+  });
+
+  if (historyToggle) historyToggle.addEventListener('click', () => {
+    const on = !historyToggle.classList.contains('on');
+    setToggle(historyToggle, on);
+    historyTabBtn.style.display = on ? '' : 'none';
+    if (!on && document.getElementById('tab-history').classList.contains('active')) activateTab('player');
+  });
+
+  // Slide-in settings panels (plugin gear / Twitch gear): hide the tab's other
+  // children, show the panel; the Back button reverses it.
+  function openPanel(tabEl, panel){
+    [...tabEl.children].forEach(c => { if (c !== panel){ c.dataset.prevDisplay = c.style.display; c.style.display = 'none'; } });
+    panel.style.display = 'block';
+    tabEl.scrollTop = 0;
+  }
+  function closePanel(tabEl, panel){
+    panel.style.display = 'none';
+    [...tabEl.children].forEach(c => { if (c !== panel) c.style.display = c.dataset.prevDisplay || ''; });
+  }
+  function wirePanel(openId, panelId, backId, tabId){
+    const open = document.getElementById(openId), panel = document.getElementById(panelId),
+          back = document.getElementById(backId), tab = document.getElementById(tabId);
+    if (open && panel && tab) open.addEventListener('click', () => openPanel(tab, panel));
+    if (back && panel && tab) back.addEventListener('click', () => closePanel(tab, panel));
+  }
+  wirePanel('plugin-demo-open', 'plugin-demo-panel', 'plugin-demo-back', 'tab-plugins');
+  wirePanel('twitch-settings-btn', 'twitch-demo-panel', 'twitch-demo-back', 'tab-settings');
+})();
 
 // ---- scroll reveal ----
 const io = new IntersectionObserver((entries) => {
