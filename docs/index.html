@@ -118,10 +118,17 @@ section{padding:70px 0;}
 .tabbtn{padding:7px 12px; font-size:12px; color:var(--text-dim); border-radius:6px; background:none; border:none; cursor:pointer; font-family:inherit;}
 .tabbtn:hover{color:var(--text);}
 .tabbtn.active{color:var(--accent); background:rgba(var(--accent-rgb),0.1);}
-.tabpanel{display:none; padding:20px 18px; height:456px; box-sizing:border-box; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent;}
+.frame-content{position:relative;}
+.global-cover-bg{position:absolute; top:0; left:-50%; width:200%; height:100%; background-size:cover; background-position:center top; filter:blur(80px); opacity:0; z-index:0; pointer-events:none; transition:opacity .5s ease;}
+.global-cover-bg.visible{opacity:.35;}
+.tabpanel{display:none; padding:20px 18px; height:456px; box-sizing:border-box; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; position:relative; z-index:1;}
 .tabpanel::-webkit-scrollbar{width:8px;}
 .tabpanel::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
-.tabpanel.active{display:block;}
+.tabpanel.active{display:block; animation:tab-fade .28s ease;}
+@keyframes tab-fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+/* smooth tab-button colour + queue toggle */
+.tabbtn{transition:color .2s ease, background .2s ease;}
+.toggle, .toggle::before, .toggle-slider, .toggle-slider::before{transition:all .22s ease;}
 
 /* player tab — matches views.css .player-container / .cover-image / .status-badge / .track-title etc. exactly */
 .player-mock{display:flex; flex-direction:column; align-items:center; text-align:center; padding:10px 0;}
@@ -257,8 +264,11 @@ section{padding:70px 0;}
 .plugins-docs p{font-size:12px; color:var(--text-dim); margin:0 0 4px; line-height:1.5;}
 .plugins-docs a{color:var(--accent); text-decoration:none;}
 .plugins-docs code{background:var(--surface-hover); padding:2px 5px; border-radius:4px; font-size:11px;}
-/* light theme — scoped to the app-frame (toggled via the Theme select) */
-.app-frame.light{--bg:#ffffff; --surface:#f3f3f6; --surface-hover:#e9e9ee; --border:#dddde2; --text:#1a1a1c; --text-dim:#6c6c74;}
+/* light theme — exact values from base.css [data-theme="light"], scoped to the app-frame */
+.app-frame.light{--bg:#e8e8e8; --surface:#d8d8d8; --surface-hover:#cecece; --border:#c0c0c0; --text:#1a1a1a; --text-dim:#555555;}
+.app-frame.light .titlebar{background:#d8d8d8;}
+.app-frame.light .tabbtn.active{background:rgba(var(--accent-rgb),0.2);}
+.app-frame.light .status-badge{background:rgba(var(--accent-rgb),0.25);}
 /* Twitch gear button + slide-in demo panels (plugin/Twitch settings) */
 .btn-gear{width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--surface-hover); border:1px solid var(--border); border-radius:8px; color:var(--text-dim); cursor:pointer; flex-shrink:0;}
 .btn-gear:hover{color:var(--text); border-color:var(--text-dim);}
@@ -271,6 +281,37 @@ section{padding:70px 0;}
 .demo-info{font-size:12px; color:var(--text-dim); font-style:italic;}
 .demo-note{font-size:11.5px; color:var(--text-dim); margin:16px 0 0; line-height:1.5; border-top:1px solid var(--border); padding-top:12px;}
 .demo-note code{background:var(--surface-hover); padding:2px 5px; border-radius:4px;}
+/* Twitch settings 1:1 (from the app's forms.css / components.css) */
+.toggle-group{display:flex; background:var(--surface); border-radius:6px; padding:2px; gap:2px;}
+.toggle-btn{flex:1; padding:6px 12px; border:none; background:transparent; color:var(--text-dim); font-size:12px; border-radius:5px; cursor:pointer; font-family:inherit; transition:all .2s;}
+.toggle-btn:hover{color:var(--text);}
+.toggle-btn.active{background:var(--accent); color:#fff;}
+.setting-notice{display:flex; gap:12px; padding:12px; border-radius:8px; margin-bottom:16px; font-size:12px;}
+.setting-notice.info{background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.3);}
+.setting-notice.warning{background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3);}
+.setting-notice .notice-icon{flex-shrink:0; color:#3b82f6; margin-top:2px;}
+.setting-notice.warning .notice-icon{color:#f59e0b;}
+.notice-content strong{display:block; margin-bottom:4px; font-size:12.5px;}
+.notice-content p{margin:0; color:var(--text-dim); line-height:1.5;}
+.notice-requirement{margin-top:6px !important; font-style:italic;}
+.collapsible-section{background:var(--surface); border-radius:10px; overflow:hidden; margin-top:14px;}
+.collapsible-header{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--surface); cursor:pointer;}
+.collapsible-title{font-size:14px; font-weight:600; margin:0; color:var(--text);}
+.collapsible-content{padding:16px; background:var(--bg);}
+.setting-input{background:var(--surface); border:2px solid var(--border); border-radius:8px; padding:8px 12px; color:var(--text); font-size:13px; font-family:inherit;}
+.setting-input-small{min-width:80px; max-width:100px; text-align:center;}
+.setting-hint{color:var(--text-dim); font-size:12px; margin:4px 0 16px; padding-left:2px; line-height:1.4;}
+.setting-hint-box{background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:12px; margin-top:8px;}
+.chat-preview-label{color:var(--text-dim); margin-right:8px;}
+.chat-preview-msg{color:var(--text);}
+.chat-sender-name.bot-name{color:var(--accent);}
+.subsection-divider{height:1px; background:var(--border); margin:16px 0;}
+.subsection-title{font-size:13px; font-weight:600; color:var(--text-dim); margin:0 0 12px;}
+.setting-value.channel-name{display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:linear-gradient(135deg, rgba(145,70,255,.2), rgba(119,44,232,.15)); border:1px solid rgba(145,70,255,.3); border-radius:6px; font-size:12px; font-weight:600;}
+.setting-row-vertical{flex-direction:column; align-items:stretch !important; gap:8px;}
+.setting-row-top{display:flex; justify-content:space-between; align-items:center; width:100%;}
+.setting-row-buttons{display:flex; gap:8px; margin-top:12px;}
+.setting-row-buttons button{flex:1;}
 .connection-info{display:flex; align-items:center; gap:10px;}
 .connection-icon{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(29,185,84,0.15); color:#1db954; font-size:14px;}
 .connection-icon.twitch{background:rgba(145,70,255,0.15); color:#9146ff;}
@@ -299,7 +340,7 @@ section{padding:70px 0;}
 .setting-slider::-webkit-slider-thumb{-webkit-appearance:none; width:18px; height:18px; background:var(--accent); border-radius:50%; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3); transition:transform .2s;}
 .setting-slider::-webkit-slider-thumb:hover{transform:scale(1.15);}
 .setting-slider::-moz-range-thumb{width:18px; height:18px; background:var(--accent); border:none; border-radius:50%; cursor:pointer;}
-.btn-small{padding:6px 14px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; font-family:inherit;}
+.btn-small{display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:6px 14px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; font-family:inherit;}
 .btn-primary{background:var(--accent); color:#fff;}
 .btn-primary:hover{background:var(--accent-hover);}
 .btn-secondary{background:var(--surface-hover); color:var(--text); border:1px solid var(--border);}
@@ -510,11 +551,11 @@ footer a:hover{color:var(--text);}
     <h1>Dein Track, direkt<br>auf <span>Sendung.</span></h1>
     <p>Universal Now Playing Widget für OBS. Erkennt automatisch, was gerade läuft — egal welcher Player, egal welche Plattform.</p>
     <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/latest">Download</a>
-      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><path d="M4 7h3a2 2 0 0 0 2-2V4M20 7h-3a2 2 0 0 1-2-2V4M4 17h3a2 2 0 0 1 2 2v1M20 17h-3a2 2 0 0 0-2 2v1M9 9h6v6H9z"></path></svg>Plugin-Version</a>
+      <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download 4.2.0</a>
+      <a class="btn btn-plugin" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.3.0-plugins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><path d="M4 7h3a2 2 0 0 0 2-2V4M20 7h-3a2 2 0 0 1-2-2V4M4 17h3a2 2 0 0 1 2 2v1M20 17h-3a2 2 0 0 0-2 2v1M9 9h6v6H9z"></path></svg>Plugin-Version</a>
       <a class="btn btn-secondary" href="#app">Reinschauen ↓</a>
     </div>
-    <p style="font-size:12px; color:var(--text-dim); margin-top:14px;">Zwei Release-Reihen: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">Standard</code> (Auto-Update) und <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">-plugins</code> (mit Plugin-API, manuelles Update). Die jeweils neueste findest du auf der <a href="https://github.com/byDopeMan/displaysong-tauri/releases" style="color:var(--accent); text-decoration:none;">Releases-Seite</a>.</p>
+    <p style="font-size:12px; color:var(--text-dim); margin-top:14px;">Der grüne Button ist die <strong>Standard-Version 4.2.0</strong> (mit Auto-Update). <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">Plugin-Version</code> ist ausdrücklich die <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">-plugins</code>-Reihe (mit Plugin-API, manuelles Update).</p>
   </div>
 </header>
 
@@ -540,6 +581,11 @@ footer a:hover{color:var(--text);}
         <button class="tabbtn" data-tab="plugins">Plugins</button>
         <button class="tabbtn" data-tab="settings" data-en="Settings">Einstellungen</button>
       </div>
+
+      <!-- Content area (blurred cover backdrop shows through when the Player tab
+           is disabled — exactly like the app's .global-cover-bg). -->
+      <div class="frame-content">
+      <div class="global-cover-bg" id="frameCoverBg"></div>
 
       <!-- PLAYER TAB -->
       <div class="tabpanel active" id="tab-player">
@@ -652,7 +698,7 @@ footer a:hover{color:var(--text);}
         <div id="plugin-list" class="plugin-list">
           <div class="plugin-card enabled">
             <div class="plugin-main">
-              <div class="plugin-info"><span class="plugin-name">Twitch Song-Ansage</span><span class="plugin-version">v1.0.0</span></div>
+              <div class="plugin-info"><span class="plugin-name">Beispiel Plugin</span><span class="plugin-version">v1.0.0</span></div>
               <div class="plugin-actions">
                 <button class="plugin-btn plugin-settings" id="plugin-demo-open" title="Einstellungen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
                 <button class="plugin-btn plugin-delete" title="Löschen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
@@ -660,19 +706,7 @@ footer a:hover{color:var(--text);}
               </div>
             </div>
             <div class="plugin-meta"><span class="plugin-author">von DisplaySong</span></div>
-            <div class="plugin-desc">Postet bei jedem Songwechsel automatisch eine Nachricht in deinen Twitch-Chat (Vorlage + Cooldown einstellbar).</div>
-          </div>
-          <div class="plugin-card">
-            <div class="plugin-main">
-              <div class="plugin-info"><span class="plugin-name">Now Playing → OBS</span><span class="plugin-version">v1.0.0</span></div>
-              <div class="plugin-actions">
-                <button class="plugin-btn plugin-settings" title="Einstellungen" disabled><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
-                <button class="plugin-btn plugin-delete" title="Löschen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-                <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
-              </div>
-            </div>
-            <div class="plugin-meta"><span class="plugin-author">von DisplaySong</span></div>
-            <div class="plugin-desc">Schreibt den aktuellen Track live in eine .txt-Datei, die du in OBS als Text-Quelle einbindest.</div>
+            <div class="plugin-desc">Ein Beispiel-Plugin, das zeigt, was über die Plugin-API möglich ist — Track-Events, Twitch-Events, eigene Einstellungen (Zahnrad).</div>
           </div>
         </div>
         <div class="plugins-docs">
@@ -685,12 +719,12 @@ footer a:hover{color:var(--text);}
              Shows the field types a plugin registers via api.registerSettings(). -->
         <div id="plugin-demo-panel" class="demo-panel" style="display:none;">
           <button class="demo-back" id="plugin-demo-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Zurück</button>
-          <h3 class="demo-title">Twitch Song-Ansage — Einstellungen</h3>
-          <div class="setting-row"><label>Nachricht-Vorlage</label><input type="text" class="demo-input" value="Jetzt läuft: {artist} – {title}"></div>
-          <div class="setting-row"><label>Cooldown</label><select class="setting-select"><option>Kein</option><option selected>30 Sekunden</option><option>1 Minute</option></select></div>
-          <div class="setting-row"><label>Nur bei Song-Requests posten</label><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-          <div class="setting-row"><span class="demo-info">Zuletzt gepostet: „Jetzt läuft: Rrotzer – 8BALL"</span></div>
-          <button class="btn-small btn-primary" style="margin-top:14px;">Test-Nachricht senden</button>
+          <h3 class="demo-title">Beispiel Plugin — Einstellungen</h3>
+          <div class="setting-row"><label>Text-Feld</label><input type="text" class="demo-input" value="Mein Wert"></div>
+          <div class="setting-row"><label>Auswahl</label><select class="setting-select"><option>Option A</option><option selected>Option B</option><option>Option C</option></select></div>
+          <div class="setting-row"><label>Umschalter</label><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="setting-row"><span class="demo-info">Info-Zeile — hier zeigt das Plugin Live-Status an.</span></div>
+          <button class="btn-small btn-primary" style="margin-top:14px;">Aktion ausführen</button>
           <p class="demo-note">Demo — Plugins bauen ihre Einstellungen per <code>api.registerSettings()</code>: Text, Toggle, Select, Button und Info-Zeilen.</p>
         </div>
       </div>
@@ -744,16 +778,35 @@ footer a:hover{color:var(--text);}
         <!-- Twitch settings demo panel — opened by the gear in "Verbindungen" -->
         <div id="twitch-demo-panel" class="demo-panel" style="display:none;">
           <button class="demo-back" id="twitch-demo-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Zurück</button>
-          <h3 class="demo-title">Twitch-Einstellungen</h3>
-          <div class="setting-row"><label>Song-Request-Modus</label><select class="setting-select"><option>Channel Points</option><option>Chat-Befehl (!sr)</option></select></div>
-          <div class="setting-row"><label>Reward</label><select class="setting-select"><option>Song Request — 100 Punkte</option></select></div>
-          <div class="setting-row"><label>Nur für Subscriber</label><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-          <div class="setting-row"><label>Cooldown</label><div class="slider-row"><input type="range" class="setting-slider" min="0" max="120" value="30"><span>30s</span></div></div>
-          <div class="setting-row"><label>Bot-Account nutzen</label><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
-          <button class="btn-small btn-secondary" style="margin-top:14px;">Chat-Nachrichten anpassen…</button>
-          <p class="demo-note">Demo — in der App steuern diese Optionen echte Twitch-Song-Requests.</p>
+          <h3 class="demo-title">Twitch</h3>
+          <div class="setting-row"><label>Channel</label><span class="setting-value channel-name">byDopeMan</span></div>
+          <div class="collapsible-section">
+            <div class="collapsible-header">
+              <h4 class="collapsible-title">Song Requests</h4>
+              <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="collapsible-content">
+              <div class="setting-row"><label>Modus</label><div class="toggle-group"><button class="toggle-btn active">Chat-Command</button><button class="toggle-btn">Channel Points</button></div></div>
+              <div class="setting-notice info"><div class="notice-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div><div class="notice-content"><strong>Link-Schutz aktiv</strong><p>Wenn dein Chat Links blockiert, können User !sr ohne Link schreiben. Der Bot gibt dann automatisch eine 60-Sekunden Link-Erlaubnis.</p><p class="notice-requirement">Voraussetzung: Der Bot muss Moderator in deinem Channel sein.</p></div></div>
+              <div class="setting-row"><label>Command</label><input type="text" class="setting-input setting-input-small" value="!sr"></div>
+              <div class="setting-row"><label>Cooldown (Sekunden)</label><input type="number" class="setting-input setting-input-small" value="30"></div>
+              <div class="setting-row"><label>Nur für Subscriber</label><input type="checkbox" class="setting-checkbox"></div>
+              <div class="setting-row"><label>Max. Song-Länge (Minuten)</label><input type="number" class="setting-input setting-input-small" value="0"></div>
+              <p class="setting-hint">0 = unbegrenzt</p>
+              <div class="setting-row"><label>Duplikate prüfen</label><input type="checkbox" class="setting-checkbox" checked></div>
+              <p class="setting-hint">Verhindert, dass der gleiche Song mehrfach in der Queue ist</p>
+              <div class="setting-row setting-row-vertical"><div class="setting-row-top"><label>Chat-Account</label><select class="setting-select"><option>DisplaySong Bot</option><option>Eigener Account</option></select></div><div class="setting-hint-box"><span class="chat-preview-label">Vorschau:</span><span class="chat-preview-msg"><strong class="chat-sender-name bot-name">DisplaySong</strong>: Jetzt läuft: Artist - Song</span></div></div>
+              <div class="setting-row-buttons"><button class="btn-secondary btn-small">Nachrichten anpassen</button><button class="btn-secondary btn-small">Test senden</button></div>
+              <div class="subsection-divider"></div>
+              <h4 class="subsection-title">Request Historie</h4>
+              <div class="setting-row"><label>Speicherort</label><div class="toggle-group"><button class="toggle-btn active">Lokal</button><button class="toggle-btn">Spotify Playlist</button></div></div>
+              <p class="setting-hint">Songs werden in einer lokalen Datenbank gespeichert.</p>
+            </div>
+          </div>
+          <p class="demo-note">1:1 der Twitch-Song-Request-Einstellungen aus der App (Chat-Command-Modus).</p>
         </div>
       </div>
+      </div><!-- /frame-content -->
     </div>
   </div>
 </section>
@@ -884,7 +937,7 @@ footer a:hover{color:var(--text);}
       </div>
     </div>
     <p style="font-size:12.5px; color:var(--text-dim); text-align:center; margin:22px 0 8px;">Neu ab v4.2.1: <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">onChatMessage</code>, <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">openModal</code>, <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">onSettingChange</code> und Capability-Checks über <code style="background:var(--surface); padding:2px 6px; border-radius:4px;">api.has()</code>.</p>
-    <p style="text-align:center;"><a href="https://github.com/byDopeMan/displaysong-tauri/releases" style="color:var(--accent); text-decoration:none; font-size:13px; font-weight:600;">→ Plugin-Version herunterladen (neuestes <code style="background:var(--surface); padding:1px 5px; border-radius:4px;">-plugins</code>-Release)</a></p>
+    <p style="text-align:center;"><a href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.3.0-plugins" style="color:var(--accent); text-decoration:none; font-size:13px; font-weight:600;">→ Plugin-Version herunterladen (v4.3.0-plugins)</a></p>
   </div>
 </section>
 
@@ -896,7 +949,7 @@ footer a:hover{color:var(--text);}
         <span class="tag-pill">● Twitch Integration</span>
         <h2 style="font-size:clamp(26px,4vw,38px); font-weight:700; letter-spacing:-0.8px; margin:0 0 16px; line-height:1.1;">Dein Chat wählt<br>die Playlist.</h2>
         <p style="color:var(--text-dim); font-size:15.5px; line-height:1.6; margin-bottom:24px;">Viewer fordern Songs direkt im Chat an — DisplaySong konvertiert YouTube-, Apple-Music- und SoundCloud-Links automatisch zu Spotify. Ein kurzer <code style="background:var(--surface); padding:2px 6px; border-radius:4px; font-size:13px;">!sr</code> gibt per Twitch-„Permit" 60 Sekunden frei, damit der Link selbst keinen automatischen Chat-Timeout auslöst.</p>
-        <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/latest">Download</a>
+        <a class="btn btn-primary" href="https://github.com/byDopeMan/displaysong-tauri/releases/tag/v4.2.0">Download 4.2.0</a>
       </div>
       <div class="chat-mock">
         <div class="row"><span class="sender">streamfan22:&nbsp;</span><span class="msg">!sr</span></div><hr>
@@ -975,15 +1028,35 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
     });
   });
 
-  // Language (Deutsch/English) — light demo: swaps elements that carry data-en.
-  const langSel = document.getElementById('demo-lang');
-  if (langSel) langSel.addEventListener('change', () => {
-    const en = langSel.value === 'en';
-    frame.querySelectorAll('[data-en]').forEach((el) => {
-      if (!el.dataset.de) el.dataset.de = el.textContent;
-      el.textContent = en ? el.dataset.en : el.dataset.de;
+  // Language (Deutsch/English) — swaps every matching text node inside the frame
+  // (SVGs and other markup untouched), like the app's i18n.
+  const DE_EN = {
+    'Player':'Player','Queue':'Queue','Verlauf':'History','Designs':'Designs','Plugins':'Plugins','Einstellungen':'Settings',
+    'Läuft jetzt':'Now Playing','Song Request Queue':'Song Request Queue','Auto-Play':'Auto-Play','Queue leeren':'Clear Queue',
+    'Letzte Tracks':'Recent tracks','Alle Quellen':'All Sources','Nur Spotify':'Spotify only','Blockiert':'Blocked','Noch keine Songs gespielt':'No songs played yet',
+    'Widget Designs':'Widget Designs','Requester bei Song-Requests in Widgets anzeigen':'Show requester in widgets','Ausblenden wenn pausiert':'Hide when paused',
+    'Horizontal, minimalistisch':'Horizontal, minimal','Akzentfarbe':'Accent color','Anzeigen':'Show','Großes Cover, vertikal':'Large cover, vertical','Anpassbar im Editor':'Editable in the editor',
+    'Aktive Widgets':'Active Widgets','Eigene Designs':'Own Designs','Du kannst die Custom-Widgets mit einem Texteditor anpassen.':'You can edit the custom widgets with a text editor.','Widget-Ordner':'Widget folder','Neu laden':'Reload',
+    'Beispiel Plugin':'Example Plugin','von DisplaySong':'by DisplaySong','Plugin entwickeln':'Develop a plugin',
+    'Verbindungen':'Connections','Verbunden':'Connected','Trennen':'Disconnect','Verbunden als byDopeMan':'Connected as byDopeMan',
+    'Design-Verhalten':'Design behavior','Aktualisierungsrate':'Update rate','Design-Transparenz':'Design opacity','Designs beim Start öffnen':'Open designs on start','Design-Positionen merken':'Remember design positions',
+    'Aussehen und System':'Appearance & System','Theme':'Theme','Dunkel':'Dark','Hell':'Light','Sprache':'Language','Player Tab anzeigen':'Show Player tab','Verlauf Tab anzeigen':'Show History tab','Aktiver Provider':'Active provider','Mit Windows starten':'Start with Windows',
+    'Über':'About','Now Playing Widget für OBS':'Now Playing Widget for OBS','Changelog':'Changelog','Lizenzen':'Licenses','Logs öffnen':'Open logs',
+    '1 Sekunde':'1 second','2 Sekunden':'2 seconds','5 Sekunden':'5 seconds','10 Sekunden':'10 seconds',
+    'Twitch':'Twitch','Channel':'Channel','Song Requests':'Song Requests','Modus':'Mode','Chat-Command':'Chat command','Channel Points':'Channel Points',
+    'Command':'Command','Cooldown (Sekunden)':'Cooldown (seconds)','Nur für Subscriber':'Subscribers only','Max. Song-Länge (Minuten)':'Max. song length (minutes)','0 = unbegrenzt':'0 = unlimited','Duplikate prüfen':'Check duplicates','Chat-Account':'Chat account','Vorschau:':'Preview:','Nachrichten anpassen':'Customize messages','Test senden':'Send test','Request Historie':'Request history','Speicherort':'Storage','Lokal':'Local','Spotify Playlist':'Spotify playlist',
+  };
+  function translateFrame(en){
+    const walker = document.createTreeWalker(frame, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((n) => {
+      const key = n.nodeValue.trim();
+      if (en){ if (DE_EN[key] !== undefined && DE_EN[key] !== key){ if (n.__de == null) n.__de = n.nodeValue; n.nodeValue = n.nodeValue.replace(key, DE_EN[key]); } }
+      else if (n.__de != null){ n.nodeValue = n.__de; n.__de = null; }
     });
-  });
+  }
+  const langSel = document.getElementById('demo-lang');
+  if (langSel) langSel.addEventListener('change', () => translateFrame(langSel.value === 'en'));
 
   // Player / Verlauf tab visibility. Player OFF → the queue moves into its own
   // Queue tab (exactly like the app); Player ON → queue sits under the player.
@@ -997,6 +1070,7 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
   const tabPlayer = document.getElementById('tab-player');
   const tabQueue = document.getElementById('tab-queue');
 
+  const coverBg = document.getElementById('frameCoverBg');
   if (playerToggle) playerToggle.addEventListener('click', () => {
     const on = !playerToggle.classList.contains('on');
     setToggle(playerToggle, on);
@@ -1005,11 +1079,17 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
       queueTabBtn.style.display = 'none';
       if (queueEl && queueEl.parentElement !== tabPlayer) tabPlayer.appendChild(queueEl);
       if (tabQueue.classList.contains('active')) activateTab('player');
+      if (coverBg) coverBg.classList.remove('visible');   // player on → no global backdrop
     } else {
       playerTabBtn.style.display = 'none';
       queueTabBtn.style.display = '';
       if (queueEl) tabQueue.appendChild(queueEl);
       if (tabPlayer.classList.contains('active')) activateTab('queue');
+      if (coverBg){                                        // player off → blurred cover backdrop
+        const src = document.getElementById('playerMockCover') && document.getElementById('playerMockCover').style.backgroundImage;
+        if (src && src !== 'none') coverBg.style.backgroundImage = src;
+        coverBg.classList.add('visible');
+      }
     }
   });
 
