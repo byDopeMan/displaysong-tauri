@@ -12,6 +12,7 @@ scripts/
 MD/
 docs/assets/output/update-manifest.ps1
 docs/index.src.html
+.docs-src.git/
 
 # =====================
 # Node / Frontend
