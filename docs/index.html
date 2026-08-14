@@ -112,8 +112,9 @@ section{padding:70px 0;}
 .titlebar{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--surface);}
 .titlebar .title{font-size:13px; color:var(--text-dim); font-weight:600;}
 .tb-controls{display:flex; gap:8px;}
-.tb-btn{width:28px; height:28px; border:none; background:var(--surface-hover); color:var(--text-dim); border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:center;}
-.tb-btn.tb-close:hover, .tb-btn.tb-close{transition:background .15s, color .15s;}
+.tb-btn{width:28px; height:28px; border:none; background:var(--surface-hover); color:var(--text-dim); border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:inherit; transition:background .15s ease, color .15s ease;}
+.tb-btn:hover{background:var(--border); color:var(--text);}
+.tb-close:hover{background:#ef4444; color:#fff;}
 .tabbar{display:flex; gap:2px; padding:6px 12px; background:var(--surface); border-bottom:1px solid var(--border);}
 .tabbtn{padding:7px 12px; font-size:12px; color:var(--text-dim); border-radius:6px; background:none; border:none; cursor:pointer; font-family:inherit;}
 .tabbtn:hover{color:var(--text);}
@@ -312,6 +313,20 @@ section{padding:70px 0;}
 .setting-row-top{display:flex; justify-content:space-between; align-items:center; width:100%;}
 .setting-row-buttons{display:flex; gap:8px; margin-top:12px;}
 .setting-row-buttons button{flex:1;}
+#twitch-points-mode-settings.hidden, #twitch-command-mode-settings.hidden{display:none;}
+/* plugin settings modal — 1:1 with the app's .modal / .modal-content, but scoped
+   to the app-frame (absolute inset:0 in .frame-content) instead of the viewport */
+.frame-modal{position:absolute; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:5; padding:16px; animation:frame-modal-fade .18s ease;}
+.frame-modal.hidden{display:none;}
+.frame-modal .modal-content{background:var(--bg); border-radius:16px; width:100%; max-width:340px; max-height:calc(100% - 24px); overflow:hidden; border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,.5); display:flex; flex-direction:column; animation:frame-modal-pop .18s ease;}
+.frame-modal .modal-header{display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); gap:12px;}
+.frame-modal .modal-header h3{font-size:16px; font-weight:600; flex:1; margin:0;}
+.frame-modal .modal-icon{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(var(--accent-rgb),.15); color:var(--accent);}
+.frame-modal .modal-close{background:none; border:none; color:var(--text-dim); font-size:24px; cursor:pointer; padding:0; line-height:1; transition:color .15s ease;}
+.frame-modal .modal-close:hover{color:var(--text);}
+.frame-modal .modal-body{padding:20px; overflow-y:auto;}
+@keyframes frame-modal-fade{from{opacity:0;} to{opacity:1;}}
+@keyframes frame-modal-pop{from{opacity:0; transform:scale(.94);} to{opacity:1; transform:none;}}
 .connection-info{display:flex; align-items:center; gap:10px;}
 .connection-icon{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(29,185,84,0.15); color:#1db954; font-size:14px;}
 .connection-icon.twitch{background:rgba(145,70,255,0.15); color:#9146ff;}
@@ -570,8 +585,8 @@ footer a:hover{color:var(--text);}
 
     <div class="app-frame reveal">
       <div class="titlebar">
-        <span class="title">DisplaySong — Now Playing für OBS</span>
-        <div class="tb-controls"><button class="tb-btn">─</button><button class="tb-btn">□</button><button class="tb-btn">×</button></div>
+        <span class="title">DisplaySong</span>
+        <div class="tb-controls"><button class="tb-btn" title="Minimieren">─</button><button class="tb-btn tb-close" title="Schließen">✕</button></div>
       </div>
       <div class="tabbar">
         <button class="tabbtn active" data-tab="player" id="tabbtn-player">Player</button>
@@ -626,15 +641,14 @@ footer a:hover{color:var(--text);}
       <!-- HISTORY TAB -->
       <div class="tabpanel" id="tab-history">
         <div class="history-header">
-          <div><h2>Verlauf</h2><div class="history-subtitle" id="historySubtitle">Letzte Tracks</div></div>
-          <div class="history-controls">
-            <select class="history-filter-select"><option>Alle Quellen</option><option>Nur Spotify</option></select>
-            <div class="history-design-toggle">
-              <button class="design-toggle-btn active" title="Liste"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
-              <button class="design-toggle-btn" title="Eingebettet"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></button>
-            </div>
-            <button class="btn-icon-sm" id="btn-open-blocklist"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> Blockiert</button>
+          <div>
+            <h2>Song-Verlauf</h2>
+            <p class="history-subtitle" id="historySubtitle">Zuletzt gespielte Songs</p>
           </div>
+          <button id="btn-open-blocklist" class="btn-icon-sm" title="Blockierte Songs verwalten">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+            <span>Blockiert</span>
+          </button>
         </div>
         <div class="history-list" id="historyListDynamic"></div>
       </div>
@@ -715,18 +729,6 @@ footer a:hover{color:var(--text);}
           <p>Docs: <a href="https://github.com/byDopeMan/displaysong-tauri/blob/plugins/PLUGIN.md" target="_blank" rel="noopener">PLUGIN.md</a></p>
         </div>
 
-        <!-- Plugin settings demo panel — opened by the gear on an enabled plugin.
-             Shows the field types a plugin registers via api.registerSettings(). -->
-        <div id="plugin-demo-panel" class="demo-panel" style="display:none;">
-          <button class="demo-back" id="plugin-demo-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Zurück</button>
-          <h3 class="demo-title">Beispiel Plugin — Einstellungen</h3>
-          <div class="setting-row"><label>Text-Feld</label><input type="text" class="demo-input" value="Mein Wert"></div>
-          <div class="setting-row"><label>Auswahl</label><select class="setting-select"><option>Option A</option><option selected>Option B</option><option>Option C</option></select></div>
-          <div class="setting-row"><label>Umschalter</label><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
-          <div class="setting-row"><span class="demo-info">Info-Zeile — hier zeigt das Plugin Live-Status an.</span></div>
-          <button class="btn-small btn-primary" style="margin-top:14px;">Aktion ausführen</button>
-          <p class="demo-note">Demo — Plugins bauen ihre Einstellungen per <code>api.registerSettings()</code>: Text, Toggle, Select, Button und Info-Zeilen.</p>
-        </div>
       </div>
 
       <!-- SETTINGS TAB — 1:1 mit Settings.svelte (Verbindungen · Design-Verhalten · Aussehen und System · Über) -->
@@ -786,11 +788,26 @@ footer a:hover{color:var(--text);}
               <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
             </div>
             <div class="collapsible-content">
-              <div class="setting-row"><label>Modus</label><div class="toggle-group"><button class="toggle-btn active">Chat-Command</button><button class="toggle-btn">Channel Points</button></div></div>
-              <div class="setting-notice info"><div class="notice-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div><div class="notice-content"><strong>Link-Schutz aktiv</strong><p>Wenn dein Chat Links blockiert, können User !sr ohne Link schreiben. Der Bot gibt dann automatisch eine 60-Sekunden Link-Erlaubnis.</p><p class="notice-requirement">Voraussetzung: Der Bot muss Moderator in deinem Channel sein.</p></div></div>
-              <div class="setting-row"><label>Command</label><input type="text" class="setting-input setting-input-small" value="!sr"></div>
-              <div class="setting-row"><label>Cooldown (Sekunden)</label><input type="number" class="setting-input setting-input-small" value="30"></div>
-              <div class="setting-row"><label>Nur für Subscriber</label><input type="checkbox" class="setting-checkbox"></div>
+              <div class="setting-row"><label>Modus</label><div class="toggle-group" id="twitch-mode-toggle"><button class="toggle-btn active" data-mode="commands">Chat-Command</button><button class="toggle-btn" data-mode="points">Channel Points</button></div></div>
+
+              <!-- Channel-Points-Ansicht (nur im Points-Modus sichtbar) -->
+              <div id="twitch-points-mode-settings" class="hidden">
+                <div class="setting-notice info"><div class="notice-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div><div class="notice-content"><strong>Channel Points Modus</strong><p>Zuschauer lösen Songs über eine Kanalpunkte-Belohnung ein. Cooldown &amp; Zugriffsbeschränkung steuerst du direkt an der Belohnung auf Twitch.</p></div></div>
+                <div class="setting-row setting-row-vertical"><div class="setting-row-top"><label>Belohnung</label><select class="setting-select"><option>— Belohnung wählen —</option><option>Song Request (500 Punkte)</option></select></div><p class="setting-hint">Die Einlösung dieser Belohnung löst einen Song-Request aus.</p></div>
+                <div class="setting-row-buttons"><button class="btn-secondary btn-small"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Aktualisieren</button><button class="btn-secondary btn-small"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Neue Belohnung</button></div>
+                <div class="subsection-divider"></div>
+                <div class="setting-notice info"><div class="notice-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div><div class="notice-content"><strong>Ohne Affiliate/Partner testen</strong><p>Die Channel-Points-API von Twitch benötigt Affiliate- oder Partner-Status. Du kannst den kompletten Ablauf (Link → Spotify → Queue) hier simulieren, ohne eine echte Belohnung.</p></div></div>
+                <div class="setting-row setting-row-vertical"><div class="setting-row-top"><label>Test-Link</label><input type="text" class="setting-input" placeholder="https://open.spotify.com/track/..."></div></div>
+                <button class="btn-secondary btn-small"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Test-Einlösung simulieren</button>
+              </div>
+
+              <!-- Chat-Command-Ansicht (nur im Command-Modus sichtbar) -->
+              <div id="twitch-command-mode-settings">
+                <div class="setting-notice info"><div class="notice-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div><div class="notice-content"><strong>Link-Schutz aktiv</strong><p>Wenn dein Chat Links blockiert, können User !sr ohne Link schreiben. Der Bot gibt dann automatisch eine 60-Sekunden Link-Erlaubnis.</p><p class="notice-requirement">Voraussetzung: Der Bot muss Moderator in deinem Channel sein.</p></div></div>
+                <div class="setting-row"><label>Command</label><input type="text" class="setting-input setting-input-small" value="!sr"></div>
+                <div class="setting-row"><label>Cooldown (Sekunden)</label><input type="number" class="setting-input setting-input-small" value="30"></div>
+                <div class="setting-row"><label>Nur für Subscriber</label><input type="checkbox" class="setting-checkbox"></div>
+              </div>
               <div class="setting-row"><label>Max. Song-Länge (Minuten)</label><input type="number" class="setting-input setting-input-small" value="0"></div>
               <p class="setting-hint">0 = unbegrenzt</p>
               <div class="setting-row"><label>Duplikate prüfen</label><input type="checkbox" class="setting-checkbox" checked></div>
@@ -804,6 +821,25 @@ footer a:hover{color:var(--text);}
             </div>
           </div>
           <p class="demo-note">1:1 der Twitch-Song-Request-Einstellungen aus der App (Chat-Command-Modus).</p>
+        </div>
+      </div>
+      <!-- Plugin settings MODAL — 1:1 with the app's plugin-settings-modal
+           (centered, backdrop, header with icon/title/×). Opened by the gear on
+           an enabled plugin. -->
+      <div id="plugin-demo-modal" class="frame-modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="modal-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+            <h3>Beispiel Plugin - Einstellungen</h3>
+            <button class="modal-close" id="plugin-demo-close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="setting-row"><label>Text-Feld</label><input type="text" class="setting-input" value="Mein Wert"></div>
+            <div class="setting-row"><label>Auswahl</label><select class="setting-select"><option>Option A</option><option selected>Option B</option><option>Option C</option></select></div>
+            <div class="setting-row"><label>Umschalter</label><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="setting-row"><span class="demo-info">Info-Zeile — hier zeigt das Plugin Live-Status an.</span></div>
+            <button class="btn-small btn-primary" style="margin-top:14px; width:100%;">Aktion ausführen</button>
+          </div>
         </div>
       </div>
       </div><!-- /frame-content -->
@@ -1117,8 +1153,30 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
     if (open && panel && tab) open.addEventListener('click', () => openPanel(tab, panel));
     if (back && panel && tab) back.addEventListener('click', () => closePanel(tab, panel));
   }
-  wirePanel('plugin-demo-open', 'plugin-demo-panel', 'plugin-demo-back', 'tab-plugins');
   wirePanel('twitch-settings-btn', 'twitch-demo-panel', 'twitch-demo-back', 'tab-settings');
+
+  // Plugin settings open as a centered modal (like the app), not a slide-in.
+  const pluginModal = document.getElementById('plugin-demo-modal');
+  const pluginOpen = document.getElementById('plugin-demo-open');
+  const pluginClose = document.getElementById('plugin-demo-close');
+  if (pluginOpen && pluginModal) pluginOpen.addEventListener('click', () => pluginModal.classList.remove('hidden'));
+  if (pluginClose && pluginModal) pluginClose.addEventListener('click', () => pluginModal.classList.add('hidden'));
+  if (pluginModal) pluginModal.addEventListener('click', (e) => { if (e.target === pluginModal) pluginModal.classList.add('hidden'); });
+
+  // Twitch mode toggle (Chat-Command ↔ Channel Points) — switches the visible
+  // settings block, 1:1 with the app.
+  const modeToggle = document.getElementById('twitch-mode-toggle');
+  if (modeToggle) modeToggle.querySelectorAll('.toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      modeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const points = btn.dataset.mode === 'points';
+      const p = document.getElementById('twitch-points-mode-settings');
+      const c = document.getElementById('twitch-command-mode-settings');
+      if (p) p.classList.toggle('hidden', !points);
+      if (c) c.classList.toggle('hidden', points);
+    });
+  });
 })();
 
 // ---- scroll reveal ----
@@ -1430,7 +1488,6 @@ const HISTORY_LINK_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill=
 
 function renderHistory(){
   const list = document.getElementById('historyListDynamic');
-  const sub = document.getElementById('historySubtitle');
   if (!list) return;
   list.innerHTML = '';
   if (historyEntries.length === 0){
@@ -1438,7 +1495,6 @@ function renderHistory(){
     empty.className = 'history-empty';
     empty.innerHTML = '<svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg><p>Noch keine Songs gespielt</p>';
     list.appendChild(empty);
-    if (sub) sub.textContent = 'Letzte Tracks';
     return;
   }
   historyEntries.forEach((e, i) => {
@@ -1457,7 +1513,6 @@ function renderHistory(){
     item.append(idx, cover, info, radial);
     list.appendChild(item);
   });
-  if (sub) sub.textContent = historyEntries.length === 1 ? '1 Track' : historyEntries.length + ' Tracks';
 }
 
 function pushHistory(track){
