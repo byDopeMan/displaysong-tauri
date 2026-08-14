@@ -10,6 +10,8 @@ backend/
 keys/
 scripts/
 MD/
+docs/assets/output/update-manifest.ps1
+docs/index.src.html
 
 # =====================
 # Node / Frontend
